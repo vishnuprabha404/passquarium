@@ -13,15 +13,15 @@ class EmailAuthScreen extends StatefulWidget {
 class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final _masterKeyController = TextEditingController();
+  final _confirmMasterKeyController = TextEditingController();
   
   bool _isLoading = false;
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
+  bool _isMasterKeyVisible = false;
+  bool _isConfirmMasterKeyVisible = false;
   bool _isSignUpMode = false;
   bool _showEmailVerificationMessage = false;
-  bool _showPasswordStrength = false;
+  bool _showMasterKeyStrength = false;
   bool _emailVerificationSent = false;
   
   // Animation controllers
@@ -59,8 +59,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _masterKeyController.dispose();
+    _confirmMasterKeyController.dispose();
     _slideController.dispose();
     _fadeController.dispose();
     super.dispose();
@@ -88,7 +88,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
     try {
       final success = await authService.authenticateWithEmail(
         _emailController.text.trim(),
-        _passwordController.text,
+        _masterKeyController.text,
         isSignUp: _isSignUpMode,
       );
 
@@ -103,8 +103,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
           // Auto-check verification status every 3 seconds
           _startVerificationChecker();
         } else {
-          // Navigate to home after successful sign in
-          Navigator.of(context).pushReplacementNamed('/home');
+          // Navigate to master key verification after successful sign in
+          Navigator.of(context).pushReplacementNamed('/master-key');
         }
       }
     } catch (e) {
@@ -130,7 +130,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
           _showSuccessDialog(
             'Email Verified!',
             'Your email has been verified successfully. You can now use all features.',
-            onClose: () => Navigator.of(context).pushReplacementNamed('/home'),
+            onClose: () => Navigator.of(context).pushReplacementNamed('/master-key'),
           );
         } else if (mounted) {
           // Check again in 5 seconds
@@ -153,7 +153,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
         _showSuccessDialog(
           'Email Verified!',
           'Your email has been verified successfully. You can now access all features.',
-          onClose: () => Navigator.of(context).pushReplacementNamed('/home'),
+          onClose: () => Navigator.of(context).pushReplacementNamed('/master-key'),
         );
       } else if (mounted) {
         _showErrorDialog(
@@ -193,13 +193,13 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
           children: [
             Icon(Icons.help_outline, color: Theme.of(context).primaryColor),
             const SizedBox(width: 8),
-            const Text('Reset Password'),
+            const Text('Reset Master Key'),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Send a password reset email to:'),
+            Text('Send a Master Key reset email to:'),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -214,7 +214,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
             ),
             const SizedBox(height: 16),
             const Text(
-              'You will receive an email with instructions to reset your password.',
+              'You will receive an email with instructions to reset your Master Key.',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
@@ -239,7 +239,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                 if (mounted) {
                   _showSuccessDialog(
                     'Reset Email Sent',
-                    'Please check your email for password reset instructions. The email may take a few minutes to arrive.',
+                    'Please check your email for Master Key reset instructions. The email may take a few minutes to arrive.',
                   );
                 }
               } catch (e) {
@@ -350,33 +350,33 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
     return null;
   }
 
-  String? _validatePassword(String? value) {
+  String? _validateMasterKey(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Please enter a password';
+      return 'Please enter a Master Key';
     }
     if (_isSignUpMode) {
       if (value.length < 8) {
-        return 'Password must be at least 8 characters long (used for encryption)';
+        return 'Master Key must be at least 8 characters long (used for encryption)';
       }
-      // Check for basic strength since this is the master password
+      // Check for basic strength since this is the master key
       bool hasUppercase = value.contains(RegExp(r'[A-Z]'));
       bool hasLowercase = value.contains(RegExp(r'[a-z]'));
       bool hasDigits = value.contains(RegExp(r'[0-9]'));
       
       if (!hasUppercase || !hasLowercase || !hasDigits) {
-        return 'Password must contain uppercase, lowercase, and numbers';
+        return 'Master Key must contain uppercase, lowercase, and numbers';
       }
     }
     return null;
   }
 
-  String? _validateConfirmPassword(String? value) {
+  String? _validateConfirmMasterKey(String? value) {
     if (_isSignUpMode) {
       if (value == null || value.isEmpty) {
-        return 'Please confirm your password';
+        return 'Please confirm your Master Key';
       }
-      if (value != _passwordController.text) {
-        return 'Passwords do not match';
+      if (value != _masterKeyController.text) {
+        return 'Master Keys do not match';
       }
     }
     return null;
@@ -427,8 +427,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                 // Description
                 Text(
                   _isSignUpMode 
-                      ? 'Create your Super Locker account. Your password will be used to encrypt your vault and sync across devices.'
-                      : 'Sign in to your Super Locker account. Your password encrypts and protects your vault.',
+                      ? 'Create your Super Locker account. Your Master Key will be used to encrypt your vault and sync across devices.'
+                      : 'Sign in to your Super Locker account. Your Master Key encrypts and protects your vault.',
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.grey,
@@ -559,26 +559,26 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
 
                 // Password Field
                 TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  validator: _validatePassword,
+                  controller: _masterKeyController,
+                                      obscureText: !_isMasterKeyVisible,
+                                      validator: _validateMasterKey,
                   onChanged: (value) {
                     if (_isSignUpMode) {
                       setState(() {
-                        _showPasswordStrength = value.isNotEmpty;
+                        _showMasterKeyStrength = value.isNotEmpty;
                       });
                     }
                   },
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: 'Master Key',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                        _isMasterKeyVisible ? Icons.visibility_off : Icons.visibility,
                       ),
                       onPressed: () {
                         setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
+                          _isMasterKeyVisible = !_isMasterKeyVisible;
                         });
                       },
                     ),
@@ -586,42 +586,42 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                       borderRadius: BorderRadius.circular(12),
                     ),
                     helperText: _isSignUpMode 
-                        ? 'This password will encrypt your vault' 
+                        ? 'This Master Key will encrypt your vault' 
                         : null,
                   ),
                 ),
 
-                // Password Strength Indicator (Sign Up only)
-                if (_isSignUpMode && _showPasswordStrength) ...[
+                // Master Key Strength Indicator (Sign Up only)
+                if (_isSignUpMode && _showMasterKeyStrength) ...[
                   const SizedBox(height: 8),
                   AnimatedBuilder(
                     animation: _fadeAnimation,
                     builder: (context, child) => Opacity(
                       opacity: _fadeAnimation.value,
                       child: PasswordStrengthIndicator(
-                        password: _passwordController.text,
+                        password: _masterKeyController.text,
                       ),
                     ),
                   ),
                 ],
 
-                // Confirm Password Field (Sign Up only)
+                // Confirm Master Key Field (Sign Up only)
                 if (_isSignUpMode) ...[
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _confirmPasswordController,
-                    obscureText: !_isConfirmPasswordVisible,
-                    validator: _validateConfirmPassword,
+                    controller: _confirmMasterKeyController,
+                    obscureText: !_isConfirmMasterKeyVisible,
+                    validator: _validateConfirmMasterKey,
                     decoration: InputDecoration(
-                      labelText: 'Confirm Password',
+                                              labelText: 'Confirm Master Key',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                          _isConfirmMasterKeyVisible ? Icons.visibility_off : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
-                            _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                            _isConfirmMasterKeyVisible = !_isConfirmMasterKeyVisible;
                           });
                         },
                       ),
@@ -641,7 +641,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                     children: [
                       TextButton(
                         onPressed: _isLoading ? null : _forgotPassword,
-                        child: const Text('Forgot Password?'),
+                        child: const Text('Forgot Master Key?'),
                       ),
                     ],
                   ),
@@ -686,7 +686,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                       onPressed: () {
                         setState(() {
                           _isSignUpMode = !_isSignUpMode;
-                          _confirmPasswordController.clear();
+                          _confirmMasterKeyController.clear();
                           _showEmailVerificationMessage = false;
                         });
                       },
@@ -733,7 +733,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Your email is only used for account creation and sync. Your passwords are encrypted with AES-256 and never stored in plain text on our servers.',
+                        'Your email is only used for account creation and sync. Your Master Key encrypts all data with AES-256 and is never stored in plain text on our servers.',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.blue.shade700,

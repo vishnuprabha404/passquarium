@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
+import 'package:super_locker/config/app_config.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/services/password_service.dart';
 import 'package:super_locker/services/encryption_service.dart';
 import 'package:super_locker/screens/splash_screen.dart';
 import 'package:super_locker/screens/email_auth_screen.dart';
 import 'package:super_locker/screens/device_auth_screen.dart';
-
+import 'package:super_locker/screens/master_key_screen.dart';
 import 'package:super_locker/screens/home_screen.dart';
 import 'package:super_locker/screens/add_password_screen.dart';
 import 'package:super_locker/screens/search_password_screen.dart';
@@ -17,14 +18,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize Firebase
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } catch (e) {
-    // For testing without Firebase configuration
-    debugPrint('Firebase initialization failed: $e');
-  }
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   
   runApp(const SuperLockerApp());
 }
@@ -41,7 +37,8 @@ class SuperLockerApp extends StatelessWidget {
         Provider(create: (_) => EncryptionService()),
       ],
       child: MaterialApp(
-        title: 'Super Locker',
+        title: AppConfig.appName,
+        debugShowCheckedModeBanner: AppConfig.showDebugBanner,
         theme: ThemeData(
           primarySwatch: Colors.blue,
           visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -63,6 +60,7 @@ class SuperLockerApp extends StatelessWidget {
           '/': (context) => const SplashScreen(),
           '/email-auth': (context) => const EmailAuthScreen(),
           '/device-auth': (context) => const DeviceAuthScreen(),
+          '/master-key': (context) => const MasterKeyScreen(),
           '/home': (context) => const HomeScreen(),
           '/add-password': (context) => const AddPasswordScreen(),
           '/search-password': (context) => const SearchPasswordScreen(),

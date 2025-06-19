@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:super_locker/config/app_config.dart';
 import 'package:super_locker/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,14 +18,14 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    // Add a small delay for splash screen effect
-    await Future.delayed(const Duration(seconds: 1));
+    // Add a delay for splash screen effect
+    await Future.delayed(AppConfig.splashScreenDuration);
     
     if (mounted) {
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.initialize();
       
-      // Navigate based on auth status - NEW FLOW: Device → Email → Home (no separate master password)
+      // Navigate based on auth status - NEW FLOW: Device → Email → Master Key → Home
       if (mounted) {
         switch (authService.authStatus) {
           case AuthStatus.deviceAuthRequired:
@@ -32,6 +33,9 @@ class _SplashScreenState extends State<SplashScreen> {
             break;
           case AuthStatus.emailRequired:
             Navigator.of(context).pushReplacementNamed('/email-auth');
+            break;
+          case AuthStatus.masterKeyRequired:
+            Navigator.of(context).pushReplacementNamed('/master-key');
             break;
           case AuthStatus.authenticated:
             Navigator.of(context).pushReplacementNamed('/home');
@@ -81,9 +85,9 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 32),
             
             // App Name
-            const Text(
-              'Super Locker',
-              style: TextStyle(
+            Text(
+              AppConfig.appName,
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -93,9 +97,9 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 8),
             
             // Tagline
-            const Text(
-              'Secure Password Manager',
-              style: TextStyle(
+            Text(
+              AppConfig.appDescription,
+              style: const TextStyle(
                 fontSize: 16,
                 color: Colors.white70,
               ),

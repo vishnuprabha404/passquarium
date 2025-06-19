@@ -39,9 +39,8 @@ class FirestoreService {
       };
 
       await docRef.set(entryData);
-      debugPrint('Password entry added successfully: ${entry.title}');
+      // Entry added successfully
     } catch (e) {
-      debugPrint('Error adding password entry: $e');
       throw Exception('Failed to add password entry: $e');
     }
   }
@@ -69,9 +68,8 @@ class FirestoreService {
           .doc(entry.id)
           .update(entryData);
       
-      debugPrint('Password entry updated successfully: ${entry.title}');
+      // Entry updated successfully
     } catch (e) {
-      debugPrint('Error updating password entry: $e');
       throw Exception('Failed to update password entry: $e');
     }
   }
@@ -84,9 +82,8 @@ class FirestoreService {
           .doc(entryId)
           .delete();
       
-      debugPrint('Password entry deleted successfully: $entryId');
+      // Entry deleted successfully
     } catch (e) {
-      debugPrint('Error deleting password entry: $e');
       throw Exception('Failed to delete password entry: $e');
     }
   }
