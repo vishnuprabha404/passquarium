@@ -149,6 +149,71 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showQuickLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.logout,
+              color: Theme.of(context).primaryColor,
+            ),
+            const SizedBox(width: 8),
+            const Text('Quick Logout'),
+          ],
+        ),
+        content: const Text('Are you sure you want to logout? You will need to authenticate again to access your passwords.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog first
+              
+              final authService = Provider.of<AuthService>(context, listen: false);
+              final passwordService = Provider.of<PasswordService>(context, listen: false);
+              
+              try {
+                // Show loading indicator
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const AlertDialog(
+                    content: Row(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(width: 16),
+                        Text('Logging out...'),
+                      ],
+                    ),
+                  ),
+                );
+                
+                await authService.signOut();
+                passwordService.clearLocalData();
+                
+                if (mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                }
+              } catch (e) {
+                Navigator.pop(context); // Close loading dialog
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Logout failed: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showSignOutDialog() {
     showDialog(
       context: context,
@@ -371,7 +436,13 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Super Locker'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: _showQuickLogoutDialog,
+          ),
+          IconButton(
             icon: const Icon(Icons.more_vert),
+            tooltip: 'Settings',
             onPressed: _showSettingsMenu,
           ),
         ],
