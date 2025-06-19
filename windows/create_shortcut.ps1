@@ -31,26 +31,13 @@ try {
     $Shortcut.WorkingDirectory = (Split-Path $ExePath)
     $Shortcut.Description = 'Super Locker - Secure Password Manager'
     $Shortcut.IconLocation = "$ExePath,0"
-    # Add arguments to show console for debugging (remove in production)
     $Shortcut.Arguments = ""
     $Shortcut.WindowStyle = 1  # Normal window
     $Shortcut.Save()
     
-    # Also create a debug version that shows console output
-    $DebugShortcutPath = Join-Path $Desktop 'Super Locker (Debug).lnk'
-    $DebugShortcut = $WScriptShell.CreateShortcut($DebugShortcutPath)
-    $DebugShortcut.TargetPath = "cmd.exe"
-    $DebugShortcut.Arguments = "/k `"cd /d `"$(Split-Path $ExePath)`" && `"$ExePath`"`""
-    $DebugShortcut.WorkingDirectory = (Split-Path $ExePath)
-    $DebugShortcut.Description = 'Super Locker - Debug Mode (shows console output)'
-    $DebugShortcut.IconLocation = "$ExePath,0"
-    $DebugShortcut.Save()
-    
     Write-Host "✅ Desktop shortcut created successfully: $ShortcutPath" -ForegroundColor Green
-    Write-Host "✅ Debug shortcut created: $DebugShortcutPath" -ForegroundColor Yellow
     Write-Host "   Target: $ExePath" -ForegroundColor Gray
     Write-Host "   Working Directory: $(Split-Path $ExePath)" -ForegroundColor Gray
-    Write-Host "   Use the Debug shortcut to see any error messages" -ForegroundColor Yellow
     
 } catch {
     Write-Error "Failed to create desktop shortcut: $($_.Exception.Message)"

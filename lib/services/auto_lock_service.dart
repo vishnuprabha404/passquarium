@@ -37,15 +37,12 @@ class AutoLockService with WidgetsBindingObserver {
     
     // Start the inactivity timer
     _resetTimer();
-    
-    debugPrint('AutoLockService initialized with ${_timeoutSeconds}s timeout');
   }
 
   // Dispose of the service
   void dispose() {
     _inactivityTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
-    debugPrint('AutoLockService disposed');
   }
 
   // Reset the inactivity timer (called on user activity)
@@ -71,8 +68,6 @@ class AutoLockService with WidgetsBindingObserver {
     // Clear authentication state
     _authService.logout();
     
-    debugPrint('App auto-locked due to inactivity');
-    
     // Notify about auto-lock
     _onAutoLock?.call();
   }
@@ -86,7 +81,6 @@ class AutoLockService with WidgetsBindingObserver {
   void unlockApp() {
     _isLocked = false;
     _resetTimer();
-    debugPrint('App unlocked');
   }
 
   // Handle user activity (tap, scroll, keyboard input, etc.)
@@ -104,7 +98,6 @@ class AutoLockService with WidgetsBindingObserver {
     } else {
       _inactivityTimer?.cancel();
     }
-    debugPrint('AutoLock ${enabled ? 'enabled' : 'disabled'}');
   }
 
   // Update timeout duration
@@ -113,7 +106,6 @@ class AutoLockService with WidgetsBindingObserver {
     if (_isEnabled && !_isLocked) {
       _resetTimer();
     }
-    debugPrint('AutoLock timeout updated to ${seconds}s');
   }
 
   // Get current state
@@ -139,26 +131,22 @@ class AutoLockService with WidgetsBindingObserver {
         if (_isEnabled && !_isLocked) {
           _resetTimer();
         }
-        debugPrint('App resumed - timer reset');
         break;
         
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
         // App went to background
         _inactivityTimer?.cancel();
-        debugPrint('App paused - timer cancelled');
         break;
         
       case AppLifecycleState.detached:
         // App is being terminated
         _lockApp();
-        debugPrint('App detached - locked');
         break;
         
       case AppLifecycleState.hidden:
         // App is hidden (iOS specific)
         _inactivityTimer?.cancel();
-        debugPrint('App hidden - timer cancelled');
         break;
     }
   }

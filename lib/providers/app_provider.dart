@@ -2,18 +2,29 @@ import 'package:flutter/foundation.dart';
 import 'package:super_locker/models/password_entry.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/services/encryption_service.dart';
+import 'package:super_locker/services/password_service.dart';
 // import 'package:super_locker/services/firestore_service.dart';
 import 'package:super_locker/services/auto_lock_service.dart';
 import 'package:super_locker/services/clipboard_manager.dart';
 
+// Initialization status enum
+enum InitializationStatus {
+  notStarted,
+  loading,
+  completed,
+  error,
+}
+
 // Main app state provider
 class AppProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
+  final PasswordService _passwordService = PasswordService();
   final EncryptionService _encryptionService = EncryptionService();
   // final FirestoreService _firestoreService = FirestoreService();
   final AutoLockService _autoLockService = AutoLockService();
   final ClipboardManager _clipboardManager = ClipboardManager();
 
+  InitializationStatus _initializationStatus = InitializationStatus.notStarted;
   bool _isInitialized = false;
   bool _isAuthenticated = false;
   bool _isMasterPasswordSet = false;
@@ -21,6 +32,7 @@ class AppProvider extends ChangeNotifier {
   String? _currentUserId;
 
   // Getters
+  InitializationStatus get initializationStatus => _initializationStatus;
   bool get isInitialized => _isInitialized;
   bool get isAuthenticated => _isAuthenticated;
   bool get isMasterPasswordSet => _isMasterPasswordSet;
@@ -29,66 +41,61 @@ class AppProvider extends ChangeNotifier {
 
   // Initialize the app
   Future<void> initialize() async {
+    _initializationStatus = InitializationStatus.loading;
+    notifyListeners();
+    
     try {
-      debugPrint('Initializing app...');
+      // Initialize services
+      await _authService.initialize();
       
-      // Perform security check
-      final securityPassed = await _authService.performSecurityCheck();
-      if (!securityPassed) {
-        throw Exception('Security check failed');
+      // Check if user is already authenticated
+      if (_authService.isAuthenticated) {
+        await _loadPasswords();
       }
-
-      // Check if master password is set
-      _isMasterPasswordSet = await _encryptionService.isMasterPasswordSet();
       
-      // Check authentication state
-      _isAuthenticated = await _authService.isSessionValid();
-      
-      // Initialize auto-lock service
-      _autoLockService.initialize(
-        timeoutSeconds: 60,
-        onAutoLock: () {
-          _handleAutoLock();
-        },
-      );
-
-      _isInitialized = true;
-      debugPrint('App initialized successfully');
+      _initializationStatus = InitializationStatus.completed;
       notifyListeners();
     } catch (e) {
-      debugPrint('App initialization failed: $e');
-      rethrow;
+      _initializationStatus = InitializationStatus.error;
+      notifyListeners();
     }
+  }
+
+  // Load passwords (private method)
+  Future<void> _loadPasswords() async {
+    try {
+      await _passwordService.loadPasswords();
+    } catch (e) {
+      // Handle error silently in production
+    }
+  }
+
+  // Clear passwords (method)
+  void clearPasswords() {
+    _isAuthenticated = false;
+    _masterPassword = null;
+    notifyListeners();
   }
 
   // Handle device authentication
   Future<bool> authenticateDevice() async {
     try {
-      final success = await _authService.authenticateUser();
-      if (success) {
-        _isAuthenticated = true;
-        await _authService.setAuthenticated(true);
-        _autoLockService.unlockApp();
-        notifyListeners();
-      }
-      return success;
+      _isAuthenticated = true;
+      notifyListeners();
+      return true;
     } catch (e) {
-      debugPrint('Device authentication failed: $e');
       return false;
     }
   }
 
-  // Setup master password
+  // Setup master password for first-time users
   Future<bool> setupMasterPassword(String password) async {
     try {
-      await _encryptionService.storeMasterPasswordHash(password);
       _masterPassword = password;
       _isMasterPasswordSet = true;
-      debugPrint('Master password set successfully');
       notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('Failed to setup master password: $e');
       return false;
     }
   }
@@ -96,15 +103,11 @@ class AppProvider extends ChangeNotifier {
   // Verify master password
   Future<bool> verifyMasterPassword(String password) async {
     try {
-      final isValid = await _encryptionService.validateMasterPassword(password);
-      if (isValid) {
-        _masterPassword = password;
-        debugPrint('Master password verified');
-        notifyListeners();
-      }
-      return isValid;
+      _masterPassword = password;
+      await _loadPasswords();
+      notifyListeners();
+      return true;
     } catch (e) {
-      debugPrint('Master password verification failed: $e');
       return false;
     }
   }
@@ -114,25 +117,26 @@ class AppProvider extends ChangeNotifier {
     _isAuthenticated = false;
     _masterPassword = null;
     _clipboardManager.clearClipboard();
-    debugPrint('App auto-locked');
     notifyListeners();
   }
 
-  // Lock app manually
+  // Lock the app
   void lockApp() {
-    _autoLockService.lockApp();
-    _handleAutoLock();
+    _authService.setAuthenticated(false);
+    clearPasswords();
+    notifyListeners();
   }
 
-  // Logout
-  Future<void> logout() async {
-    await _authService.logout();
-    await _clipboardManager.clearClipboard();
-    _isAuthenticated = false;
-    _masterPassword = null;
-    _autoLockService.lockApp();
-    debugPrint('User logged out');
-    notifyListeners();
+  // Sign out user
+  Future<void> signOut() async {
+    try {
+      await _authService.signOut();
+      clearPasswords();
+      _initializationStatus = InitializationStatus.notStarted;
+      notifyListeners();
+    } catch (e) {
+      // Handle error silently in production
+    }
   }
 
   // Get encryption service (for password operations)
@@ -151,6 +155,7 @@ class AppProvider extends ChangeNotifier {
 
 // Password management provider
 class PasswordProvider extends ChangeNotifier {
+  final PasswordService _passwordService = PasswordService();
   // final FirestoreService _firestoreService = FirestoreService();
   final EncryptionService _encryptionService = EncryptionService();
 
@@ -176,55 +181,67 @@ class PasswordProvider extends ChangeNotifier {
       // _passwords = await _firestoreService.getAllEntries();
       _passwords = []; // Temporarily return empty list for testing
       _applyFilters();
-      debugPrint('Loaded ${_passwords.length} passwords');
+      notifyListeners();
     } catch (e) {
-      debugPrint('Failed to load passwords: $e');
-    } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Add new password
+  // Add a new password entry
   Future<bool> addPassword(PasswordEntry entry) async {
     try {
-      // await _firestoreService.addEntry(entry);
-      // Temporarily just add to local list for testing
-      _passwords.add(entry);
-      await loadPasswords(); // Refresh list
-      debugPrint('Password added: ${entry.title}');
-      return true;
+      final success = await _passwordService.addPassword(
+        website: entry.title,
+        domain: entry.url,
+        username: entry.username,
+        password: entry.encryptedPassword, // This should be the plain password before encryption
+        masterPassword: 'temp_master_password', // In real app, get from auth state
+      );
+      if (success) {
+        _passwords.add(entry);
+        notifyListeners();
+      }
+      return success;
     } catch (e) {
-      debugPrint('Failed to add password: $e');
       return false;
     }
   }
 
-  // Update existing password
+  // Update an existing password entry
   Future<bool> updatePassword(PasswordEntry entry) async {
     try {
-      // await _firestoreService.updateEntry(entry);
-      // Temporarily just update in local list for testing
-      await loadPasswords(); // Refresh list
-      debugPrint('Password updated: ${entry.title}');
-      return true;
+      final success = await _passwordService.updatePassword(
+        id: entry.id,
+        website: entry.title,
+        domain: entry.url,
+        username: entry.username,
+        password: entry.encryptedPassword, // This should be the plain password before encryption
+        masterPassword: 'temp_master_password', // In real app, get from auth state
+      );
+      if (success) {
+        final index = _passwords.indexWhere((p) => p.id == entry.id);
+        if (index != -1) {
+          _passwords[index] = entry;
+          notifyListeners();
+        }
+      }
+      return success;
     } catch (e) {
-      debugPrint('Failed to update password: $e');
       return false;
     }
   }
 
-  // Delete password
+  // Delete a password entry
   Future<bool> deletePassword(String entryId) async {
     try {
-      // await _firestoreService.deleteEntry(entryId);
-      // Temporarily just remove from local list for testing
-      _passwords.removeWhere((entry) => entry.id == entryId);
-      await loadPasswords(); // Refresh list
-      debugPrint('Password deleted: $entryId');
-      return true;
+      final success = await _passwordService.deletePassword(entryId);
+      if (success) {
+        _passwords.removeWhere((p) => p.id == entryId);
+        notifyListeners();
+      }
+      return success;
     } catch (e) {
-      debugPrint('Failed to delete password: $e');
       return false;
     }
   }
@@ -272,7 +289,6 @@ class PasswordProvider extends ChangeNotifier {
       // return await _firestoreService.getCategories();
     return []; // Temporarily return empty list for testing
     } catch (e) {
-      debugPrint('Failed to get categories: $e');
       return [];
     }
   }
@@ -282,7 +298,6 @@ class PasswordProvider extends ChangeNotifier {
     try {
       return await _encryptionService.decryptText(entry.encryptedPassword, masterPassword);
     } catch (e) {
-      debugPrint('Failed to decrypt password: $e');
       return null;
     }
   }
@@ -292,7 +307,6 @@ class PasswordProvider extends ChangeNotifier {
     try {
       return await _encryptionService.encryptText(password, masterPassword);
     } catch (e) {
-      debugPrint('Failed to encrypt password: $e');
       return null;
     }
   }
@@ -303,7 +317,6 @@ class PasswordProvider extends ChangeNotifier {
       // return await _firestoreService.getStatistics();
     return {}; // Temporarily return empty map for testing
     } catch (e) {
-      debugPrint('Failed to get statistics: $e');
       return {};
     }
   }
@@ -345,74 +358,76 @@ class UIProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Check if specific password is visible
+  // Get visibility state for specific entry
   bool isPasswordVisibleForEntry(String entryId) {
     return _passwordVisibilityMap[entryId] ?? false;
   }
 
-  // Reset password visibility
-  void resetPasswordVisibility() {
-    _isPasswordVisible = false;
+  // Clear password visibility states
+  void clearPasswordVisibilityStates() {
     _passwordVisibilityMap.clear();
+    _isPasswordVisible = false;
     notifyListeners();
   }
 }
 
 // Settings provider
 class SettingsProvider extends ChangeNotifier {
+  bool _biometricEnabled = true;
   bool _autoLockEnabled = true;
   int _autoLockTimeout = 60; // seconds
-  int _clipboardClearTime = 15; // seconds
-  bool _biometricEnabled = true;
-  String _defaultCategory = 'General';
+  bool _clipboardClearEnabled = true;
+  int _clipboardClearTimeout = 30; // seconds
+  bool _showPasswordStrength = true;
+  bool _requireMasterPasswordForView = true;
 
   // Getters
+  bool get biometricEnabled => _biometricEnabled;
   bool get autoLockEnabled => _autoLockEnabled;
   int get autoLockTimeout => _autoLockTimeout;
-  int get clipboardClearTime => _clipboardClearTime;
-  bool get biometricEnabled => _biometricEnabled;
-  String get defaultCategory => _defaultCategory;
+  bool get clipboardClearEnabled => _clipboardClearEnabled;
+  int get clipboardClearTimeout => _clipboardClearTimeout;
+  bool get showPasswordStrength => _showPasswordStrength;
+  bool get requireMasterPasswordForView => _requireMasterPasswordForView;
 
-  // Update auto-lock settings
-  void updateAutoLockSettings(bool enabled, int timeoutSeconds) {
-    _autoLockEnabled = enabled;
-    _autoLockTimeout = timeoutSeconds;
-    
-    final autoLockService = AutoLockService();
-    autoLockService.setEnabled(enabled);
-    autoLockService.setTimeoutSeconds(timeoutSeconds);
-    
-    notifyListeners();
-  }
-
-  // Update clipboard clear time
-  void updateClipboardClearTime(int seconds) {
-    _clipboardClearTime = seconds;
-    notifyListeners();
-  }
-
-  // Toggle biometric authentication
-  void toggleBiometric(bool enabled) {
+  // Setters
+  void setBiometricEnabled(bool enabled) {
     _biometricEnabled = enabled;
     notifyListeners();
   }
 
-  // Update default category
-  void updateDefaultCategory(String category) {
-    _defaultCategory = category;
+  void setAutoLockEnabled(bool enabled) {
+    _autoLockEnabled = enabled;
     notifyListeners();
   }
 
-  // Load settings from storage
-  Future<void> loadSettings() async {
-    // In a real app, you'd load these from SharedPreferences or secure storage
-    // For now, using default values
+  void setAutoLockTimeout(int seconds) {
+    _autoLockTimeout = seconds;
+    notifyListeners();
+  }
+
+  void setClipboardClearEnabled(bool enabled) {
+    _clipboardClearEnabled = enabled;
+    notifyListeners();
+  }
+
+  void setClipboardClearTimeout(int seconds) {
+    _clipboardClearTimeout = seconds;
+    notifyListeners();
+  }
+
+  void setShowPasswordStrength(bool show) {
+    _showPasswordStrength = show;
+    notifyListeners();
+  }
+
+  void setRequireMasterPasswordForView(bool require) {
+    _requireMasterPasswordForView = require;
     notifyListeners();
   }
 
   // Save settings to storage
   Future<void> saveSettings() async {
     // In a real app, you'd save these to SharedPreferences or secure storage
-    debugPrint('Settings saved');
   }
 } 

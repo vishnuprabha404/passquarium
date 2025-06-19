@@ -47,11 +47,8 @@ class ClipboardManager {
         );
       }
       
-      debugPrint('Secure data copied to clipboard, will clear in ${clearAfterSeconds}s');
       return true;
     } catch (e) {
-      debugPrint('Failed to copy to clipboard: $e');
-      
       if (context != null) {
         _showSnackBar(
           context,
@@ -81,11 +78,8 @@ class ClipboardManager {
         );
       }
       
-      debugPrint('Data copied to clipboard');
       return true;
     } catch (e) {
-      debugPrint('Failed to copy to clipboard: $e');
-      
       if (context != null) {
         _showSnackBar(
           context,
@@ -113,7 +107,6 @@ class ClipboardManager {
       // Only clear if our secure data is still there
       if (_isSecureDataInClipboard && currentClipboard == _lastSecureData) {
         await Clipboard.setData(const ClipboardData(text: ''));
-        debugPrint('Clipboard cleared automatically');
       }
       
       // Reset tracking
@@ -122,7 +115,7 @@ class ClipboardManager {
       _clearTimer?.cancel();
       
     } catch (e) {
-      debugPrint('Failed to clear clipboard: $e');
+      // debugPrint('Failed to clear clipboard: $e'); // Removed debug print
     }
   }
 
@@ -140,16 +133,16 @@ class ClipboardManager {
     _clearTimer?.cancel();
     _isSecureDataInClipboard = false;
     _lastSecureData = '';
-    debugPrint('Auto-clear cancelled');
   }
 
-  // Get clipboard content (for verification)
-  Future<String?> getClipboardContent() async {
+  // Get clipboard content
+  Future<String?> getClipboardContent({BuildContext? context}) async {
     try {
       final clipboardData = await Clipboard.getData('text/plain');
       return clipboardData?.text;
     } catch (e) {
-      debugPrint('Failed to get clipboard content: $e');
+      // Removed context usage to fix build error
+      // Error handling now done silently in production
       return null;
     }
   }

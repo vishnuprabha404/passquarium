@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+// import 'package:flutter/foundation.dart'; // Removed - no longer needed after debug cleanup
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
@@ -527,7 +527,6 @@ class AuthService extends ChangeNotifier {
       final bool isDeviceSupported = await _localAuth.isDeviceSupported();
       return isAvailable && isDeviceSupported;
     } catch (e) {
-      debugPrint('Error checking biometric availability: $e');
       return false;
     }
   }
@@ -537,7 +536,6 @@ class AuthService extends ChangeNotifier {
     try {
       return await _localAuth.getAvailableBiometrics();
     } catch (e) {
-      debugPrint('Error getting available biometrics: $e');
       return [];
     }
   }
@@ -565,7 +563,6 @@ class AuthService extends ChangeNotifier {
         return await _authenticateGeneric(reason, biometricOnly);
       }
     } catch (e) {
-      debugPrint('Authentication error: $e');
       return false;
     }
   }
@@ -594,7 +591,6 @@ class AuthService extends ChangeNotifier {
 
       return didAuthenticate;
     } on PlatformException catch (e) {
-      debugPrint('Android authentication error: ${e.message}');
       return false;
     }
   }
@@ -616,12 +612,6 @@ class AuthService extends ChangeNotifier {
 
       return didAuthenticate;
     } on PlatformException catch (e) {
-      debugPrint('Windows authentication error: ${e.message}');
-      
-      // Fallback to custom PIN dialog for Windows if Windows Hello fails
-      if (!biometricOnly) {
-        return await _showCustomPinDialog();
-      }
       return false;
     }
   }
@@ -640,7 +630,6 @@ class AuthService extends ChangeNotifier {
 
       return didAuthenticate;
     } on PlatformException catch (e) {
-      debugPrint('Generic authentication error: ${e.message}');
       return false;
     }
   }
@@ -650,7 +639,6 @@ class AuthService extends ChangeNotifier {
     // This would need to be implemented with a custom dialog
     // For now, return false to indicate failure
     // In a real implementation, you'd show a secure PIN entry dialog
-    debugPrint('Custom PIN dialog would be shown here');
     return false;
   }
 
@@ -715,7 +703,6 @@ class AuthService extends ChangeNotifier {
 
       return difference.inMinutes < timeoutMinutes;
     } catch (e) {
-      debugPrint('Error checking authentication status: $e');
       return false;
     }
   }
@@ -748,35 +735,13 @@ class AuthService extends ChangeNotifier {
   // Security check - verify app hasn't been tampered with
   Future<bool> performSecurityCheck() async {
     try {
-      // Check if the app is running on a physical device
-      if (kDebugMode) {
-        debugPrint('Running in debug mode - security check passed');
-        return true;
-      }
-
-      // Additional security checks can be added here
+      // Enhanced security checks for production
       // - Check for root/jailbreak
-      // - Verify app signature
       // - Check for debugging tools
-      
-      return true;
+      // - Check for emulator
+      return true; // Implement actual security checks
     } catch (e) {
-      debugPrint('Security check failed: $e');
       return false;
     }
-  }
-
-  // Emergency authentication bypass (for development/testing)
-  Future<bool> emergencyAuthentication(String emergencyCode) async {
-    // This should only be used in development or emergency situations
-    const String hardcodedEmergencyCode = 'EMERGENCY_SUPER_LOCKER_2025';
-    
-    if (kDebugMode && emergencyCode == hardcodedEmergencyCode) {
-      debugPrint('Emergency authentication used');
-      await setAuthenticated(true);
-      return true;
-    }
-    
-    return false;
   }
 } 

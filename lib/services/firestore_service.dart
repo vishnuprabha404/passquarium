@@ -104,7 +104,6 @@ class FirestoreService {
         return PasswordEntry.fromMap(data);
       }).toList();
     } catch (e) {
-      debugPrint('Error getting password entries: $e');
       throw Exception('Failed to get password entries: $e');
     }
   }
@@ -136,7 +135,6 @@ class FirestoreService {
                entry.category.toLowerCase().contains(lowerKeyword);
       }).toList();
     } catch (e) {
-      debugPrint('Error searching password entries: $e');
       throw Exception('Failed to search password entries: $e');
     }
   }
@@ -178,7 +176,6 @@ class FirestoreService {
         return PasswordEntry.fromMap(data);
       }).toList();
     } catch (e) {
-      debugPrint('Error searching by field: $e');
       throw Exception('Failed to search by field: $e');
     }
   }
@@ -215,7 +212,6 @@ class FirestoreService {
       }
       return null;
     } catch (e) {
-      debugPrint('Error getting entry by ID: $e');
       throw Exception('Failed to get entry by ID: $e');
     }
   }
@@ -237,7 +233,6 @@ class FirestoreService {
         return PasswordEntry.fromMap(data);
       }).toList();
     } catch (e) {
-      debugPrint('Error getting entries by category: $e');
       throw Exception('Failed to get entries by category: $e');
     }
   }
@@ -262,7 +257,6 @@ class FirestoreService {
 
       return categories.toList()..sort();
     } catch (e) {
-      debugPrint('Error getting categories: $e');
       throw Exception('Failed to get categories: $e');
     }
   }
@@ -296,9 +290,7 @@ class FirestoreService {
       }
 
       await batch.commit();
-      debugPrint('Multiple entries added successfully');
     } catch (e) {
-      debugPrint('Error adding multiple entries: $e');
       throw Exception('Failed to add multiple entries: $e');
     }
   }
@@ -319,9 +311,7 @@ class FirestoreService {
       }
 
       await batch.commit();
-      debugPrint('All entries deleted successfully');
     } catch (e) {
-      debugPrint('Error deleting all entries: $e');
       throw Exception('Failed to delete all entries: $e');
     }
   }
@@ -363,9 +353,7 @@ class FirestoreService {
         }
       }
       
-      debugPrint('Entries synced successfully');
     } catch (e) {
-      debugPrint('Error syncing entries: $e');
       throw Exception('Failed to sync entries: $e');
     }
   }
@@ -390,8 +378,7 @@ class FirestoreService {
 
       return stats;
     } catch (e) {
-      debugPrint('Error getting statistics: $e');
-      throw Exception('Failed to get statistics: $e');
+      return {};
     }
   }
 } 

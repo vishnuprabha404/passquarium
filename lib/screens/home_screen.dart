@@ -661,7 +661,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                             onTap: () {
-                              // TODO: Navigate to password detail/edit
+                              // Navigate to password detail/edit screen
+                              Navigator.of(context).pushNamed(
+                                '/search-password',
+                              );
                             },
                           ),
                         );

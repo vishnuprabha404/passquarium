@@ -74,9 +74,10 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
       
       _searchResults = passwordProvider.passwords;
     } catch (e) {
-      debugPrint('Search error: $e');
-    } finally {
-      setState(() => _isSearching = false);
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
     }
   }
 
