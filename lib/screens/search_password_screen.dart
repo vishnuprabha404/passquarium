@@ -41,8 +41,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
   }
 
   void _loadCategories() async {
-    final passwordProvider = Provider.of<PasswordProvider>(context, listen: false);
-    _categories = await passwordProvider.getCategories();
+    final passwordService = Provider.of<PasswordService>(context, listen: false);
+    _categories = await passwordService.getCategories();
     if (mounted) setState(() {});
   }
 
@@ -64,15 +64,16 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     setState(() => _isSearching = true);
 
     try {
-      final passwordProvider = Provider.of<PasswordProvider>(context, listen: false);
-      await passwordProvider.loadPasswords();
+      final passwordService = Provider.of<PasswordService>(context, listen: false);
+      await passwordService.loadPasswords();
       
-      passwordProvider.searchPasswords(query);
+      _searchResults = passwordService.searchPasswords(query);
+      
+      // TODO: Add category filtering if needed
       if (_selectedCategory.isNotEmpty) {
-        passwordProvider.filterByCategory(_selectedCategory);
+        _searchResults = _searchResults.where((entry) => 
+          entry.category == _selectedCategory).toList();
       }
-      
-      _searchResults = passwordProvider.passwords;
     } catch (e) {
       setState(() {
         _searchResults = [];

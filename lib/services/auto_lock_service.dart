@@ -155,8 +155,7 @@ class AutoLockService with WidgetsBindingObserver {
   Widget createActivityTracker({required Widget child}) {
     return GestureDetector(
       onTap: onUserActivity,
-      onPanStart: (_) => onUserActivity(),
-      onScaleStart: (_) => onUserActivity(),
+      onScaleStart: (_) => onUserActivity(), // Scale is a superset of pan
       behavior: HitTestBehavior.translucent,
       child: Listener(
         onPointerDown: (_) => onUserActivity(),

@@ -316,6 +316,22 @@ class PasswordService extends ChangeNotifier {
     return _passwords.map((entry) => entry.toMap()).toList();
   }
 
+  /// Get all categories
+  Future<List<String>> getCategories() async {
+    try {
+      // Get unique categories from passwords
+      final categories = <String>{};
+      for (final password in _passwords) {
+        if (password.category.isNotEmpty) {
+          categories.add(password.category);
+        }
+      }
+      return categories.toList()..sort();
+    } catch (e) {
+      return [];
+    }
+  }
+
   /// Clear all local data (for logout)
   void clearLocalData() {
     _passwords.clear();

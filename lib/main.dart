@@ -13,6 +13,7 @@ import 'package:super_locker/screens/master_key_screen.dart';
 import 'package:super_locker/screens/home_screen.dart';
 import 'package:super_locker/screens/add_password_screen.dart';
 import 'package:super_locker/screens/search_password_screen.dart';
+import 'package:super_locker/screens/password_generator_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,6 +65,7 @@ class SuperLockerApp extends StatelessWidget {
           '/home': (context) => const HomeScreen(),
           '/add-password': (context) => const AddPasswordScreen(),
           '/search-password': (context) => const SearchPasswordScreen(),
+          '/password-generator': (context) => const PasswordGeneratorScreen(),
         },
       ),
     );

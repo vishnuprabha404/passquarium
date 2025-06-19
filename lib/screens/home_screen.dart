@@ -448,7 +448,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -538,6 +538,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
 
+              const SizedBox(height: 16),
+
+              // Second Row of Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: _ActionCard(
+                      icon: Icons.auto_awesome,
+                      title: 'Password Generator',
+                      subtitle: 'Create secure passwords',
+                      color: Colors.orange,
+                      onTap: () {
+                        Navigator.of(context).pushNamed('/password-generator');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Container(), // Empty space for symmetry
+                  ),
+                ],
+              ),
+
               const SizedBox(height: 32),
 
               // Recent Passwords
@@ -551,7 +574,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 16),
 
-              Expanded(
+              // Recent Passwords List (Fixed Height)
+              SizedBox(
+                height: 300, // Fixed height to avoid overflow
                 child: Consumer<PasswordService>(
                   builder: (context, passwordService, child) {
                     if (passwordService.isLoading) {

@@ -84,6 +84,18 @@ class AuthService extends ChangeNotifier {
       // Check Firebase user with proper error handling
       try {
         _firebaseUser = _firebaseAuth.currentUser;
+        
+        // If user is signed in but email not verified, keep them on email screen
+        if (_firebaseUser != null && !_firebaseUser!.emailVerified) {
+          // Load stored email for display
+          final storedEmail = await _secureStorage.read(key: 'user_email_${_firebaseUser!.uid}');
+          if (storedEmail != null) {
+            _userEmail = storedEmail;
+          }
+          _authStatus = AuthStatus.emailRequired;
+          notifyListeners();
+          return;
+        }
       } catch (e) {
         _firebaseUser = null;
       }
@@ -170,11 +182,12 @@ class AuthService extends ChangeNotifier {
       _firebaseUser = userCredential.user;
       
       if (_firebaseUser != null) {
-        // Send email verification
+        // Send email verification immediately
         try {
           await _firebaseUser!.sendEmailVerification();
         } catch (e) {
-          // Continue anyway, user can verify later
+          // If verification email fails, still continue but throw a specific error
+          throw Exception('Account created but verification email failed to send. Please try to resend verification email.');
         }
         
         _userEmail = email;
@@ -193,8 +206,9 @@ class AuthService extends ChangeNotifier {
           value: email
         );
         
-        // After signup, go directly to authenticated status since email password is master key
-        _authStatus = AuthStatus.authenticated;
+        // DO NOT set authenticated status - require email verification first
+        // User must verify email before they can access the app
+        _authStatus = AuthStatus.emailRequired; // Keep them on email screen for verification
         notifyListeners();
         return true;
       }
@@ -224,6 +238,32 @@ class AuthService extends ChangeNotifier {
       _firebaseUser = userCredential.user;
       
       if (_firebaseUser != null) {
+        // Check if email is verified before allowing access
+        if (!_firebaseUser!.emailVerified) {
+          // Email not verified - keep user on email screen
+          _userEmail = email;
+          _masterPassword = password;
+          
+          // Store credentials for after verification
+          final hashedPassword = _encryptionService.hashMasterPassword(password);
+          await _secureStorage.write(
+            key: 'master_password_hash_${_firebaseUser!.uid}', 
+            value: hashedPassword
+          );
+          
+          await _secureStorage.write(
+            key: 'user_email_${_firebaseUser!.uid}',
+            value: email
+          );
+          
+          _authStatus = AuthStatus.emailRequired; // Keep them on email screen for verification
+          notifyListeners();
+          
+          // Throw specific error to show verification message
+          throw Exception('EMAIL_NOT_VERIFIED');
+        }
+        
+        // Email is verified - proceed with authentication
         _userEmail = email;
         _masterPassword = password;
         
@@ -260,6 +300,27 @@ class AuthService extends ChangeNotifier {
           _firebaseUser = retryCredential.user;
           
           if (_firebaseUser != null) {
+            // Check email verification on retry as well
+            if (!_firebaseUser!.emailVerified) {
+              _userEmail = email;
+              _masterPassword = password;
+              
+              final hashedPassword = _encryptionService.hashMasterPassword(password);
+              await _secureStorage.write(
+                key: 'master_password_hash_${_firebaseUser!.uid}', 
+                value: hashedPassword
+              );
+              
+              await _secureStorage.write(
+                key: 'user_email_${_firebaseUser!.uid}',
+                value: email
+              );
+              
+              _authStatus = AuthStatus.emailRequired;
+              notifyListeners();
+              throw Exception('EMAIL_NOT_VERIFIED');
+            }
+            
             _userEmail = email;
             _masterPassword = password;
             
@@ -285,6 +346,10 @@ class AuthService extends ChangeNotifier {
       
       throw Exception(_getFirebaseAuthErrorMessage(e.code));
     } catch (e) {
+      // Pass through EMAIL_NOT_VERIFIED exception
+      if (e.toString().contains('EMAIL_NOT_VERIFIED')) {
+        rethrow;
+      }
       throw Exception('Sign in failed. Please try again.');
     }
   }
@@ -299,6 +364,9 @@ class AuthService extends ChangeNotifier {
         const Duration(seconds: 15),
         onTimeout: () => throw Exception('Request timeout. Please check your internet connection and try again.'),
       );
+      
+      // Note: Firebase will send password reset email regardless of verification status
+      // After password reset, user will still need to verify email if not already verified
     } on FirebaseAuthException catch (e) {
       throw Exception(_getFirebaseAuthErrorMessage(e.code));
     } catch (e) {
@@ -505,6 +573,30 @@ class AuthService extends ChangeNotifier {
     _hasLoggedOut = false;
     _masterPassword = null;
     _authStatus = AuthStatus.unauthenticated;
+    notifyListeners();
+  }
+
+  /// Sign out during verification process (lighter sign-out)
+  Future<void> signOutDuringVerification() async {
+    if (_firebaseUser != null) {
+      // Don't clear stored credentials during verification sign-out
+      // This allows easier re-sign-in after verification
+    }
+    
+    _masterPassword = null;
+    _userEmail = null;
+    _firebaseUser = null;
+    _deviceAuthCompleted = false;
+    _hasLoggedOut = false; // Don't mark as logged out since this is part of verification flow
+    
+    // Set status to require device auth if supported, otherwise email auth
+    if (_isDeviceAuthSupported) {
+      _authStatus = AuthStatus.deviceAuthRequired;
+    } else {
+      _authStatus = AuthStatus.emailRequired;
+    }
+    
+    await _firebaseAuth.signOut();
     notifyListeners();
   }
 

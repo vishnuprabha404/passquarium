@@ -94,6 +94,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
 
       if (success && mounted) {
         if (_isSignUpMode) {
+          // Sign-up successful - show verification message
           setState(() {
             _showEmailVerificationMessage = true;
             _emailVerificationSent = true;
@@ -103,13 +104,27 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
           // Auto-check verification status every 3 seconds
           _startVerificationChecker();
         } else {
-          // Navigate directly to home after successful sign in since email password is master key
+          // Sign-in successful and email verified - navigate to home
           Navigator.of(context).pushReplacementNamed('/home');
         }
       }
     } catch (e) {
       if (mounted) {
-        _showErrorDialog('Authentication Failed', e.toString());
+        // Check if this is an email verification error
+        if (e.toString().contains('EMAIL_NOT_VERIFIED')) {
+          // User signed in but email not verified - show verification UI
+          setState(() {
+            _showEmailVerificationMessage = true;
+            _emailVerificationSent = false; // They need to resend or check
+          });
+          _slideController.forward();
+          
+          // Auto-check verification status
+          _startVerificationChecker();
+        } else {
+          // Other authentication errors
+          _showErrorDialog('Authentication Failed', e.toString());
+        }
       }
     } finally {
       if (mounted) {
@@ -127,11 +142,31 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
         await authService.reloadUser();
         
         if (authService.isEmailVerified && mounted) {
-          _showSuccessDialog(
-            'Email Verified!',
-            'Your email has been verified successfully. You can now use all features.',
-            onClose: () => Navigator.of(context).pushReplacementNamed('/home'),
-          );
+          if (_isSignUpMode) {
+            // For sign-up: redirect to login screen after verification
+            _showSuccessDialog(
+              'Email Verified!',
+              'Your email has been verified successfully. Please sign in with your credentials to access the app.',
+              onClose: () {
+                // Sign out the user and redirect to login
+                authService.signOutDuringVerification();
+                setState(() {
+                  _isSignUpMode = false; // Switch to login mode
+                  _showEmailVerificationMessage = false;
+                  _emailVerificationSent = false;
+                  _masterKeyController.clear(); // Clear password field for security
+                });
+                _slideController.reverse(); // Hide verification UI
+              },
+            );
+          } else {
+            // For sign-in: proceed to home after verification
+            _showSuccessDialog(
+              'Email Verified!',
+              'Your email has been verified successfully. You can now use all features.',
+              onClose: () => Navigator.of(context).pushReplacementNamed('/home'),
+            );
+          }
         } else if (mounted) {
           // Check again in 5 seconds
           _startVerificationChecker();
@@ -150,11 +185,31 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
       await authService.reloadUser();
       
       if (authService.isEmailVerified && mounted) {
-        _showSuccessDialog(
-          'Email Verified!',
-          'Your email has been verified successfully. You can now access all features.',
-          onClose: () => Navigator.of(context).pushReplacementNamed('/home'),
-        );
+        if (_isSignUpMode) {
+          // For sign-up: redirect to login screen after verification
+          _showSuccessDialog(
+            'Email Verified!',
+            'Your email has been verified successfully. Please sign in with your credentials to access the app.',
+            onClose: () {
+              // Sign out the user and redirect to login
+              authService.signOutDuringVerification();
+              setState(() {
+                _isSignUpMode = false; // Switch to login mode
+                _showEmailVerificationMessage = false;
+                _emailVerificationSent = false;
+                _masterKeyController.clear(); // Clear password field for security
+              });
+              _slideController.reverse(); // Hide verification UI
+            },
+          );
+        } else {
+          // For sign-in: proceed to home after verification
+          _showSuccessDialog(
+            'Email Verified!',
+            'Your email has been verified successfully. You can now access all features.',
+            onClose: () => Navigator.of(context).pushReplacementNamed('/home'),
+          );
+        }
       } else if (mounted) {
         _showErrorDialog(
           'Not Verified Yet',
@@ -173,8 +228,6 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
       }
     }
   }
-
-
 
   Future<void> _forgotPassword() async {
     if (_emailController.text.trim().isEmpty) {
@@ -214,7 +267,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
             ),
             const SizedBox(height: 16),
             const Text(
-              'You will receive an email with instructions to reset your Master Key.',
+              'You will receive an email with instructions to reset your Master Key. Note: If your email address is not verified, you will need to verify it after resetting your password.',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
@@ -239,7 +292,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                 if (mounted) {
                   _showSuccessDialog(
                     'Reset Email Sent',
-                    'Please check your email for Master Key reset instructions. The email may take a few minutes to arrive.',
+                    'Please check your email for Master Key reset instructions. The email may take a few minutes to arrive.\n\nImportant: After resetting your password, you may need to verify your email address before you can access the app.',
                   );
                 }
               } catch (e) {
