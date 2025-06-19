@@ -1,6 +1,22 @@
 # Super Locker - Secure Password Manager
 
-A secure, cross-platform password manager built with Flutter that works on Android and Windows. Super Locker uses military-grade AES-256 encryption to protect your passwords with multiple layers of security.
+## 👋 Personal Introduction
+
+Hi! This is a multiplatform password manager app I built using Flutter for myself to solve my personal password management struggles. I was having trouble storing all my passwords securely across different devices and platforms, so I decided to create my own solution with military-grade security.
+
+The app currently works on Android and Windows, using AES-256 encryption to keep everything secure. I'm planning to implement more updates in the future, including:
+- 🌐 Custom browser plugins for Chrome, Firefox, and Edge
+- 🔧 Auto-fill functionality for websites and apps  
+- 📊 Advanced security analytics and breach monitoring
+- 🎨 More themes and customization options
+- 🔄 Enhanced sync capabilities across more platforms
+
+
+---
+
+## 🔐 About This Project
+
+Super Locker is a secure, cross-platform password manager built with Flutter that works on Android and Windows. It uses military-grade AES-256 encryption to protect your passwords with multiple layers of security.
 
 ## 🎯 Features
 
@@ -499,23 +515,50 @@ See [`requirements.txt`](requirements.txt) for the complete installation guide i
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🛣️ Roadmap
+## 🛣️ Roadmap & Personal Development Plan
 
-### Planned Features
-- [ ] iOS and macOS support
+### Immediate Goals (Next 3 Months)
+- [ ] Complete UI polish and theme customization
+- [ ] Implement comprehensive testing suite
+- [ ] Add password import/export functionality
+- [ ] Create browser extension for Chrome (primary focus)
+- [ ] Enhance search functionality with advanced filters
+
+### Medium-term Goals (6 Months)
+- [ ] Browser extensions for Firefox and Edge
+- [ ] Auto-fill functionality for websites and apps
+- [ ] iOS and macOS support expansion
+- [ ] Password breach monitoring and alerts
+- [ ] Advanced password analytics and insights
+
+### Long-term Vision (1 Year+)
+- [ ] Custom synchronization server (self-hosted option)
 - [ ] Linux desktop support
-- [ ] Password import/export functionality
-- [ ] Browser extension integration
-- [ ] Two-factor authentication support
-- [ ] Password breach monitoring
+- [ ] Two-factor authentication integration
 - [ ] Family sharing features
-- [ ] Advanced audit logging
+- [ ] Advanced audit logging and security reports
 
-### Security Enhancements
+### Security Enhancements (Ongoing)
 - [ ] Hardware security module integration
 - [ ] Enhanced zero-knowledge architecture
-- [ ] Multi-user support with role-based access
-- [ ] Advanced threat detection
+- [ ] Advanced threat detection and response
+- [ ] Regular security audits and penetration testing
+
+## 📅 Project Updates
+
+### Version 1.1 - June 19, 2025
+- ✅ **Core Implementation Complete**: All basic password management features implemented
+- ✅ **Cross-Platform Support**: Android and Windows builds working
+- ✅ **Security Features**: AES-256 encryption, biometric auth, auto-lock, secure clipboard
+- ✅ **State Management**: Comprehensive provider-based architecture
+- ✅ **Documentation**: Complete setup guides and troubleshooting documentation
+- 🔄 **Current Focus**: Testing, UI improvements, and browser plugin development
+
+### Next Update Goals
+- 🎯 **Browser Plugin Development**: Starting with Chrome extension
+- 🎯 **Enhanced UI/UX**: Material Design 3 implementation
+- 🎯 **Performance Optimization**: Faster app startup and smoother animations
+- 🎯 **Advanced Features**: Password generator improvements and categories
 
 ---
 
