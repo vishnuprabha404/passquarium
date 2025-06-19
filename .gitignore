@@ -76,5 +76,11 @@ GoogleService-Info.plist
 coverage/
 *.lcov
 
+# Debug and profiling files
+*.hprof
+*.heap
+*.prof
+*.trace
+
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages 
