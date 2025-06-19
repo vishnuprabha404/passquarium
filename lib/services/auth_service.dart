@@ -123,9 +123,15 @@ class AuthService extends ChangeNotifier {
     try {
       debugPrint('Starting Firebase sign up for email: $email');
       
+      // Windows Firebase Auth fix: Add longer delay and retry mechanism
+      await Future.delayed(const Duration(milliseconds: 300));
+      
       UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw Exception('Registration timeout. Please check your internet connection and try again.'),
       );
       
       debugPrint('Firebase sign up successful');
@@ -178,9 +184,15 @@ class AuthService extends ChangeNotifier {
     try {
       debugPrint('Starting Firebase sign in for email: $email');
       
+      // Windows Firebase Auth fix: Add longer delay and retry mechanism
+      await Future.delayed(const Duration(milliseconds: 300));
+      
       UserCredential userCredential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw Exception('Authentication timeout. Please check your internet connection and try again.'),
       );
       
       debugPrint('Firebase sign in successful');
@@ -211,6 +223,45 @@ class AuthService extends ChangeNotifier {
       return false;
     } on FirebaseAuthException catch (e) {
       debugPrint('FirebaseAuthException during sign in: ${e.code} - ${e.message}');
+      
+      // Windows Firebase Auth fix: Retry on unknown-error
+      if (e.code == 'unknown-error' || e.code == 'internal-error') {
+        debugPrint('Retrying Firebase sign in due to Windows compatibility issue...');
+        await Future.delayed(const Duration(seconds: 2));
+        
+        try {
+          UserCredential retryCredential = await _firebaseAuth.signInWithEmailAndPassword(
+            email: email,
+            password: password,
+          ).timeout(const Duration(seconds: 30));
+          
+          debugPrint('Firebase sign in retry successful');
+          _firebaseUser = retryCredential.user;
+          
+          if (_firebaseUser != null) {
+            _userEmail = email;
+            _masterPassword = password;
+            
+            final hashedPassword = _encryptionService.hashMasterPassword(password);
+            await _secureStorage.write(
+              key: 'master_password_hash_${_firebaseUser!.uid}', 
+              value: hashedPassword
+            );
+            
+            await _secureStorage.write(
+              key: 'user_email_${_firebaseUser!.uid}',
+              value: email
+            );
+            
+            _authStatus = AuthStatus.authenticated;
+            notifyListeners();
+            return true;
+          }
+        } catch (retryError) {
+          debugPrint('Firebase sign in retry also failed: $retryError');
+        }
+      }
+      
       throw Exception(_getFirebaseAuthErrorMessage(e.code));
     } catch (e) {
       debugPrint('General error during sign in: $e');
@@ -221,7 +272,13 @@ class AuthService extends ChangeNotifier {
   /// Send password reset email
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      await _firebaseAuth.sendPasswordResetEmail(email: email);
+      // Windows Firebase Auth fix: Add delay and timeout
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      await _firebaseAuth.sendPasswordResetEmail(email: email).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => throw Exception('Request timeout. Please check your internet connection and try again.'),
+      );
     } on FirebaseAuthException catch (e) {
       throw Exception(_getFirebaseAuthErrorMessage(e.code));
     } catch (e) {
@@ -234,7 +291,13 @@ class AuthService extends ChangeNotifier {
   Future<void> sendEmailVerification() async {
     if (_firebaseUser != null && !_firebaseUser!.emailVerified) {
       try {
-        await _firebaseUser!.sendEmailVerification();
+        // Windows Firebase Auth fix: Add delay and timeout
+        await Future.delayed(const Duration(milliseconds: 200));
+        
+        await _firebaseUser!.sendEmailVerification().timeout(
+          const Duration(seconds: 15),
+          onTimeout: () => throw Exception('Request timeout. Please check your internet connection and try again.'),
+        );
       } on FirebaseAuthException catch (e) {
         throw Exception(_getFirebaseAuthErrorMessage(e.code));
       } catch (e) {
@@ -344,9 +407,9 @@ class AuthService extends ChangeNotifier {
       case 'network-request-failed':
         return 'Network error. Please check your connection.';
       case 'unknown-error':
-        return 'Firebase authentication is temporarily unavailable. Please try again in a few moments.';
+        return 'Authentication service temporarily unavailable. This is a known Windows issue. Please try again in a few moments or restart the app.';
       case 'internal-error':
-        return 'Internal authentication error. Please restart the app and try again.';
+        return 'Internal authentication error. Please restart the app and try again. If the issue persists, this may be a Windows Firebase compatibility issue.';
       case 'app-not-authorized':
         return 'App is not authorized to use Firebase Authentication. Please check your configuration.';
       case 'api-key-not-valid':

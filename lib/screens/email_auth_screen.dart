@@ -174,59 +174,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
     }
   }
 
-  void _showChangeEmailDialog() {
-    final newEmailController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.email_outlined, color: Theme.of(context).primaryColor),
-            const SizedBox(width: 8),
-            const Text('Change Email'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Enter a new email address for your account:'),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: newEmailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'New Email Address',
-                prefixIcon: const Icon(Icons.email),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (newEmailController.text.trim().isNotEmpty) {
-                Navigator.of(context).pop();
-                setState(() {
-                  _emailController.text = newEmailController.text.trim();
-                  _showEmailVerificationMessage = false;
-                  _emailVerificationSent = false;
-                });
-              }
-            },
-            child: const Text('Update Email'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Future<void> _forgotPassword() async {
     if (_emailController.text.trim().isEmpty) {
@@ -689,13 +637,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                 // Forgot Password (Sign In only)
                 if (!_isSignUpMode) ...[
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      TextButton.icon(
-                        onPressed: _isLoading ? null : _showChangeEmailDialog,
-                        icon: Icon(Icons.email_outlined, size: 16),
-                        label: const Text('Use Different Email'),
-                      ),
                       TextButton(
                         onPressed: _isLoading ? null : _forgotPassword,
                         child: const Text('Forgot Password?'),
