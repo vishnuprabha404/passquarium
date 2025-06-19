@@ -14,7 +14,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadPasswords();
+    // Use post frame callback to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadPasswords();
+    });
   }
 
   Future<void> _loadPasswords() async {
@@ -29,13 +32,75 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showSettingsMenu() {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final userInfo = authService.getUserInfo();
+    
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) => Container(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // User Info Section
+            if (userInfo != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Account Information',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${userInfo['email'] ?? 'Unknown'}',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          userInfo['emailVerified'] == true 
+                              ? Icons.verified 
+                              : Icons.warning,
+                          size: 16,
+                          color: userInfo['emailVerified'] == true 
+                              ? Colors.green 
+                              : Colors.orange,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          userInfo['emailVerified'] == true 
+                              ? 'Email Verified' 
+                              : 'Email Not Verified',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: userInfo['emailVerified'] == true 
+                                ? Colors.green 
+                                : Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            
+            // Menu Options
             ListTile(
               leading: const Icon(Icons.lock_outline),
               title: const Text('Lock App'),
@@ -46,18 +111,36 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.key),
-              title: const Text('Change Master Password'),
+              title: const Text('Change Password'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to change password screen
+                _showChangePasswordDialog();
               },
             ),
+            if (userInfo != null && userInfo['emailVerified'] == false) ...[
+              ListTile(
+                leading: const Icon(Icons.mark_email_unread),
+                title: const Text('Verify Email'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _sendVerificationEmail();
+                },
+              ),
+            ],
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Sign Out'),
               onTap: () {
                 Navigator.pop(context);
                 _showSignOutDialog();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.switch_account),
+              title: const Text('Switch Account'),
+              onTap: () {
+                Navigator.pop(context);
+                _showSwitchAccountDialog();
               },
             ),
           ],
@@ -94,6 +177,191 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  void _showSwitchAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Switch Account'),
+        content: const Text('This will sign you out and allow you to sign in with a different account. Your current data will be cleared from this device.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final authService = Provider.of<AuthService>(context, listen: false);
+              final passwordService = Provider.of<PasswordService>(context, listen: false);
+              
+              await authService.signOut();
+              passwordService.clearLocalData();
+              
+              if (mounted) {
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pushReplacementNamed('/email-auth');
+              }
+            },
+            child: const Text('Switch Account'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool isCurrentPasswordVisible = false;
+    bool isNewPasswordVisible = false;
+    bool isConfirmPasswordVisible = false;
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Change Password'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: currentPasswordController,
+                  obscureText: !isCurrentPasswordVisible,
+                  decoration: InputDecoration(
+                    labelText: 'Current Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(isCurrentPasswordVisible ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () {
+                        setState(() {
+                          isCurrentPasswordVisible = !isCurrentPasswordVisible;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: newPasswordController,
+                  obscureText: !isNewPasswordVisible,
+                  decoration: InputDecoration(
+                    labelText: 'New Password',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(isNewPasswordVisible ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () {
+                        setState(() {
+                          isNewPasswordVisible = !isNewPasswordVisible;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: confirmPasswordController,
+                  obscureText: !isConfirmPasswordVisible,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm New Password',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () {
+                        setState(() {
+                          isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: isLoading ? null : () async {
+                if (newPasswordController.text != confirmPasswordController.text) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('New passwords do not match')),
+                  );
+                  return;
+                }
+
+                if (newPasswordController.text.length < 8) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Password must be at least 8 characters long')),
+                  );
+                  return;
+                }
+
+                setState(() {
+                  isLoading = true;
+                });
+
+                try {
+                  final authService = Provider.of<AuthService>(context, listen: false);
+                  await authService.changePassword(
+                    currentPasswordController.text,
+                    newPasswordController.text,
+                  );
+                  
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Password changed successfully')),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
+                  }
+                } finally {
+                  setState(() {
+                    isLoading = false;
+                  });
+                }
+              },
+              child: isLoading 
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Change Password'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendVerificationEmail() async {
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      await authService.sendEmailVerification();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verification email sent! Please check your inbox.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
   }
 
   @override

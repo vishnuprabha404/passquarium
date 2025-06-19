@@ -24,20 +24,25 @@ class _SplashScreenState extends State<SplashScreen> {
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.initialize();
       
-      // Navigate based on auth status
+      // Navigate based on auth status - NEW FLOW: Device → Email → Home (no separate master password)
       if (mounted) {
         switch (authService.authStatus) {
           case AuthStatus.deviceAuthRequired:
             Navigator.of(context).pushReplacementNamed('/device-auth');
             break;
-          case AuthStatus.masterPasswordRequired:
-            Navigator.of(context).pushReplacementNamed('/master-password');
+          case AuthStatus.emailRequired:
+            Navigator.of(context).pushReplacementNamed('/email-auth');
             break;
           case AuthStatus.authenticated:
             Navigator.of(context).pushReplacementNamed('/home');
             break;
           default:
-            Navigator.of(context).pushReplacementNamed('/master-password');
+            // Default to device auth if supported, otherwise email
+            if (authService.isDeviceAuthSupported) {
+              Navigator.of(context).pushReplacementNamed('/device-auth');
+            } else {
+              Navigator.of(context).pushReplacementNamed('/email-auth');
+            }
         }
       }
     }

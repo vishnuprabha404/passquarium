@@ -160,15 +160,35 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                 const SizedBox(height: 16),
 
                 // Description
-                Text(
-                  _isFirstTimeSetup 
-                      ? 'Create a strong master password to secure your vault. This password will encrypt all your data.'
-                      : 'Enter your master password to unlock your vault.',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                  textAlign: TextAlign.center,
+                Consumer<AuthService>(
+                  builder: (context, authService, child) {
+                    return Column(
+                      children: [
+                        if (authService.userEmail != null) ...[
+                          Text(
+                            'Account: ${authService.userEmail}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.blue,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        Text(
+                          _isFirstTimeSetup 
+                              ? 'Create a strong master password to secure your vault. This password will encrypt all your data.'
+                              : 'Enter your master password to unlock your vault.',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 48),

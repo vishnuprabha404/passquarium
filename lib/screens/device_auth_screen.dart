@@ -34,7 +34,18 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
       final success = await authService.authenticateWithDevice();
       
       if (success && mounted) {
-        Navigator.of(context).pushReplacementNamed('/master-password');
+        // Navigate based on the updated auth status - NEW FLOW: Device → Email → Home
+        switch (authService.authStatus) {
+          case AuthStatus.emailRequired:
+            Navigator.of(context).pushReplacementNamed('/email-auth');
+            break;
+          case AuthStatus.authenticated:
+            Navigator.of(context).pushReplacementNamed('/home');
+            break;
+          default:
+            // Default to email if status unclear
+            Navigator.of(context).pushReplacementNamed('/email-auth');
+        }
       } else if (mounted) {
         _showErrorDialog('Authentication failed. Please try again.');
       }
@@ -154,15 +165,7 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
 
-              // Skip button (for development/fallback)
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pushReplacementNamed('/master-password');
-                },
-                child: const Text('Skip Device Authentication'),
-              ),
             ],
           ),
         ),

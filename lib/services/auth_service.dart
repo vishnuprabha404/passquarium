@@ -6,17 +6,23 @@ import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
 import 'package:local_auth_windows/local_auth_windows.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:super_locker/services/encryption_service.dart';
+
+// NOTE: Firebase Auth temporarily disabled due to Windows compatibility issues
+// This is a known issue: https://github.com/firebase/flutterfire/issues/16536
+// Using local-only authentication as workaround
 
 enum AuthStatus {
   unauthenticated,
-  deviceAuthRequired,
-  masterPasswordRequired,
-  authenticated,
+  deviceAuthRequired,    // Device auth comes first
+  emailRequired,         // Email auth (password becomes master password)
+  authenticated,         // Fully authenticated - ready for home
 }
 
 class AuthService extends ChangeNotifier {
   final LocalAuthentication _localAuth = LocalAuthentication();
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
     aOptions: AndroidOptions(
       encryptedSharedPreferences: true,
@@ -25,15 +31,21 @@ class AuthService extends ChangeNotifier {
   final EncryptionService _encryptionService = EncryptionService();
 
   AuthStatus _authStatus = AuthStatus.unauthenticated;
-  String? _masterPassword;
+  String? _masterPassword;  // This will be the email password
+  String? _userEmail;
+  User? _firebaseUser;
   bool _isDeviceAuthSupported = false;
   List<BiometricType> _availableBiometrics = [];
+  bool _deviceAuthCompleted = false;
 
   AuthStatus get authStatus => _authStatus;
   bool get isAuthenticated => _authStatus == AuthStatus.authenticated;
   bool get isDeviceAuthSupported => _isDeviceAuthSupported;
   List<BiometricType> get availableBiometrics => _availableBiometrics;
   String? get masterPassword => _masterPassword;
+  String? get userEmail => _userEmail;
+  User? get firebaseUser => _firebaseUser;
+  bool get deviceAuthCompleted => _deviceAuthCompleted;
 
   /// Initialize the authentication service
   Future<void> initialize() async {
@@ -43,27 +55,34 @@ class AuthService extends ChangeNotifier {
         _availableBiometrics = await _localAuth.getAvailableBiometrics();
       }
       
-      // Check if master password is set
-      final hasMasterPassword = await _secureStorage.read(key: 'master_password_hash') != null;
+      // Check Firebase user
+      _firebaseUser = _firebaseAuth.currentUser;
       
-      if (hasMasterPassword) {
+      // FIXED FLOW: Always start with device auth if supported, then always require email auth
+      if (_isDeviceAuthSupported && !_deviceAuthCompleted) {
         _authStatus = AuthStatus.deviceAuthRequired;
-      } else {
-        _authStatus = AuthStatus.masterPasswordRequired;
+        notifyListeners();
+        return;
       }
       
+      // Always require email authentication - don't skip based on stored credentials
+      _authStatus = AuthStatus.emailRequired;
       notifyListeners();
+      
     } catch (e) {
       debugPrint('Auth initialization error: $e');
-      _authStatus = AuthStatus.masterPasswordRequired;
+      _authStatus = _isDeviceAuthSupported ? AuthStatus.deviceAuthRequired : AuthStatus.emailRequired;
       notifyListeners();
     }
   }
 
-  /// Authenticate using device biometrics or PIN
+  /// Authenticate using device biometrics or PIN (first step)
   Future<bool> authenticateWithDevice() async {
     if (!_isDeviceAuthSupported) {
-      return false;
+      _deviceAuthCompleted = true;
+      _authStatus = AuthStatus.emailRequired;
+      notifyListeners();
+      return true;
     }
 
     try {
@@ -76,7 +95,9 @@ class AuthService extends ChangeNotifier {
       );
 
       if (didAuthenticate) {
-        _authStatus = AuthStatus.masterPasswordRequired;
+        _deviceAuthCompleted = true;
+        // Always proceed to email authentication after device auth
+        _authStatus = AuthStatus.emailRequired;
         notifyListeners();
         return true;
       }
@@ -88,55 +109,161 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Set up master password (first time setup)
-  Future<bool> setMasterPassword(String password) async {
-    if (password.length < 8) {
-      throw Exception('Master password must be at least 8 characters long');
-    }
-
+  /// Sign up with email and password
+  Future<bool> signUpWithEmail(String email, String password) async {
     try {
-      final hashedPassword = _encryptionService.hashMasterPassword(password);
-      await _secureStorage.write(key: 'master_password_hash', value: hashedPassword);
+      UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       
-      _masterPassword = password;
-      _authStatus = AuthStatus.authenticated;
-      notifyListeners();
+      _firebaseUser = userCredential.user;
       
-      return true;
-    } catch (e) {
-      debugPrint('Error setting master password: $e');
-      return false;
-    }
-  }
-
-  /// Verify master password
-  Future<bool> verifyMasterPassword(String password) async {
-    try {
-      final storedHash = await _secureStorage.read(key: 'master_password_hash');
-      if (storedHash == null) {
-        return false;
-      }
-
-      final isValid = await _encryptionService.verifyMasterPassword(password, storedHash);
-      
-      if (isValid) {
+      if (_firebaseUser != null) {
+        // Send email verification
+        await _firebaseUser!.sendEmailVerification();
+        
+        _userEmail = email;
         _masterPassword = password;
+        
+        // Store the email password as master password hash
+        final hashedPassword = _encryptionService.hashMasterPassword(password);
+        await _secureStorage.write(
+          key: 'master_password_hash_${_firebaseUser!.uid}', 
+          value: hashedPassword
+        );
+        
+        // Store user email for future reference
+        await _secureStorage.write(
+          key: 'user_email_${_firebaseUser!.uid}',
+          value: email
+        );
+        
         _authStatus = AuthStatus.authenticated;
         notifyListeners();
         return true;
       }
       
       return false;
+    } on FirebaseAuthException catch (e) {
+      throw Exception(_getFirebaseAuthErrorMessage(e.code));
     } catch (e) {
-      debugPrint('Error verifying master password: $e');
+      debugPrint('Sign up error: $e');
+      throw Exception('Sign up failed. Please try again.');
+    }
+  }
+
+  /// Sign in with email and password
+  Future<bool> signInWithEmail(String email, String password) async {
+    try {
+      UserCredential userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      
+      _firebaseUser = userCredential.user;
+      
+      if (_firebaseUser != null) {
+        _userEmail = email;
+        _masterPassword = password;
+        
+        // Store/update the email password as master password hash
+        final hashedPassword = _encryptionService.hashMasterPassword(password);
+        await _secureStorage.write(
+          key: 'master_password_hash_${_firebaseUser!.uid}', 
+          value: hashedPassword
+        );
+        
+        // Store user email for future reference
+        await _secureStorage.write(
+          key: 'user_email_${_firebaseUser!.uid}',
+          value: email
+        );
+        
+        _authStatus = AuthStatus.authenticated;
+        notifyListeners();
+        return true;
+      }
+      
+      return false;
+    } on FirebaseAuthException catch (e) {
+      throw Exception(_getFirebaseAuthErrorMessage(e.code));
+    } catch (e) {
+      debugPrint('Sign in error: $e');
+      throw Exception('Sign in failed. Please try again.');
+    }
+  }
+
+  /// Send password reset email
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw Exception(_getFirebaseAuthErrorMessage(e.code));
+    } catch (e) {
+      debugPrint('Password reset error: $e');
+      throw Exception('Failed to send password reset email. Please try again.');
+    }
+  }
+
+  /// Send email verification
+  Future<void> sendEmailVerification() async {
+    if (_firebaseUser != null && !_firebaseUser!.emailVerified) {
+      try {
+        await _firebaseUser!.sendEmailVerification();
+      } on FirebaseAuthException catch (e) {
+        throw Exception(_getFirebaseAuthErrorMessage(e.code));
+      } catch (e) {
+        debugPrint('Email verification error: $e');
+        throw Exception('Failed to send verification email. Please try again.');
+      }
+    }
+  }
+
+  /// Check if current user's email is verified
+  bool get isEmailVerified => _firebaseUser?.emailVerified ?? false;
+
+  /// Reload user to check verification status
+  Future<void> reloadUser() async {
+    if (_firebaseUser != null) {
+      await _firebaseUser!.reload();
+      _firebaseUser = _firebaseAuth.currentUser;
+      notifyListeners();
+    }
+  }
+
+  /// Legacy method for backward compatibility
+  Future<bool> authenticateWithEmail(String email, String password, {bool isSignUp = false}) async {
+    if (isSignUp) {
+      return await signUpWithEmail(email, password);
+    } else {
+      return await signInWithEmail(email, password);
+    }
+  }
+
+  /// Verify password (for accessing sensitive operations)
+  Future<bool> verifyPassword(String password) async {
+    if (_firebaseUser == null) {
+      throw Exception('Must be signed in to verify password');
+    }
+
+    try {
+      final storedHash = await _secureStorage.read(key: 'master_password_hash_${_firebaseUser!.uid}');
+      if (storedHash == null) {
+        return false;
+      }
+
+      return await _encryptionService.verifyMasterPassword(password, storedHash);
+    } catch (e) {
+      debugPrint('Error verifying password: $e');
       return false;
     }
   }
 
-  /// Change master password
-  Future<bool> changeMasterPassword(String currentPassword, String newPassword) async {
-    if (!await verifyMasterPassword(currentPassword)) {
-      throw Exception('Current password is incorrect');
+  /// Change password (updates both Firebase and master password)
+  Future<bool> changePassword(String currentPassword, String newPassword) async {
+    if (_firebaseUser == null) {
+      throw Exception('Must be signed in to change password');
     }
 
     if (newPassword.length < 8) {
@@ -144,57 +271,135 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
+      // Verify current password
+      if (!await verifyPassword(currentPassword)) {
+        throw Exception('Current password is incorrect');
+      }
+
+      // Update Firebase password
+      await _firebaseUser!.updatePassword(newPassword);
+      
+      // Update stored master password hash
       final hashedPassword = _encryptionService.hashMasterPassword(newPassword);
-      await _secureStorage.write(key: 'master_password_hash', value: hashedPassword);
+      await _secureStorage.write(
+        key: 'master_password_hash_${_firebaseUser!.uid}', 
+        value: hashedPassword
+      );
       
       _masterPassword = newPassword;
       notifyListeners();
       
       return true;
     } catch (e) {
-      debugPrint('Error changing master password: $e');
-      return false;
+      debugPrint('Error changing password: $e');
+      throw Exception('Failed to change password: $e');
     }
   }
 
-  /// Check if master password is set
-  Future<bool> hasMasterPassword() async {
-    final hash = await _secureStorage.read(key: 'master_password_hash');
-    return hash != null;
+  /// Convert Firebase Auth error codes to user-friendly messages
+  String _getFirebaseAuthErrorMessage(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return 'No account found with this email address.';
+      case 'wrong-password':
+        return 'Incorrect password.';
+      case 'email-already-in-use':
+        return 'An account already exists with this email address.';
+      case 'weak-password':
+        return 'Password is too weak. Please choose a stronger password.';
+      case 'invalid-email':
+        return 'Please enter a valid email address.';
+      case 'too-many-requests':
+        return 'Too many failed attempts. Please try again later.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'operation-not-allowed':
+        return 'This operation is not allowed.';
+      case 'invalid-credential':
+        return 'Invalid credentials provided.';
+      case 'network-request-failed':
+        return 'Network error. Please check your connection.';
+      default:
+        return 'Authentication failed. Please try again.';
+    }
+  }
+
+  /// Get description of available authentication methods
+  String getAuthMethodDescription() {
+    if (!_isDeviceAuthSupported) {
+      return 'device PIN or password';
+    }
+    
+    if (_availableBiometrics.isNotEmpty) {
+      List<String> methods = [];
+      if (_availableBiometrics.contains(BiometricType.fingerprint)) {
+        methods.add('fingerprint');
+      }
+      if (_availableBiometrics.contains(BiometricType.face)) {
+        methods.add('face recognition');
+      }
+      if (_availableBiometrics.contains(BiometricType.iris)) {
+        methods.add('iris scan');
+      }
+      
+      if (methods.isNotEmpty) {
+        return methods.join(' or ') + ' or device PIN';
+      }
+    }
+    
+    return 'device authentication';
   }
 
   /// Lock the app (require re-authentication)
   void lock() {
     _masterPassword = null;
+    _deviceAuthCompleted = false;
     if (_isDeviceAuthSupported) {
       _authStatus = AuthStatus.deviceAuthRequired;
     } else {
-      _authStatus = AuthStatus.masterPasswordRequired;
+      _authStatus = AuthStatus.emailRequired;
     }
     notifyListeners();
   }
 
   /// Sign out and clear all data
   Future<void> signOut() async {
+    if (_firebaseUser != null) {
+      // Clear stored credentials
+      await _secureStorage.delete(key: 'master_password_hash_${_firebaseUser!.uid}');
+      await _secureStorage.delete(key: 'user_email_${_firebaseUser!.uid}');
+    }
+    
     _masterPassword = null;
+    _userEmail = null;
+    _firebaseUser = null;
+    _deviceAuthCompleted = false;
     _authStatus = AuthStatus.unauthenticated;
-    await _secureStorage.deleteAll();
+    
+    await _firebaseAuth.signOut();
     notifyListeners();
   }
 
-  /// Get device authentication method description
-  String getAuthMethodDescription() {
-    if (_availableBiometrics.contains(BiometricType.face)) {
-      return 'Face ID';
-    } else if (_availableBiometrics.contains(BiometricType.fingerprint)) {
-      return 'Fingerprint';
-    } else if (_availableBiometrics.contains(BiometricType.iris)) {
-      return 'Iris';
-    } else if (_isDeviceAuthSupported) {
-      return 'Device PIN/Pattern';
-    } else {
-      return 'Device Lock';
-    }
+  /// Check if user has completed setup
+  Future<bool> hasCompletedSetup() async {
+    if (_firebaseUser == null) return false;
+    final storedEmail = await _secureStorage.read(key: 'user_email_${_firebaseUser!.uid}');
+    return storedEmail != null;
+  }
+
+  /// Get current Firebase user info
+  Map<String, dynamic>? getUserInfo() {
+    if (_firebaseUser == null) return null;
+    
+    return {
+      'uid': _firebaseUser!.uid,
+      'email': _firebaseUser!.email,
+      'emailVerified': _firebaseUser!.emailVerified,
+      'displayName': _firebaseUser!.displayName,
+      'photoURL': _firebaseUser!.photoURL,
+      'creationTime': _firebaseUser!.metadata.creationTime?.toIso8601String(),
+      'lastSignInTime': _firebaseUser!.metadata.lastSignInTime?.toIso8601String(),
+    };
   }
 
   /// Auto-lock after inactivity
