@@ -55,8 +55,17 @@ class AuthService extends ChangeNotifier {
         _availableBiometrics = await _localAuth.getAvailableBiometrics();
       }
       
-      // Check Firebase user
-      _firebaseUser = _firebaseAuth.currentUser;
+      // Add delay to prevent Firebase threading issues
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Check Firebase user with proper error handling
+      try {
+        _firebaseUser = _firebaseAuth.currentUser;
+        debugPrint('Firebase user check completed. User: ${_firebaseUser?.email ?? "null"}');
+      } catch (e) {
+        debugPrint('Firebase user check error: $e');
+        _firebaseUser = null;
+      }
       
       // FIXED FLOW: Always start with device auth if supported, then always require email auth
       if (_isDeviceAuthSupported && !_deviceAuthCompleted) {
@@ -112,16 +121,26 @@ class AuthService extends ChangeNotifier {
   /// Sign up with email and password
   Future<bool> signUpWithEmail(String email, String password) async {
     try {
+      debugPrint('Starting Firebase sign up for email: $email');
+      
       UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
       
+      debugPrint('Firebase sign up successful');
       _firebaseUser = userCredential.user;
       
       if (_firebaseUser != null) {
+        debugPrint('Sending email verification');
         // Send email verification
-        await _firebaseUser!.sendEmailVerification();
+        try {
+          await _firebaseUser!.sendEmailVerification();
+          debugPrint('Email verification sent successfully');
+        } catch (e) {
+          debugPrint('Email verification failed: $e');
+          // Continue anyway, user can verify later
+        }
         
         _userEmail = email;
         _masterPassword = password;
@@ -146,9 +165,10 @@ class AuthService extends ChangeNotifier {
       
       return false;
     } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException during sign up: ${e.code} - ${e.message}');
       throw Exception(_getFirebaseAuthErrorMessage(e.code));
     } catch (e) {
-      debugPrint('Sign up error: $e');
+      debugPrint('General error during sign up: $e');
       throw Exception('Sign up failed. Please try again.');
     }
   }
@@ -156,11 +176,14 @@ class AuthService extends ChangeNotifier {
   /// Sign in with email and password
   Future<bool> signInWithEmail(String email, String password) async {
     try {
+      debugPrint('Starting Firebase sign in for email: $email');
+      
       UserCredential userCredential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       
+      debugPrint('Firebase sign in successful');
       _firebaseUser = userCredential.user;
       
       if (_firebaseUser != null) {
@@ -187,9 +210,10 @@ class AuthService extends ChangeNotifier {
       
       return false;
     } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException during sign in: ${e.code} - ${e.message}');
       throw Exception(_getFirebaseAuthErrorMessage(e.code));
     } catch (e) {
-      debugPrint('Sign in error: $e');
+      debugPrint('General error during sign in: $e');
       throw Exception('Sign in failed. Please try again.');
     }
   }
@@ -319,7 +343,16 @@ class AuthService extends ChangeNotifier {
         return 'Invalid credentials provided.';
       case 'network-request-failed':
         return 'Network error. Please check your connection.';
+      case 'unknown-error':
+        return 'Firebase authentication is temporarily unavailable. Please try again in a few moments.';
+      case 'internal-error':
+        return 'Internal authentication error. Please restart the app and try again.';
+      case 'app-not-authorized':
+        return 'App is not authorized to use Firebase Authentication. Please check your configuration.';
+      case 'api-key-not-valid':
+        return 'Invalid API key. Please check your Firebase configuration.';
       default:
+        debugPrint('Unknown Firebase Auth error code: $code');
         return 'Authentication failed. Please try again.';
     }
   }
