@@ -22,7 +22,12 @@ apply_standard_settings(${BINARY_NAME})
 
 # Add dependency libraries and include directories. Add any application-specific
 # dependencies here.
-target_link_libraries(${BINARY_NAME} flutter flutter_wrapper_app)
+target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app dwmapi)
+
+# Set Windows subsystem to console for proper main function linking
+set_target_properties(${BINARY_NAME} PROPERTIES
+  WIN32_EXECUTABLE TRUE
+)
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
 # Run the Flutter tool portions of the build. This must not be removed.

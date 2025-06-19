@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'firebase_options.dart';
+// import 'firebase_options.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/services/password_service.dart';
 import 'package:super_locker/services/encryption_service.dart';
@@ -15,15 +15,15 @@ import 'package:super_locker/screens/search_password_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Firebase
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } catch (e) {
-    // For testing without Firebase configuration
-    debugPrint('Firebase initialization failed: $e');
-  }
+  // Initialize Firebase - temporarily disabled for Windows testing
+  // try {
+  //   await Firebase.initializeApp(
+  //     options: DefaultFirebaseOptions.currentPlatform,
+  //   );
+  // } catch (e) {
+  //   // For testing without Firebase configuration
+  //   debugPrint('Firebase initialization failed: $e');
+  // }
   
   runApp(const SuperLockerApp());
 }

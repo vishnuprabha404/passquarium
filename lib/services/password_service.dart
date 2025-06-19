@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import 'package:super_locker/models/password_entry.dart';
 import 'package:super_locker/services/encryption_service.dart';
 
 class PasswordService extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final EncryptionService _encryptionService = EncryptionService();
   final Uuid _uuid = const Uuid();
 
@@ -29,19 +29,22 @@ class PasswordService extends ChangeNotifier {
     _clearError();
 
     try {
-      final snapshot = await _firestore
-          .collection('password_vaults')
-          .doc(_deviceId)
-          .collection('passwords')
-          .orderBy('created_at', descending: true)
-          .get();
+      // final snapshot = await _firestore
+      //     .collection('password_vaults')
+      //     .doc(_deviceId)
+      //     .collection('passwords')
+      //     .orderBy('created_at', descending: true)
+      //     .get();
 
-      _passwords = snapshot.docs
-          .map((doc) => PasswordEntry.fromMap({
-                'id': doc.id,
-                ...doc.data(),
-              }))
-          .toList();
+      // _passwords = snapshot.docs
+      //     .map((doc) => PasswordEntry.fromMap({
+      //           'id': doc.id,
+      //           ...doc.data(),
+      //         }))
+      //     .toList();
+      
+      // Temporarily start with empty list for testing
+      _passwords = [];
 
       notifyListeners();
     } catch (e) {
@@ -64,7 +67,7 @@ class PasswordService extends ChangeNotifier {
 
     try {
       // Encrypt the password
-      final encryptedPassword = _encryptionService.encryptPassword(password, masterPassword);
+      final encryptedPassword = await _encryptionService.encryptPassword(password, masterPassword);
       
       // Create password entry
       final entry = PasswordEntry(
@@ -77,13 +80,13 @@ class PasswordService extends ChangeNotifier {
         updatedAt: DateTime.now(),
       );
 
-      // Save to Firebase
-      await _firestore
-          .collection('password_vaults')
-          .doc(_deviceId)
-          .collection('passwords')
-          .doc(entry.id)
-          .set(entry.toMap());
+      // Save to Firebase - temporarily disabled
+      // await _firestore
+      //     .collection('password_vaults')
+      //     .doc(_deviceId)
+      //     .collection('passwords')
+      //     .doc(entry.id)
+      //     .set(entry.toMap());
 
       // Add to local list
       _passwords.insert(0, entry);
@@ -114,7 +117,7 @@ class PasswordService extends ChangeNotifier {
       final existingEntry = _passwords.firstWhere((p) => p.id == id);
       
       // Encrypt the new password
-      final encryptedPassword = _encryptionService.encryptPassword(password, masterPassword);
+      final encryptedPassword = await _encryptionService.encryptPassword(password, masterPassword);
       
       // Create updated entry
       final updatedEntry = existingEntry.copyWith(
@@ -125,13 +128,13 @@ class PasswordService extends ChangeNotifier {
         updatedAt: DateTime.now(),
       );
 
-      // Update in Firebase
-      await _firestore
-          .collection('password_vaults')
-          .doc(_deviceId)
-          .collection('passwords')
-          .doc(id)
-          .update(updatedEntry.toMap());
+      // Update in Firebase - temporarily disabled
+      // await _firestore
+      //     .collection('password_vaults')
+      //     .doc(_deviceId)
+      //     .collection('passwords')
+      //     .doc(id)
+      //     .update(updatedEntry.toMap());
 
       // Update local list
       final index = _passwords.indexWhere((p) => p.id == id);
@@ -155,13 +158,13 @@ class PasswordService extends ChangeNotifier {
     _clearError();
 
     try {
-      // Delete from Firebase
-      await _firestore
-          .collection('password_vaults')
-          .doc(_deviceId)
-          .collection('passwords')
-          .doc(id)
-          .delete();
+      // Delete from Firebase - temporarily disabled
+      // await _firestore
+      //     .collection('password_vaults')
+      //     .doc(_deviceId)
+      //     .collection('passwords')
+      //     .doc(id)
+      //     .delete();
 
       // Remove from local list
       _passwords.removeWhere((p) => p.id == id);
@@ -177,9 +180,9 @@ class PasswordService extends ChangeNotifier {
   }
 
   /// Decrypt a password
-  String decryptPassword(PasswordEntry entry, String masterPassword) {
+  Future<String> decryptPassword(PasswordEntry entry, String masterPassword) async {
     try {
-      return _encryptionService.decryptPassword(entry.encryptedPassword, masterPassword);
+      return await _encryptionService.decryptPassword(entry.encryptedPassword, masterPassword);
     } catch (e) {
       throw Exception('Failed to decrypt password: $e');
     }

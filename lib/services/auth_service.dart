@@ -117,7 +117,7 @@ class AuthService extends ChangeNotifier {
         return false;
       }
 
-      final isValid = _encryptionService.verifyMasterPassword(password, storedHash);
+      final isValid = await _encryptionService.verifyMasterPassword(password, storedHash);
       
       if (isValid) {
         _masterPassword = password;
@@ -295,9 +295,7 @@ class AuthService extends ChangeNotifier {
       final bool didAuthenticate = await _localAuth.authenticate(
         localizedReason: reason,
         authMessages: const [
-          WindowsAuthMessages(
-            cancelButton: 'Cancel',
-          ),
+          WindowsAuthMessages(),
         ],
         options: AuthenticationOptions(
           biometricOnly: biometricOnly,
@@ -395,7 +393,7 @@ class AuthService extends ChangeNotifier {
   }
 
   // Check if user is still authenticated (within timeout period)
-  Future<bool> isAuthenticated({int timeoutMinutes = 5}) async {
+  Future<bool> isSessionValid({int timeoutMinutes = 5}) async {
     try {
       final timestampStr = await _secureStorage.read(key: 'auth_timestamp');
       if (timestampStr == null) return false;

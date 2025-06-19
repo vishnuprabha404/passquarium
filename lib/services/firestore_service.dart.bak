@@ -342,16 +342,18 @@ class FirestoreService {
           (e) => e.id == localEntry.id,
           orElse: () => PasswordEntry(
             id: '',
-            title: '',
+            website: '',
+            domain: '',
             username: '',
             encryptedPassword: '',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            title: '',
             url: '',
             notes: '',
             category: '',
             salt: '',
             iv: '',
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
           ),
         );
 

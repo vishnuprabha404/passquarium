@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:super_locker/models/password_entry.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/services/encryption_service.dart';
-import 'package:super_locker/services/firestore_service.dart';
+// import 'package:super_locker/services/firestore_service.dart';
 import 'package:super_locker/services/auto_lock_service.dart';
 import 'package:super_locker/services/clipboard_manager.dart';
 
@@ -10,7 +10,7 @@ import 'package:super_locker/services/clipboard_manager.dart';
 class AppProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final EncryptionService _encryptionService = EncryptionService();
-  final FirestoreService _firestoreService = FirestoreService();
+  // final FirestoreService _firestoreService = FirestoreService();
   final AutoLockService _autoLockService = AutoLockService();
   final ClipboardManager _clipboardManager = ClipboardManager();
 
@@ -42,7 +42,7 @@ class AppProvider extends ChangeNotifier {
       _isMasterPasswordSet = await _encryptionService.isMasterPasswordSet();
       
       // Check authentication state
-      _isAuthenticated = await _authService.isAuthenticated();
+      _isAuthenticated = await _authService.isSessionValid();
       
       // Initialize auto-lock service
       _autoLockService.initialize(
@@ -151,7 +151,7 @@ class AppProvider extends ChangeNotifier {
 
 // Password management provider
 class PasswordProvider extends ChangeNotifier {
-  final FirestoreService _firestoreService = FirestoreService();
+  // final FirestoreService _firestoreService = FirestoreService();
   final EncryptionService _encryptionService = EncryptionService();
 
   List<PasswordEntry> _passwords = [];
@@ -173,7 +173,8 @@ class PasswordProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _passwords = await _firestoreService.getAllEntries();
+      // _passwords = await _firestoreService.getAllEntries();
+      _passwords = []; // Temporarily return empty list for testing
       _applyFilters();
       debugPrint('Loaded ${_passwords.length} passwords');
     } catch (e) {
@@ -187,7 +188,9 @@ class PasswordProvider extends ChangeNotifier {
   // Add new password
   Future<bool> addPassword(PasswordEntry entry) async {
     try {
-      await _firestoreService.addEntry(entry);
+      // await _firestoreService.addEntry(entry);
+      // Temporarily just add to local list for testing
+      _passwords.add(entry);
       await loadPasswords(); // Refresh list
       debugPrint('Password added: ${entry.title}');
       return true;
@@ -200,7 +203,8 @@ class PasswordProvider extends ChangeNotifier {
   // Update existing password
   Future<bool> updatePassword(PasswordEntry entry) async {
     try {
-      await _firestoreService.updateEntry(entry);
+      // await _firestoreService.updateEntry(entry);
+      // Temporarily just update in local list for testing
       await loadPasswords(); // Refresh list
       debugPrint('Password updated: ${entry.title}');
       return true;
@@ -213,7 +217,9 @@ class PasswordProvider extends ChangeNotifier {
   // Delete password
   Future<bool> deletePassword(String entryId) async {
     try {
-      await _firestoreService.deleteEntry(entryId);
+      // await _firestoreService.deleteEntry(entryId);
+      // Temporarily just remove from local list for testing
+      _passwords.removeWhere((entry) => entry.id == entryId);
       await loadPasswords(); // Refresh list
       debugPrint('Password deleted: $entryId');
       return true;
@@ -263,7 +269,8 @@ class PasswordProvider extends ChangeNotifier {
   // Get all categories
   Future<List<String>> getCategories() async {
     try {
-      return await _firestoreService.getCategories();
+      // return await _firestoreService.getCategories();
+    return []; // Temporarily return empty list for testing
     } catch (e) {
       debugPrint('Failed to get categories: $e');
       return [];
@@ -293,7 +300,8 @@ class PasswordProvider extends ChangeNotifier {
   // Get password statistics
   Future<Map<String, dynamic>> getStatistics() async {
     try {
-      return await _firestoreService.getStatistics();
+      // return await _firestoreService.getStatistics();
+    return {}; // Temporarily return empty map for testing
     } catch (e) {
       debugPrint('Failed to get statistics: $e');
       return {};

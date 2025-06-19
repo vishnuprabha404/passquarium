@@ -13,9 +13,9 @@ dependencies:
   # State Management
   provider: ^6.1.1
   
-  # Firebase
-  firebase_core: ^2.24.2
-  cloud_firestore: ^4.14.0
+  # Firebase - temporarily disabled for Windows testing
+  # firebase_core: ^2.24.2
+  # cloud_firestore: ^4.14.0
   
   # Authentication & Security
   local_auth: ^2.1.7

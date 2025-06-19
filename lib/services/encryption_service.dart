@@ -23,18 +23,40 @@ class EncryptionService {
   // Derive key from master password using PBKDF2
   Uint8List _deriveKey(String masterPassword, Uint8List salt) {
     final passwordBytes = utf8.encode(masterPassword);
-    final pbkdf2 = Pbkdf2(
-      macAlgorithm: Hmac.sha256(),
-      iterations: _iterations,
-      bits: _keyLength * 8,
-    );
+    final hmac = Hmac(sha256, passwordBytes);
     
-    final secretKey = pbkdf2.deriveKey(
-      secretKey: SecretKey(passwordBytes),
-      nonce: salt,
-    );
+    // Simple PBKDF2 implementation
+    Uint8List result = Uint8List(_keyLength);
+    Uint8List u = Uint8List(32);
     
-    return Uint8List.fromList(secretKey.extractSync());
+    for (int i = 1; i <= (_keyLength / 32).ceil(); i++) {
+      // Create block
+      final block = Uint8List(salt.length + 4);
+      block.setRange(0, salt.length, salt);
+      block[salt.length] = (i >> 24) & 0xff;
+      block[salt.length + 1] = (i >> 16) & 0xff;
+      block[salt.length + 2] = (i >> 8) & 0xff;
+      block[salt.length + 3] = i & 0xff;
+      
+      // First iteration
+      List<int> hash = hmac.convert(block).bytes;
+      u.setRange(0, hash.length, hash);
+      
+      // Remaining iterations
+      for (int j = 1; j < _iterations; j++) {
+        hash = hmac.convert(hash).bytes;
+        for (int k = 0; k < u.length; k++) {
+          u[k] ^= hash[k];
+        }
+      }
+      
+      // Copy to result
+      final start = (i - 1) * 32;
+      final end = (start + 32) < result.length ? start + 32 : result.length;
+      result.setRange(start, end, u);
+    }
+    
+    return result;
   }
 
   // Encrypt text with AES-256-CBC
@@ -179,6 +201,22 @@ class EncryptionService {
     ).join();
   }
 
+  // Encrypt password for storage
+  Future<String> encryptPassword(String password, String masterPassword) async {
+    return await encryptText(password, masterPassword);
+  }
+
+  // Decrypt password from storage
+  Future<String> decryptPassword(String encryptedPassword, String masterPassword) async {
+    return await decryptText(encryptedPassword, masterPassword);
+  }
+
+  // Verify master password against stored hash
+  Future<bool> verifyMasterPassword(String password, String storedHash) async {
+    final inputHash = hashMasterPassword(password);
+    return inputHash == storedHash;
+  }
+
   // Calculate password strength
   int calculatePasswordStrength(String password) {
     int score = 0;
@@ -203,56 +241,4 @@ class EncryptionService {
   }
 }
 
-/// PBKDF2 implementation
-class Pbkdf2 {
-  final MacAlgorithm macAlgorithm;
-  final int iterations;
-  final int bits;
-
-  Pbkdf2({
-    required this.macAlgorithm,
-    required this.iterations,
-    required this.bits,
-  });
-
-  List<int> deriveBitsFromPassword({
-    required String password,
-    required List<int> nonce,
-  }) {
-    final passwordBytes = utf8.encode(password);
-    final dkLen = (bits + 7) ~/ 8;
-    final hLen = macAlgorithm.macLength;
-    final l = (dkLen + hLen - 1) ~/ hLen;
-    
-    final dk = <int>[];
-    
-    for (int i = 1; i <= l; i++) {
-      final u = <int>[];
-      final iBytes = <int>[
-        (i >> 24) & 0xff,
-        (i >> 16) & 0xff,
-        (i >> 8) & 0xff,
-        i & 0xff,
-      ];
-      
-      var currentU = _hmac(passwordBytes, [...nonce, ...iBytes]);
-      u.addAll(currentU);
-      
-      for (int j = 1; j < iterations; j++) {
-        currentU = _hmac(passwordBytes, currentU);
-        for (int k = 0; k < currentU.length; k++) {
-          u[k] ^= currentU[k];
-        }
-      }
-      
-      dk.addAll(u);
-    }
-    
-    return dk.sublist(0, dkLen);
-  }
-
-  List<int> _hmac(List<int> key, List<int> message) {
-    final hmac = Hmac(sha256, key);
-    return hmac.convert(message).bytes;
-  }
-} 
+ 
