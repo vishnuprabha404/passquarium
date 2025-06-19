@@ -103,8 +103,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
           // Auto-check verification status every 3 seconds
           _startVerificationChecker();
         } else {
-          // Navigate to master key verification after successful sign in
-          Navigator.of(context).pushReplacementNamed('/master-key');
+          // Navigate directly to home after successful sign in since email password is master key
+          Navigator.of(context).pushReplacementNamed('/home');
         }
       }
     } catch (e) {
@@ -130,7 +130,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
           _showSuccessDialog(
             'Email Verified!',
             'Your email has been verified successfully. You can now use all features.',
-            onClose: () => Navigator.of(context).pushReplacementNamed('/master-key'),
+            onClose: () => Navigator.of(context).pushReplacementNamed('/home'),
           );
         } else if (mounted) {
           // Check again in 5 seconds
@@ -153,7 +153,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
         _showSuccessDialog(
           'Email Verified!',
           'Your email has been verified successfully. You can now access all features.',
-          onClose: () => Navigator.of(context).pushReplacementNamed('/master-key'),
+          onClose: () => Navigator.of(context).pushReplacementNamed('/home'),
         );
       } else if (mounted) {
         _showErrorDialog(

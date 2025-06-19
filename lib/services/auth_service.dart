@@ -63,16 +63,16 @@ class AuthService extends ChangeNotifier {
         _firebaseUser = null;
       }
       
-      // NEW FLOW: Device auth only required after explicit logout
-      if (_isDeviceAuthSupported && _hasLoggedOut && !_deviceAuthCompleted) {
+      // RESTORED FLOW: Always show device auth first if supported
+      if (_isDeviceAuthSupported && !_deviceAuthCompleted) {
         _authStatus = AuthStatus.deviceAuthRequired;
         notifyListeners();
         return;
       }
       
-      // If Firebase user exists, go to master key verification, otherwise email auth
+      // If Firebase user exists, go to email auth (which includes master key), otherwise email auth
       if (_firebaseUser != null) {
-        _authStatus = AuthStatus.masterKeyRequired;
+        _authStatus = AuthStatus.emailRequired;
       } else {
         _authStatus = AuthStatus.emailRequired;
       }
@@ -104,12 +104,8 @@ class AuthService extends ChangeNotifier {
 
       if (didAuthenticate) {
         _deviceAuthCompleted = true;
-        // After device auth, check if Firebase user exists
-        if (_firebaseUser != null) {
-          _authStatus = AuthStatus.masterKeyRequired;
-        } else {
-          _authStatus = AuthStatus.emailRequired;
-        }
+        // After device auth, always go to email auth (which includes master key verification)
+        _authStatus = AuthStatus.emailRequired;
         notifyListeners();
         return true;
       }
@@ -160,8 +156,8 @@ class AuthService extends ChangeNotifier {
           value: email
         );
         
-        // After signup, require master key verification before dashboard
-        _authStatus = AuthStatus.masterKeyRequired;
+        // After signup, go directly to authenticated status since email password is master key
+        _authStatus = AuthStatus.authenticated;
         notifyListeners();
         return true;
       }
@@ -466,6 +462,15 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Reset authentication state for fresh start
+  void resetAuthState() {
+    _deviceAuthCompleted = false;
+    _hasLoggedOut = false;
+    _masterPassword = null;
+    _authStatus = AuthStatus.unauthenticated;
+    notifyListeners();
+  }
+
   /// Sign out and clear all data
   Future<void> signOut() async {
     if (_firebaseUser != null) {
@@ -477,9 +482,15 @@ class AuthService extends ChangeNotifier {
     _masterPassword = null;
     _userEmail = null;
     _firebaseUser = null;
-    _deviceAuthCompleted = false;
+    _deviceAuthCompleted = false; // Reset device auth so it shows again
     _hasLoggedOut = true; // Mark that user has explicitly logged out
-    _authStatus = AuthStatus.unauthenticated;
+    
+    // Set status to require device auth if supported
+    if (_isDeviceAuthSupported) {
+      _authStatus = AuthStatus.deviceAuthRequired;
+    } else {
+      _authStatus = AuthStatus.emailRequired;
+    }
     
     await _firebaseAuth.signOut();
     notifyListeners();
@@ -742,6 +753,30 @@ class AuthService extends ChangeNotifier {
       return true; // Implement actual security checks
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Clear all stored authentication data (for debugging/reset)
+  Future<void> clearAllStoredData() async {
+    try {
+      // Clear all secure storage data
+      await _secureStorage.deleteAll();
+      
+      // Reset all state variables
+      _deviceAuthCompleted = false;
+      _hasLoggedOut = false;
+      _masterPassword = null;
+      _userEmail = null;
+      _firebaseUser = null;
+      
+      // Sign out from Firebase
+      await _firebaseAuth.signOut();
+      
+      // Set to unauthenticated state
+      _authStatus = AuthStatus.unauthenticated;
+      notifyListeners();
+    } catch (e) {
+      // Handle error silently in production
     }
   }
 } 
