@@ -402,6 +402,168 @@ ENHANCED SERVICES:
 - [ ] Compliance with security standards (OWASP, NIST)
 
 ===============================================================================
+                          BUILD ERRORS & SOLUTIONS REFERENCE
+===============================================================================
+
+=== WINDOWS BUILD ERRORS & SOLUTIONS ===
+
+ERROR 1: CMake Build Failures
+SYMPTOM: "CMake Error: target_link_libraries called with incorrect number of arguments"
+CAUSE: Incompatible CMake syntax between Flutter versions and Visual Studio
+SOLUTION: 
+- Regenerated Windows platform files: `flutter create --platforms=windows .`
+- Updated CMakeLists.txt with proper target_link_libraries syntax
+- Added missing dwmapi library for Windows API functions
+WHY: Flutter's Windows CMake configuration can become corrupted or outdated, requiring regeneration with current Flutter version
+
+ERROR 2: Firebase C++ SDK Conflicts
+SYMPTOM: Windows build fails with Firebase linking errors
+CAUSE: Firebase C++ SDK not compatible with Windows desktop builds
+SOLUTION:
+- Temporarily disabled Firebase imports for Windows builds
+- Used conditional imports based on platform
+- Moved firestore_service.dart to .bak file during Windows testing
+WHY: Firebase Flutter plugins primarily target mobile platforms; desktop support is limited
+
+ERROR 3: Missing Dependencies & Libraries
+SYMPTOM: Unresolved external symbols, missing .lib files
+CAUSE: Windows-specific libraries not properly linked
+SOLUTION:
+- Added WIN32_EXECUTABLE property to CMakeLists.txt
+- Ensured proper subsystem settings for main function
+- Verified Visual Studio C++ tools installation
+WHY: Windows desktop apps require specific linking configuration for proper executable generation
+
+=== ANDROID BUILD ERRORS & SOLUTIONS ===
+
+ERROR 1: Gradle Plugin Application Method Deprecated
+SYMPTOM: "You are applying Flutter's app_plugin_loader Gradle plugin imperatively using the apply script method, which is not possible anymore"
+CAUSE: Flutter 3.32.4 requires declarative plugins block instead of imperative apply statements
+SOLUTION:
+- Updated android/settings.gradle with pluginManagement block
+- Migrated to plugins {} block in app/build.gradle
+- Removed apply plugin statements
+WHY: Modern Gradle and Flutter versions enforce declarative plugin syntax for better dependency management and build reproducibility
+
+ERROR 2: Boolean Property Parsing Error
+SYMPTOM: "Cannot parse project property android.enableJetifier='true ' of type 'class java.lang.String' as boolean"
+CAUSE: Trailing space in gradle.properties file
+SOLUTION:
+- Recreated android/gradle.properties file without trailing spaces
+- Used PowerShell here-string to ensure clean formatting
+WHY: Gradle strictly parses boolean values and any whitespace causes type conversion failures
+
+ERROR 3: Version Compatibility Issues
+SYMPTOM: Multiple warnings about outdated Gradle, Kotlin, and Android Gradle Plugin versions
+CAUSE: Project created with older Flutter template, versions not compatible with Flutter 3.32.4
+SOLUTION:
+- Updated Android Gradle Plugin: 8.1.4 → 8.3.0
+- Updated Gradle wrapper: 8.3 → 8.4  
+- Updated Kotlin: 1.7.10 → 1.8.10
+- Added version declarations in both settings.gradle and build.gradle
+WHY: Flutter 3.32.4 requires minimum versions for compatibility and modern build features
+
+ERROR 4: Missing Namespace Declaration
+SYMPTOM: "Namespace not specified. Specify a namespace in the module's build file"
+CAUSE: Modern Android Gradle Plugin requires explicit namespace declaration
+SOLUTION:
+- Added `namespace "com.example.super_locker"` to android block in app/build.gradle
+- Removed package attribute from AndroidManifest.xml (deprecated)
+WHY: Android build system moved from manifest-based package declaration to build.gradle namespace for better build consistency
+
+ERROR 5: Gradle Version Mismatch
+SYMPTOM: "Minimum supported Gradle version is 8.4. Current version is 8.3"
+CAUSE: Android Gradle Plugin 8.3.0 requires Gradle 8.4+
+SOLUTION:
+- Updated gradle-wrapper.properties: gradle-8.3-all.zip → gradle-8.4-all.zip
+WHY: Each Android Gradle Plugin version has specific Gradle version requirements for compatibility
+
+ERROR 6: Duplicate Gradle Configuration Files & Java Heap Space Error
+SYMPTOM: "Both settings.gradle and settings.gradle.kts exist, so settings.gradle.kts is ignored. This is likely a mistake." + "Java heap space" error during JetifyTransform of x86_64_debug jar
+CAUSE: Conflicting Gradle configuration files and insufficient JVM memory for Jetify transformation of Flutter engine binaries
+SOLUTION:
+- Removed duplicate files: `android/settings.gradle.kts` and `android/build.gradle.kts`
+- Increased JVM heap memory in gradle.properties: `-Xmx1536M` → `-Xmx6144M`
+- Added memory management flags: `-XX:MaxMetaspaceSize=1024M -XX:+HeapDumpOnOutOfMemoryError`
+- Disabled Jetifier: `android.enableJetifier=false` (since project uses AndroidX)
+- Cleared Gradle cache: `rmdir /s /q %USERPROFILE%\.gradle\caches`
+- Performed clean builds: `flutter clean` and `./gradlew clean`
+WHY: Duplicate configuration files cause build system confusion, and Jetify transformation of large Flutter engine binaries requires significant memory. Modern projects using AndroidX don't need Jetifier for legacy support library conversion.
+
+=== CONFIGURATION FILES UPDATED ===
+
+1. android/settings.gradle:
+   - Added pluginManagement block with Flutter SDK path resolution
+   - Configured repositories (google, mavenCentral, gradlePluginPortal)
+   - Declared plugins with versions (flutter-plugin-loader, android.application, kotlin.android)
+
+2. android/app/build.gradle:
+   - Replaced apply plugin statements with plugins {} block
+   - Added namespace declaration
+   - Removed deprecated apply from flutter.gradle
+
+3. android/build.gradle:
+   - Updated kotlin_version from 1.7.10 to 1.8.10
+   - Updated Android Gradle Plugin from 8.1.4 to 8.3.0
+
+4. android/gradle.properties:
+   - Removed trailing spaces from boolean properties
+   - Ensured clean UTF-8 encoding
+
+5. android/gradle/wrapper/gradle-wrapper.properties:
+   - Updated Gradle distribution from 8.3 to 8.4
+
+=== LESSONS LEARNED ===
+
+1. Flutter Version Compatibility:
+   - Always check Flutter release notes for breaking changes
+   - Modern Flutter versions enforce stricter build configurations
+   - Platform-specific code may need updates with Flutter upgrades
+
+2. Gradle Build System Evolution:
+   - Android build tools continuously evolve with stricter requirements
+   - Declarative syntax preferred over imperative for maintainability
+   - Version dependencies are tightly coupled and must be updated together
+
+3. Cross-Platform Considerations:
+   - Firebase and other plugins may have platform-specific limitations
+   - Desktop platforms (Windows) have different dependency requirements than mobile
+   - Conditional compilation may be necessary for platform-specific features
+
+4. Error Diagnosis Strategy:
+   - Read error messages carefully for specific version requirements
+   - Check official documentation for migration guides
+   - Use flutter clean between configuration changes
+   - Verify all related version dependencies when updating one component
+
+=== FUTURE REFERENCE COMMANDS ===
+
+Windows Build:
+```bash
+flutter clean
+flutter pub get
+flutter run -d windows
+flutter build windows --release
+```
+
+Android Build:
+```bash
+flutter clean
+flutter pub get
+flutter run -d emulator-5554
+flutter build apk --debug
+flutter build apk --release
+```
+
+Troubleshooting:
+```bash
+flutter doctor -v
+flutter config --enable-windows-desktop
+flutter emulators --launch <emulator_id>
+flutter devices
+```
+
+===============================================================================
                                 END OF NOTES
 ===============================================================================
 
