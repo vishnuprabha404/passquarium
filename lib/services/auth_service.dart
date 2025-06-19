@@ -45,10 +45,35 @@ class AuthService extends ChangeNotifier {
   User? get firebaseUser => _firebaseUser;
   bool get deviceAuthCompleted => _deviceAuthCompleted;
 
+  /// Check if device has any authentication configured (biometrics or device lock)
+  /// This is more comprehensive than just canCheckBiometrics
+  Future<bool> _hasDeviceAuthentication() async {
+    try {
+      // First check if biometrics are available
+      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      if (canCheckBiometrics) {
+        final availableBiometrics = await _localAuth.getAvailableBiometrics();
+        if (availableBiometrics.isNotEmpty) {
+          return true;
+        }
+      }
+      
+      // Check if device has any security (PIN, pattern, password, etc.)
+      final isDeviceSupported = await _localAuth.isDeviceSupported();
+      return isDeviceSupported;
+    } catch (e) {
+      // If we can't determine, assume authentication is available for security
+      return true;
+    }
+  }
+
   /// Initialize the authentication service
   Future<void> initialize() async {
     try {
+      // Check if device has any authentication configured
+      final hasDeviceAuth = await _hasDeviceAuthentication();
       _isDeviceAuthSupported = await _localAuth.canCheckBiometrics;
+      
       if (_isDeviceAuthSupported) {
         _availableBiometrics = await _localAuth.getAvailableBiometrics();
       }
@@ -63,8 +88,19 @@ class AuthService extends ChangeNotifier {
         _firebaseUser = null;
       }
       
-      // RESTORED FLOW: Always show device auth first if supported
+      // DEVELOPMENT SKIP: If device has no authentication configured, skip device auth
+      // TODO: Remove this for production - device authentication should be mandatory
+      if (!hasDeviceAuth) {
+        print('DEBUG: Device has no authentication configured - skipping device auth (DEVELOPMENT ONLY)');
+        _deviceAuthCompleted = true;
+        _authStatus = AuthStatus.emailRequired;
+        notifyListeners();
+        return;
+      }
+      
+      // RESTORED FLOW: Always show device auth first if supported and device has authentication
       if (_isDeviceAuthSupported && !_deviceAuthCompleted) {
+        print('DEBUG: Device authentication required - showing device auth screen');
         _authStatus = AuthStatus.deviceAuthRequired;
         notifyListeners();
         return;
@@ -79,6 +115,7 @@ class AuthService extends ChangeNotifier {
       notifyListeners();
       
     } catch (e) {
+      print('DEBUG: Error during auth initialization: $e');
       _authStatus = _isDeviceAuthSupported ? AuthStatus.deviceAuthRequired : AuthStatus.emailRequired;
       notifyListeners();
     }
