@@ -36,7 +36,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
   @override
   void initState() {
     super.initState();
-    _generatePassword();
+    // Don't generate password initially - let user generate when ready
   }
 
   void _generatePassword() {
@@ -167,13 +167,6 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Password Generator'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _generatePassword,
-            tooltip: 'Generate New Password',
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -214,48 +207,64 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.grey[300]!),
                         ),
-                        child: SelectableText(
-                          _generatedPassword,
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
+                        child: _generatedPassword.isEmpty
+                            ? const Text(
+                                'Click "Generate Password" to create a secure password',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                textAlign: TextAlign.center,
+                              )
+                            : SelectableText(
+                                _generatedPassword,
+                                style: const TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
                       ),
 
                       const SizedBox(height: 16),
 
-                      // Password Strength
-                      PasswordStrengthIndicator(password: _generatedPassword),
+                      // Password Strength (only show if password exists)
+                      if (_generatedPassword.isNotEmpty)
+                        PasswordStrengthIndicator(password: _generatedPassword),
 
-                      const SizedBox(height: 16),
+                      if (_generatedPassword.isNotEmpty)
+                        const SizedBox(height: 16),
 
                       // Action Buttons
                       Row(
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: _copyToClipboard,
+                              onPressed: _generatedPassword.isEmpty ? null : _copyToClipboard,
                               icon: const Icon(Icons.copy),
                               label: const Text('Copy to Clipboard'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
+                                backgroundColor: _generatedPassword.isEmpty ? Colors.grey : Colors.green,
                                 foregroundColor: Colors.white,
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 12),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 12),
                           ElevatedButton.icon(
                             onPressed: _generatePassword,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('New'),
+                            icon: const Icon(Icons.auto_awesome, size: 20),
+                            label: const Text('Generate Password'),
                             style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
-                                  vertical: 12, horizontal: 16),
+                                  vertical: 12, horizontal: 20),
+                              elevation: 4,
+                              shadowColor: Colors.blue.withOpacity(0.5),
                             ),
                           ),
                         ],
