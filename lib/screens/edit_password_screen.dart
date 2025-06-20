@@ -33,13 +33,15 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Pre-populate controllers with existing data
-    _websiteController = TextEditingController(text: widget.passwordEntry.website);
-    _usernameController = TextEditingController(text: widget.passwordEntry.username);
+    _websiteController =
+        TextEditingController(text: widget.passwordEntry.website);
+    _usernameController =
+        TextEditingController(text: widget.passwordEntry.username);
     _passwordController = TextEditingController(text: widget.decryptedPassword);
     _notesController = TextEditingController(text: widget.passwordEntry.notes);
-    
+
     // Calculate initial password strength
     _updatePasswordStrength();
   }
@@ -56,7 +58,7 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
   void _generatePassword() {
     final passwordService =
         Provider.of<PasswordService>(context, listen: false);
-    
+
     try {
       final generatedPassword = passwordService.generatePassword(
         length: 16,
@@ -65,13 +67,13 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
         includeNumbers: true,
         includeSymbols: true,
       );
-      
+
       setState(() {
         _passwordController.text = generatedPassword;
         _isPasswordVisible = true;
         _updatePasswordStrength();
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Strong password generated!'),
@@ -85,7 +87,7 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
         _isPasswordVisible = true;
         _updatePasswordStrength();
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Password generated with fallback method'),
@@ -210,7 +212,8 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
         title: const Text('Edit Password'),
         actions: [
           TextButton(
-            onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
+            onPressed:
+                _isLoading ? null : () => Navigator.of(context).pop(false),
             child: const Text('Cancel'),
           ),
         ],
@@ -252,13 +255,14 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
                   validator: _validatePassword,
                   obscureText: !_isPasswordVisible,
                   onChanged: (_) => _updatePasswordStrength(),
-                  style: _passwordController.text.isNotEmpty && _isPasswordVisible
-                      ? const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        )
-                      : null,
+                  style:
+                      _passwordController.text.isNotEmpty && _isPasswordVisible
+                          ? const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            )
+                          : null,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outline),
@@ -284,7 +288,9 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
                               _isPasswordVisible = !_isPasswordVisible;
                             });
                           },
-                          tooltip: _isPasswordVisible ? 'Hide Password' : 'Show Password',
+                          tooltip: _isPasswordVisible
+                              ? 'Hide Password'
+                              : 'Show Password',
                         ),
                       ],
                     ),
@@ -387,4 +393,4 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
       ),
     );
   }
-} 
+}

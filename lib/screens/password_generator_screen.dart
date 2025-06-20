@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'package:super_locker/services/encryption_service.dart';
 import 'package:super_locker/services/clipboard_manager.dart';
 import 'package:super_locker/widgets/password_strength_indicator.dart';
@@ -28,7 +28,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
 
   // Generated password
   String _generatedPassword = '';
-  int _passwordStrength = 0;
+
 
   // Password policy compliance
   Map<String, bool> _policyCompliance = {};
@@ -63,8 +63,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
           _generatedPassword = _removeRepeatingChars(_generatedPassword);
         }
 
-        _passwordStrength =
-            _encryptionService.calculatePasswordStrength(_generatedPassword);
+
         _policyCompliance = _checkPolicyCompliance(_generatedPassword);
       });
     } catch (e) {
@@ -242,11 +241,15 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: _generatedPassword.isEmpty ? null : _copyToClipboard,
+                              onPressed: _generatedPassword.isEmpty
+                                  ? null
+                                  : _copyToClipboard,
                               icon: const Icon(Icons.copy),
                               label: const Text('Copy to Clipboard'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _generatedPassword.isEmpty ? Colors.grey : Colors.green,
+                                backgroundColor: _generatedPassword.isEmpty
+                                    ? Colors.grey
+                                    : Colors.green,
                                 foregroundColor: Colors.white,
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 12),

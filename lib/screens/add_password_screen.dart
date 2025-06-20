@@ -34,7 +34,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
   void _generatePassword() {
     final passwordService =
         Provider.of<PasswordService>(context, listen: false);
-    
+
     try {
       final generatedPassword = passwordService.generatePassword(
         length: 16,
@@ -43,13 +43,13 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
         includeNumbers: true,
         includeSymbols: true,
       );
-      
+
       setState(() {
         _passwordController.text = generatedPassword;
         _isPasswordVisible = true; // Show the password so user can see it
         _updatePasswordStrength();
       });
-      
+
       // Show a brief success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -65,7 +65,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
         _isPasswordVisible = true;
         _updatePasswordStrength();
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Password generated with fallback method'),
@@ -232,13 +232,14 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                   validator: _validatePassword,
                   obscureText: !_isPasswordVisible,
                   onChanged: (_) => _updatePasswordStrength(),
-                  style: _passwordController.text.isNotEmpty && _isPasswordVisible
-                      ? const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        )
-                      : null,
+                  style:
+                      _passwordController.text.isNotEmpty && _isPasswordVisible
+                          ? const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            )
+                          : null,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outline),
@@ -264,17 +265,21 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                               _isPasswordVisible = !_isPasswordVisible;
                             });
                           },
-                          tooltip: _isPasswordVisible ? 'Hide Password' : 'Show Password',
+                          tooltip: _isPasswordVisible
+                              ? 'Hide Password'
+                              : 'Show Password',
                         ),
                       ],
                     ),
                     border: const OutlineInputBorder(),
                     hintText: 'Enter password or click ✨ to generate',
-                    helperText: _passwordController.text.isNotEmpty && _isPasswordVisible
+                    helperText: _passwordController.text.isNotEmpty &&
+                            _isPasswordVisible
                         ? 'Generated strong password (16 chars with mixed case, numbers & symbols)'
                         : 'Click the ✨ button to generate a secure password',
                     helperStyle: TextStyle(
-                      color: _passwordController.text.isNotEmpty && _isPasswordVisible
+                      color: _passwordController.text.isNotEmpty &&
+                              _isPasswordVisible
                           ? Colors.green[600]
                           : Colors.grey[600],
                       fontSize: 12,

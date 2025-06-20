@@ -80,13 +80,13 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       final prefs = await SharedPreferences.getInstance();
       final savedEmail = prefs.getString('saved_email');
       final rememberEmail = prefs.getBool('remember_email') ?? false;
-      
+
       if (savedEmail != null && rememberEmail) {
         setState(() {
           _emailController.text = savedEmail;
           _rememberEmail = true;
         });
-        
+
         // Auto-focus on Master Key field when email is remembered
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _masterKeyFocusNode.requestFocus();
@@ -679,7 +679,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                   autocorrect: false,
                   enableSuggestions: true,
                   inputFormatters: [
-                    FilteringTextInputFormatter.deny(RegExp(r'\s')), // No spaces in email
+                    FilteringTextInputFormatter.deny(
+                        RegExp(r'\s')), // No spaces in email
                   ],
                   onFieldSubmitted: (_) {
                     // Move focus to Master Key field when pressing Enter on email
@@ -719,7 +720,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                   controller: _masterKeyController,
                   focusNode: _masterKeyFocusNode,
                   obscureText: !_isMasterKeyVisible,
-                  textInputAction: _isSignUpMode ? TextInputAction.next : TextInputAction.done,
+                  textInputAction: _isSignUpMode
+                      ? TextInputAction.next
+                      : TextInputAction.done,
                   validator: _validateMasterKey,
                   enableInteractiveSelection: true,
                   autocorrect: false,
@@ -760,10 +763,12 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                     ),
                     helperText: _isSignUpMode
                         ? 'This Master Key will encrypt your vault'
-                        : (_rememberEmail 
+                        : (_rememberEmail
                             ? 'Email remembered - Press Enter to sign in'
                             : 'Press Enter to sign in'),
-                    hintText: _isSignUpMode ? 'Create a strong master key' : 'Enter your master key',
+                    hintText: _isSignUpMode
+                        ? 'Create a strong master key'
+                        : 'Enter your master key',
                   ),
                 ),
 
@@ -880,9 +885,10 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                           _confirmMasterKeyController.clear();
                           _showEmailVerificationMessage = false;
                         });
-                        
+
                         // Maintain proper focus when switching modes
-                        if (_rememberEmail && _emailController.text.isNotEmpty) {
+                        if (_rememberEmail &&
+                            _emailController.text.isNotEmpty) {
                           // If email is remembered, focus on Master Key field
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             _masterKeyFocusNode.requestFocus();

@@ -36,6 +36,7 @@ class AuthService extends ChangeNotifier {
   bool _deviceAuthCompleted = false;
   bool _hasLoggedOut = false; // Track if user has explicitly logged out
 
+
   AuthStatus get authStatus => _authStatus;
   bool get isAuthenticated => _authStatus == AuthStatus.authenticated;
   bool get isDeviceAuthSupported => _isDeviceAuthSupported;
@@ -104,18 +105,16 @@ class AuthService extends ChangeNotifier {
       // DEVELOPMENT SKIP: If device has no authentication configured, skip device auth
       // TODO: Remove this for production - device authentication should be mandatory
       if (!hasDeviceAuth) {
-        print(
-            'DEBUG: Device has no authentication configured - skipping device auth (DEVELOPMENT ONLY)');
-        _deviceAuthCompleted = true;
-        _authStatus = AuthStatus.emailRequired;
-        notifyListeners();
-        return;
-      }
+              // DEBUG: Device has no authentication configured - skipping device auth (DEVELOPMENT ONLY)
+      _deviceAuthCompleted = true;
+      _authStatus = AuthStatus.emailRequired;
+      notifyListeners();
+      return;
+    }
 
-      // RESTORED FLOW: Always show device auth first if supported and device has authentication
-      if (_isDeviceAuthSupported && !_deviceAuthCompleted) {
-        print(
-            'DEBUG: Device authentication required - showing device auth screen');
+    // RESTORED FLOW: Always show device auth first if supported and device has authentication
+    if (_isDeviceAuthSupported && !_deviceAuthCompleted) {
+      // DEBUG: Device authentication required - showing device auth screen
         _authStatus = AuthStatus.deviceAuthRequired;
         notifyListeners();
         return;
@@ -129,7 +128,7 @@ class AuthService extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      print('DEBUG: Error during auth initialization: $e');
+      // DEBUG: Error during auth initialization: $e
       _authStatus = _isDeviceAuthSupported
           ? AuthStatus.deviceAuthRequired
           : AuthStatus.emailRequired;

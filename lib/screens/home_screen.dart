@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:super_locker/models/password_entry.dart';
-import 'package:super_locker/providers/app_provider.dart';
+
 import 'package:super_locker/screens/edit_password_screen.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/services/password_service.dart';
@@ -24,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late AutoLockService _autoLockService;
   List<PasswordEntry> _filteredPasswords = [];
   bool _isSearching = false;
+
 
   @override
   void initState() {
@@ -49,8 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
-    final passwordService = Provider.of<PasswordService>(context, listen: false);
-    
+    final passwordService =
+        Provider.of<PasswordService>(context, listen: false);
+
     if (query.isEmpty) {
       setState(() {
         _filteredPasswords = passwordService.passwords;
@@ -61,10 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
         _isSearching = true;
         _filteredPasswords = passwordService.passwords.where((password) {
           return password.website.toLowerCase().contains(query) ||
-                 password.domain.toLowerCase().contains(query) ||
-                 password.username.toLowerCase().contains(query) ||
-                 password.title.toLowerCase().contains(query) ||
-                 password.category.toLowerCase().contains(query);
+              password.domain.toLowerCase().contains(query) ||
+              password.username.toLowerCase().contains(query) ||
+              password.title.toLowerCase().contains(query) ||
+              password.category.toLowerCase().contains(query);
         }).toList();
       });
     }
@@ -647,12 +649,12 @@ class _HomeScreenState extends State<HomeScreen> {
               // Recent Passwords with Search
               Row(
                 children: [
-              const Text(
+                  const Text(
                     'Your Passwords',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const Spacer(),
                   Text(
@@ -743,7 +745,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     }
 
-                    if (_filteredPasswords.isEmpty && passwordService.passwords.isNotEmpty) {
+                    if (_filteredPasswords.isEmpty &&
+                        passwordService.passwords.isNotEmpty) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -804,6 +807,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
 
                     return ListView.builder(
+                      physics:
+                          const NeverScrollableScrollPhysics(), // Disable scrolling since we're inside SingleChildScrollView
+                      shrinkWrap:
+                          true, // Allow ListView to size itself based on content
                       padding: const EdgeInsets.only(bottom: 16),
                       itemCount: _filteredPasswords.length,
                       itemBuilder: (context, index) {
@@ -818,7 +825,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Text(
                                 password.domain.isNotEmpty
                                     ? password.domain[0].toUpperCase()
-                                    : (password.website.isNotEmpty ? password.website[0].toUpperCase() : 'P'),
+                                    : (password.website.isNotEmpty
+                                        ? password.website[0].toUpperCase()
+                                        : 'P'),
                                 style: TextStyle(
                                   color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.bold,
@@ -826,7 +835,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             title: Text(
-                              password.title.isNotEmpty ? password.title : password.website,
+                              password.title.isNotEmpty
+                                  ? password.title
+                                  : password.website,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -834,9 +845,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                              password.username,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                                  password.username,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(color: Colors.grey[600]),
                                 ),
                                 if (password.notes.isNotEmpty) ...[
@@ -864,8 +875,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    textStyle: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -875,7 +889,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 PopupMenuButton<String>(
                                   icon: const Icon(Icons.more_vert, size: 24),
                                   onSelected: (value) async {
-                                    print('🔧 DEBUG: Home PopupMenu selected: $value');
+                                    print(
+                                        '🔧 DEBUG: Home PopupMenu selected: $value');
                                     switch (value) {
                                       case 'view':
                                         _viewPassword(password);
@@ -889,7 +904,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     }
                                   },
                                   itemBuilder: (context) {
-                                    print('🔧 DEBUG: Building home popup menu items');
+                                    print(
+                                        '🔧 DEBUG: Building home popup menu items');
                                     return [
                                       const PopupMenuItem(
                                         value: 'view',
@@ -911,12 +927,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ],
                                         ),
                                       ),
-                                      if (password.website.isNotEmpty || password.url.isNotEmpty)
+                                      if (password.website.isNotEmpty ||
+                                          password.url.isNotEmpty)
                                         const PopupMenuItem(
                                           value: 'browser',
                                           child: Row(
                                             children: [
-                                              Icon(Icons.open_in_browser, size: 20),
+                                              Icon(Icons.open_in_browser,
+                                                  size: 20),
                                               SizedBox(width: 8),
                                               Text('Open in Browser'),
                                             ],
@@ -958,29 +976,31 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Consumer<PasswordService>(
           builder: (context, passwordService, child) {
             final passwords = passwordService.passwords;
-            final weakPasswords = passwords.where((p) => p.encryptedPassword.length < 50).length; // Rough estimate
-            
+            final weakPasswords = passwords
+                .where((p) => p.encryptedPassword.length < 50)
+                .length; // Rough estimate
+
             return Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSecurityItem(
-                  'Total Passwords', 
-                  '${passwords.length}', 
+                  'Total Passwords',
+                  '${passwords.length}',
                   Icons.lock_outline,
                   Colors.blue,
                 ),
                 const SizedBox(height: 12),
                 _buildSecurityItem(
-                  'Potentially Weak', 
-                  '$weakPasswords', 
+                  'Potentially Weak',
+                  '$weakPasswords',
                   Icons.warning,
                   weakPasswords > 0 ? Colors.orange : Colors.green,
                 ),
                 const SizedBox(height: 12),
                 _buildSecurityItem(
-                  'Security Score', 
-                  '${((passwords.length - weakPasswords) / (passwords.length > 0 ? passwords.length : 1) * 100).round()}%', 
+                  'Security Score',
+                  '${((passwords.length - weakPasswords) / (passwords.length > 0 ? passwords.length : 1) * 100).round()}%',
                   Icons.shield,
                   Colors.green,
                 ),
@@ -998,7 +1018,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSecurityItem(String label, String value, IconData icon, Color color) {
+  Widget _buildSecurityItem(
+      String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1033,7 +1054,7 @@ class _HomeScreenState extends State<HomeScreen> {
     onUserInteraction();
 
     final displayName = entry.title.isNotEmpty ? entry.title : entry.website;
-    
+
     // Require biometric authentication
     final authService = Provider.of<AuthService>(context, listen: false);
     final authenticated = await authService.authenticateUser(
@@ -1054,8 +1075,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     try {
-      final passwordService = Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+      final passwordService =
+          Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword =
+          await passwordService.decryptPassword(entry, masterPassword);
 
       if (decryptedPassword.isNotEmpty) {
         _showPasswordDialog(entry, decryptedPassword);
@@ -1069,7 +1092,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showPasswordDialog(PasswordEntry entry, String password) {
     final displayName = entry.title.isNotEmpty ? entry.title : entry.website;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1082,7 +1105,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () async {
                 final edited = await _editPassword(entry);
                 if (edited) {
-                  Navigator.of(context).pop(); // Close dialog only after successful edit
+                  Navigator.of(context)
+                      .pop(); // Close dialog only after successful edit
                 }
               },
               icon: const Icon(Icons.edit, size: 20),
@@ -1097,7 +1121,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () async {
                 final deleted = await _deletePassword(entry);
                 if (deleted) {
-                  Navigator.of(context).pop(); // Close dialog only after successful deletion
+                  Navigator.of(context)
+                      .pop(); // Close dialog only after successful deletion
                 }
               },
               icon: const Icon(Icons.delete, size: 20),
@@ -1117,7 +1142,9 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Service Details
-                if (entry.website.isNotEmpty || entry.url.isNotEmpty || entry.category.isNotEmpty) ...[
+                if (entry.website.isNotEmpty ||
+                    entry.url.isNotEmpty ||
+                    entry.category.isNotEmpty) ...[
                   Text(
                     'Service Details',
                     style: TextStyle(
@@ -1135,7 +1162,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildDetailRow('Category', entry.category, Icons.category),
                   const SizedBox(height: 16),
                 ],
-                
+
                 // Account Details
                 Text(
                   'Account Details',
@@ -1147,10 +1174,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 8),
                 if (entry.username.isNotEmpty)
-                  _buildDetailRow('Username', entry.username, Icons.person, copyable: true),
-                
+                  _buildDetailRow('Username', entry.username, Icons.person,
+                      copyable: true),
+
                 const SizedBox(height: 16),
-                
+
                 // Password Section
                 Text(
                   'Password',
@@ -1199,9 +1227,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 8),
                 PasswordStrengthIndicator(password: password),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Notes Section (Always visible)
                 Text(
                   'Notes',
@@ -1223,13 +1251,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: SelectableText(
                     entry.notes.isNotEmpty ? entry.notes : 'No notes added',
                     style: TextStyle(
-                      fontStyle: entry.notes.isEmpty ? FontStyle.italic : FontStyle.normal,
+                      fontStyle: entry.notes.isEmpty
+                          ? FontStyle.italic
+                          : FontStyle.normal,
                       color: entry.notes.isEmpty ? Colors.grey[600] : null,
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Action Buttons
                 Row(
                   children: [
@@ -1247,9 +1277,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
-          ),
-        ),
-      ),
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
@@ -1286,7 +1316,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, IconData icon, {bool copyable = false}) {
+  Widget _buildDetailRow(String label, String value, IconData icon,
+      {bool copyable = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
@@ -1356,8 +1387,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     try {
-      final passwordService = Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+      final passwordService =
+          Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword =
+          await passwordService.decryptPassword(entry, masterPassword);
 
       if (decryptedPassword.isNotEmpty) {
         await _clipboardManager.copySecureData(
@@ -1416,8 +1449,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     try {
-      final passwordService = Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+      final passwordService =
+          Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword =
+          await passwordService.decryptPassword(entry, masterPassword);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);
@@ -1435,7 +1470,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Determine URL to open with improved logic
       String url = entry.url.isNotEmpty ? entry.url : entry.website;
-      
+
       // Smart URL handling
       url = _buildSmartUrl(url);
 
@@ -1445,7 +1480,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
-        _showMessage('Browser opened! Password is in clipboard for 60 seconds.');
+        _showMessage(
+            'Browser opened! Password is in clipboard for 60 seconds.');
       } else {
         _showMessage('Cannot open URL: $url', isError: true);
       }
@@ -1456,22 +1492,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _buildSmartUrl(String input) {
     if (input.isEmpty) return 'https://google.com';
-    
+
     String url = input.trim().toLowerCase();
-    
+
     // If it already has a protocol, return as is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return input; // Return original case
     }
-    
+
     // Remove www. if present for processing
     String processUrl = url.replaceFirst('www.', '');
-    
+
     // If it looks like a domain (contains a dot), use it as is
     if (processUrl.contains('.')) {
       return 'https://$input';
     }
-    
+
     // If it's just a name/brand, try to make it a .com domain
     // Common patterns: facebook -> facebook.com, google -> google.com
     return 'https://$input.com';
@@ -1490,8 +1526,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return false;
       }
 
-      final passwordService = Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+      final passwordService =
+          Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword =
+          await passwordService.decryptPassword(entry, masterPassword);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);
@@ -1513,7 +1551,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _loadPasswords();
         return true;
       }
-      
+
       return false;
     } catch (e) {
       _showMessage('Error: $e', isError: true);
@@ -1529,7 +1567,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Password'),
-        content: Text('Are you sure you want to delete the password for ${entry.title.isNotEmpty ? entry.title : entry.website}?\n\nThis action cannot be undone.'),
+        content: Text(
+            'Are you sure you want to delete the password for ${entry.title.isNotEmpty ? entry.title : entry.website}?\n\nThis action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -1557,7 +1596,8 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       try {
-        final passwordService = Provider.of<PasswordService>(context, listen: false);
+        final passwordService =
+            Provider.of<PasswordService>(context, listen: false);
         final success = await passwordService.deletePassword(entry.id);
 
         if (success) {
@@ -1574,7 +1614,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return false;
       }
     }
-    
+
     return false; // User cancelled
   }
 }

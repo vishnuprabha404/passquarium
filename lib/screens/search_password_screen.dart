@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:super_locker/models/password_entry.dart';
@@ -314,7 +314,9 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
           child: Text(
             entry.domain.isNotEmpty
                 ? entry.domain[0].toUpperCase()
-                : (entry.website.isNotEmpty ? entry.website[0].toUpperCase() : 'P'),
+                : (entry.website.isNotEmpty
+                    ? entry.website[0].toUpperCase()
+                    : 'P'),
             style: TextStyle(
               color: Theme.of(context).primaryColor,
               fontWeight: FontWeight.bold,
@@ -352,55 +354,55 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
         ),
         trailing: PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert, size: 24),
-                     onSelected: (value) async {
-             print('🔧 DEBUG: PopupMenu selected: $value');
-             switch (value) {
-               case 'view':
-                 _viewPassword(entry);
-                 break;
-               case 'copy':
-                 _copyPassword(entry);
-                 break;
-               case 'browser':
-                 _openInBrowser(entry);
-                 break;
-             }
-           },
+          onSelected: (value) async {
+            print('🔧 DEBUG: PopupMenu selected: $value');
+            switch (value) {
+              case 'view':
+                _viewPassword(entry);
+                break;
+              case 'copy':
+                _copyPassword(entry);
+                break;
+              case 'browser':
+                _openInBrowser(entry);
+                break;
+            }
+          },
           itemBuilder: (context) {
             print('🔧 DEBUG: Building popup menu items');
-                         return [
-               const PopupMenuItem(
-                 value: 'view',
-                 child: Row(
-                   children: [
-                     Icon(Icons.visibility, size: 20),
-                     SizedBox(width: 8),
-                     Text('View Details'),
-                   ],
-                 ),
-               ),
-               const PopupMenuItem(
-                 value: 'copy',
-                 child: Row(
-                   children: [
-                     Icon(Icons.copy, size: 20),
-                     SizedBox(width: 8),
-                     Text('Copy Password'),
-                   ],
-                 ),
-               ),
-               if (entry.website.isNotEmpty || entry.url.isNotEmpty)
-                 const PopupMenuItem(
-                   value: 'browser',
-                   child: Row(
-                     children: [
-                       Icon(Icons.open_in_browser, size: 20),
-                       SizedBox(width: 8),
-                       Text('Open in Browser'),
-                     ],
-                   ),
-                 ),
-             ];
+            return [
+              const PopupMenuItem(
+                value: 'view',
+                child: Row(
+                  children: [
+                    Icon(Icons.visibility, size: 20),
+                    SizedBox(width: 8),
+                    Text('View Details'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'copy',
+                child: Row(
+                  children: [
+                    Icon(Icons.copy, size: 20),
+                    SizedBox(width: 8),
+                    Text('Copy Password'),
+                  ],
+                ),
+              ),
+              if (entry.website.isNotEmpty || entry.url.isNotEmpty)
+                const PopupMenuItem(
+                  value: 'browser',
+                  child: Row(
+                    children: [
+                      Icon(Icons.open_in_browser, size: 20),
+                      SizedBox(width: 8),
+                      Text('Open in Browser'),
+                    ],
+                  ),
+                ),
+            ];
           },
         ),
         onTap: () => _viewPassword(entry),
@@ -446,10 +448,13 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     print('🔍 DEBUG: Starting decryption...');
 
     try {
-      final passwordService = Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+      final passwordService =
+          Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword =
+          await passwordService.decryptPassword(entry, masterPassword);
 
-      print('🔍 DEBUG: Decryption result: ${decryptedPassword.isNotEmpty ? "SUCCESS" : "FAILED"}');
+      print(
+          '🔍 DEBUG: Decryption result: ${decryptedPassword.isNotEmpty ? "SUCCESS" : "FAILED"}');
 
       if (decryptedPassword.isNotEmpty) {
         print('🔍 DEBUG: Showing password dialog...');
@@ -466,7 +471,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
 
   void _showPasswordDialog(PasswordEntry entry, String password) {
     final displayName = entry.title.isNotEmpty ? entry.title : entry.website;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -479,7 +484,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
               onPressed: () async {
                 final edited = await _editPassword(entry);
                 if (edited) {
-                  Navigator.of(context).pop(); // Close dialog only after successful edit
+                  Navigator.of(context)
+                      .pop(); // Close dialog only after successful edit
                 }
               },
               icon: const Icon(Icons.edit, size: 20),
@@ -494,7 +500,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
               onPressed: () async {
                 final deleted = await _deletePassword(entry);
                 if (deleted) {
-                  Navigator.of(context).pop(); // Close dialog only after successful deletion
+                  Navigator.of(context)
+                      .pop(); // Close dialog only after successful deletion
                 }
               },
               icon: const Icon(Icons.delete, size: 20),
@@ -524,17 +531,18 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                   if (entry.category.isNotEmpty)
                     _buildDetailRow('Category', entry.category, Icons.category),
                 ]),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Account Details
                 _buildDetailSection('Account Details', [
                   if (entry.username.isNotEmpty)
-                    _buildDetailRow('Username', entry.username, Icons.person, copyable: true),
+                    _buildDetailRow('Username', entry.username, Icons.person,
+                        copyable: true),
                 ]),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Password Section
                 _buildDetailSection('Password', [
                   Container(
@@ -576,9 +584,9 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                   const SizedBox(height: 8),
                   PasswordStrengthIndicator(password: password),
                 ]),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Notes Section (Always visible)
                 _buildDetailSection('Notes', [
                   Container(
@@ -596,11 +604,16 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                         const SizedBox(width: 8),
                         Expanded(
                           child: SelectableText(
-                            entry.notes.isNotEmpty ? entry.notes : 'No notes added',
+                            entry.notes.isNotEmpty
+                                ? entry.notes
+                                : 'No notes added',
                             style: TextStyle(
                               fontSize: 14,
-                              fontStyle: entry.notes.isEmpty ? FontStyle.italic : FontStyle.normal,
-                              color: entry.notes.isEmpty ? Colors.grey[600] : null,
+                              fontStyle: entry.notes.isEmpty
+                                  ? FontStyle.italic
+                                  : FontStyle.normal,
+                              color:
+                                  entry.notes.isEmpty ? Colors.grey[600] : null,
                             ),
                           ),
                         ),
@@ -608,25 +621,25 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                     ),
                   ),
                 ]),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Metadata Section
                 _buildDetailSection('Information', [
                   _buildDetailRow(
-                    'Created', 
-                    _formatDate(entry.createdAt), 
+                    'Created',
+                    _formatDate(entry.createdAt),
                     Icons.calendar_today,
                   ),
                   _buildDetailRow(
-                    'Last Updated', 
-                    _formatDate(entry.updatedAt), 
+                    'Last Updated',
+                    _formatDate(entry.updatedAt),
                     Icons.update,
                   ),
                 ]),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Action Buttons
                 Row(
                   children: [
@@ -685,7 +698,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
 
   Widget _buildDetailSection(String title, List<Widget> children) {
     if (children.isEmpty) return const SizedBox.shrink();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -703,7 +716,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     );
   }
 
-  Widget _buildDetailRow(String label, String value, IconData icon, {bool copyable = false}) {
+  Widget _buildDetailRow(String label, String value, IconData icon,
+      {bool copyable = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
@@ -777,8 +791,10 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     }
 
     try {
-      final passwordService = Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+      final passwordService =
+          Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword =
+          await passwordService.decryptPassword(entry, masterPassword);
 
       if (decryptedPassword.isNotEmpty) {
         await _clipboardManager.copySecureData(
@@ -837,8 +853,10 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     }
 
     try {
-      final passwordService = Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+      final passwordService =
+          Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword =
+          await passwordService.decryptPassword(entry, masterPassword);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);
@@ -855,7 +873,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
 
       // Determine URL to open with improved logic
       String url = entry.url.isNotEmpty ? entry.url : entry.website;
-      
+
       // Smart URL handling
       url = _buildSmartUrl(url);
 
@@ -865,7 +883,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
-        _showMessage('Browser opened! Password is in clipboard for 60 seconds.');
+        _showMessage(
+            'Browser opened! Password is in clipboard for 60 seconds.');
       } else {
         _showMessage('Cannot open URL: $url', isError: true);
       }
@@ -876,22 +895,22 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
 
   String _buildSmartUrl(String input) {
     if (input.isEmpty) return 'https://google.com';
-    
+
     String url = input.trim().toLowerCase();
-    
+
     // If it already has a protocol, return as is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return input; // Return original case
     }
-    
+
     // Remove www. if present for processing
     String processUrl = url.replaceFirst('www.', '');
-    
+
     // If it looks like a domain (contains a dot), use it as is
     if (processUrl.contains('.')) {
       return 'https://$input';
     }
-    
+
     // If it's just a name/brand, try to make it a .com domain
     // Common patterns: facebook -> facebook.com, google -> google.com
     return 'https://$input.com';
@@ -910,8 +929,10 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
         return false;
       }
 
-      final passwordService = Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+      final passwordService =
+          Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword =
+          await passwordService.decryptPassword(entry, masterPassword);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);
@@ -933,7 +954,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
         _performSearch();
         return true;
       }
-      
+
       return false;
     } catch (e) {
       _showMessage('Error: $e', isError: true);
@@ -949,7 +970,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Password'),
-        content: Text('Are you sure you want to delete the password for ${entry.title.isNotEmpty ? entry.title : entry.website}?\n\nThis action cannot be undone.'),
+        content: Text(
+            'Are you sure you want to delete the password for ${entry.title.isNotEmpty ? entry.title : entry.website}?\n\nThis action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -976,7 +998,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
       }
 
       try {
-        final passwordService = Provider.of<PasswordService>(context, listen: false);
+        final passwordService =
+            Provider.of<PasswordService>(context, listen: false);
         final success = await passwordService.deletePassword(entry.id);
 
         if (success) {
@@ -993,7 +1016,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
         return false;
       }
     }
-    
+
     return false; // User cancelled
   }
 }

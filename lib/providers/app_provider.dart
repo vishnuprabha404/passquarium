@@ -112,13 +112,7 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  // Handle auto-lock
-  void _handleAutoLock() {
-    _isAuthenticated = false;
-    _masterPassword = null;
-    _clipboardManager.clearClipboard();
-    notifyListeners();
-  }
+
 
   // Lock the app
   void lockApp() {
