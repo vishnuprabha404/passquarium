@@ -834,11 +834,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                IconButton(
-                                  icon: const Icon(Icons.copy, size: 20),
+                                ElevatedButton.icon(
                                   onPressed: () => _copyPassword(password),
-                                  tooltip: 'Copy Password',
+                                  icon: const Icon(Icons.copy, size: 16),
+                                  label: const Text('Copy Pass'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
                                 ),
+                                const SizedBox(width: 8),
                                 const Icon(Icons.arrow_forward_ios, size: 16),
                               ],
                             ),
