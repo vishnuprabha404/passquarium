@@ -317,7 +317,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
               children: [
                 Expanded(
                   child: Text(
-                    entry.title,
+                    entry.title.isNotEmpty ? entry.title : entry.website,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -426,90 +426,234 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
   void _viewPassword(PasswordEntry entry) async {
     onUserInteraction();
 
+    final displayName = entry.title.isNotEmpty ? entry.title : entry.website;
+    print('🔍 DEBUG: Starting password view for $displayName');
+
     // Require biometric authentication
+    print('🔍 DEBUG: Requesting authentication...');
     final authenticated = await _authService.authenticateUser(
-      reason: 'Authenticate to view password for ${entry.title}',
+      reason: 'Authenticate to view password for $displayName',
     );
 
+    print('🔍 DEBUG: Authentication result: $authenticated');
+
     if (!authenticated) {
+      print('🔍 DEBUG: Authentication failed');
       _showMessage('Authentication failed', isError: true);
       return;
     }
+
+    print('🔍 DEBUG: Authentication successful, proceeding with decryption...');
 
     // Get master password and decrypt
     final authService = Provider.of<AuthService>(context, listen: false);
     final masterPassword = authService.masterPassword;
 
+    print('🔍 DEBUG: Master password available: ${masterPassword != null}');
+
     if (masterPassword == null) {
+      print('🔍 DEBUG: Master password is null');
       _showMessage('Master password not available', isError: true);
       return;
     }
+
+    print('🔍 DEBUG: Starting decryption...');
 
     try {
       final passwordService = Provider.of<PasswordService>(context, listen: false);
       final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
 
+      print('🔍 DEBUG: Decryption result: ${decryptedPassword.isNotEmpty ? "SUCCESS" : "FAILED"}');
+
       if (decryptedPassword.isNotEmpty) {
+        print('🔍 DEBUG: Showing password dialog...');
         _showPasswordDialog(entry, decryptedPassword);
       } else {
+        print('🔍 DEBUG: Decrypted password is empty');
         _showMessage('Failed to decrypt password', isError: true);
       }
     } catch (e) {
+      print('🔍 DEBUG: Exception during decryption: $e');
       _showMessage('Error decrypting password: $e', isError: true);
     }
   }
 
   void _showPasswordDialog(PasswordEntry entry, String password) {
+    final displayName = entry.title.isNotEmpty ? entry.title : entry.website;
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Password for ${entry.title}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            // Password display
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: SelectableText(
-                password,
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Password strength
-            PasswordStrengthIndicator(password: password),
-            const SizedBox(height: 16),
-            // Copy button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  _clipboardManager.copySecureData(
-                    password,
-                    context: context,
-                    successMessage: 'Password copied securely',
-                  );
-                  Navigator.of(context).pop();
-                },
-                icon: const Icon(Icons.copy),
-                label: const Text('Copy to Clipboard'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
+            Icon(Icons.lock_open, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 8),
+            Expanded(child: Text(displayName)),
           ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Website/Service Details
+                _buildDetailSection('Service Details', [
+                  if (entry.website.isNotEmpty)
+                    _buildDetailRow('Website', entry.website, Icons.language),
+                  if (entry.url.isNotEmpty && entry.url != entry.website)
+                    _buildDetailRow('URL', entry.url, Icons.link),
+                  if (entry.domain.isNotEmpty && entry.domain != entry.website)
+                    _buildDetailRow('Domain', entry.domain, Icons.dns),
+                  if (entry.category.isNotEmpty)
+                    _buildDetailRow('Category', entry.category, Icons.category),
+                ]),
+                
+                const SizedBox(height: 16),
+                
+                // Account Details
+                _buildDetailSection('Account Details', [
+                  if (entry.username.isNotEmpty)
+                    _buildDetailRow('Username', entry.username, Icons.person, copyable: true),
+                ]),
+                
+                const SizedBox(height: 16),
+                
+                // Password Section
+                _buildDetailSection('Password', [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.lock, size: 20, color: Colors.grey[600]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SelectableText(
+                            password,
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            _clipboardManager.copySecureData(
+                              password,
+                              context: context,
+                              successMessage: 'Password copied securely',
+                            );
+                          },
+                          icon: const Icon(Icons.copy, size: 20),
+                          tooltip: 'Copy Password',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  PasswordStrengthIndicator(password: password),
+                ]),
+                
+                const SizedBox(height: 16),
+                
+                // Notes Section
+                if (entry.notes.isNotEmpty)
+                  _buildDetailSection('Notes', [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.note, size: 20, color: Colors.blue[600]),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: SelectableText(
+                              entry.notes,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ]),
+                
+                const SizedBox(height: 16),
+                
+                // Metadata Section
+                _buildDetailSection('Information', [
+                  _buildDetailRow(
+                    'Created', 
+                    _formatDate(entry.createdAt), 
+                    Icons.calendar_today,
+                  ),
+                  _buildDetailRow(
+                    'Last Updated', 
+                    _formatDate(entry.updatedAt), 
+                    Icons.update,
+                  ),
+                ]),
+                
+                const SizedBox(height: 20),
+                
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          _clipboardManager.copySecureData(
+                            password,
+                            context: context,
+                            successMessage: 'Password copied securely',
+                          );
+                        },
+                        icon: const Icon(Icons.copy),
+                        label: const Text('Copy Password'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          if (entry.username.isNotEmpty) {
+                            _clipboardManager.copyData(
+                              entry.username,
+                              context: context,
+                              successMessage: 'Username copied',
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.person),
+                        label: const Text('Copy Username'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
         actions: [
           TextButton(
@@ -519,6 +663,76 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildDetailSection(String title, List<Widget> children) {
+    if (children.isEmpty) return const SizedBox.shrink();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...children,
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, IconData icon, {bool copyable = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: Colors.grey[600]),
+            const SizedBox(width: 8),
+            Text(
+              '$label: ',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
+            ),
+            Expanded(
+              child: SelectableText(
+                value,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+            if (copyable)
+              IconButton(
+                onPressed: () {
+                  _clipboardManager.copyData(
+                    value,
+                    context: context,
+                    successMessage: '$label copied',
+                  );
+                },
+                icon: const Icon(Icons.copy, size: 16),
+                tooltip: 'Copy $label',
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year} at ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 
   void _copyUsername(PasswordEntry entry) async {
@@ -537,8 +751,9 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     onUserInteraction();
 
     // Require biometric authentication
+    final displayName = entry.title.isNotEmpty ? entry.title : entry.website;
     final authenticated = await _authService.authenticateUser(
-      reason: 'Authenticate to copy password for ${entry.title}',
+      reason: 'Authenticate to copy password for $displayName',
     );
 
     if (!authenticated) {
