@@ -5,18 +5,18 @@ import 'package:super_locker/services/auth_service.dart';
 
 class AutoLockService with WidgetsBindingObserver {
   static const int _defaultTimeoutSeconds = 60;
-  
+
   Timer? _inactivityTimer;
   int _timeoutSeconds = _defaultTimeoutSeconds;
   bool _isLocked = false;
   bool _isEnabled = true;
-  
+
   final AuthService _authService = AuthService();
-  
+
   // Callbacks
   VoidCallback? _onAutoLock;
   VoidCallback? _onUserActivity;
-  
+
   // Singleton pattern
   static final AutoLockService _instance = AutoLockService._internal();
   factory AutoLockService() => _instance;
@@ -31,10 +31,10 @@ class AutoLockService with WidgetsBindingObserver {
     _timeoutSeconds = timeoutSeconds;
     _onAutoLock = onAutoLock;
     _onUserActivity = onUserActivity;
-    
+
     // Add observer for app lifecycle changes
     WidgetsBinding.instance.addObserver(this);
-    
+
     // Start the inactivity timer
     _resetTimer();
   }
@@ -48,12 +48,12 @@ class AutoLockService with WidgetsBindingObserver {
   // Reset the inactivity timer (called on user activity)
   void _resetTimer() {
     if (!_isEnabled || _isLocked) return;
-    
+
     _inactivityTimer?.cancel();
     _inactivityTimer = Timer(Duration(seconds: _timeoutSeconds), () {
       _lockApp();
     });
-    
+
     // Notify about user activity
     _onUserActivity?.call();
   }
@@ -61,13 +61,13 @@ class AutoLockService with WidgetsBindingObserver {
   // Lock the app
   void _lockApp() {
     if (_isLocked) return;
-    
+
     _isLocked = true;
     _inactivityTimer?.cancel();
-    
+
     // Clear authentication state
     _authService.logout();
-    
+
     // Notify about auto-lock
     _onAutoLock?.call();
   }
@@ -112,7 +112,7 @@ class AutoLockService with WidgetsBindingObserver {
   bool get isLocked => _isLocked;
   bool get isEnabled => _isEnabled;
   int get timeoutSeconds => _timeoutSeconds;
-  
+
   // Get remaining time before auto-lock
   int get remainingSeconds {
     if (_inactivityTimer == null || !_inactivityTimer!.isActive) {
@@ -132,18 +132,18 @@ class AutoLockService with WidgetsBindingObserver {
           _resetTimer();
         }
         break;
-        
+
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
         // App went to background
         _inactivityTimer?.cancel();
         break;
-        
+
       case AppLifecycleState.detached:
         // App is being terminated
         _lockApp();
         break;
-        
+
       case AppLifecycleState.hidden:
         // App is hidden (iOS specific)
         _inactivityTimer?.cancel();
@@ -184,12 +184,12 @@ mixin AutoLockMixin<T extends StatefulWidget> on State<T> {
       AutoLockService().onUserActivity();
     });
   }
-  
+
   // Method to be called on any user interaction
   void onUserInteraction() {
     AutoLockService().onUserActivity();
   }
-  
+
   // Wrap build method to track interactions
   @override
   Widget build(BuildContext context) {
@@ -197,7 +197,7 @@ mixin AutoLockMixin<T extends StatefulWidget> on State<T> {
       child: buildWithAutoLock(context),
     );
   }
-  
+
   // Override this instead of build when using the mixin
   Widget buildWithAutoLock(BuildContext context);
 }
@@ -205,28 +205,28 @@ mixin AutoLockMixin<T extends StatefulWidget> on State<T> {
 // Provider for auto-lock settings
 class AutoLockProvider extends ChangeNotifier {
   final AutoLockService _autoLockService = AutoLockService();
-  
+
   bool get isEnabled => _autoLockService.isEnabled;
   bool get isLocked => _autoLockService.isLocked;
   int get timeoutSeconds => _autoLockService.timeoutSeconds;
-  
+
   void setEnabled(bool enabled) {
     _autoLockService.setEnabled(enabled);
     notifyListeners();
   }
-  
+
   void setTimeoutSeconds(int seconds) {
     _autoLockService.setTimeoutSeconds(seconds);
     notifyListeners();
   }
-  
+
   void lockApp() {
     _autoLockService.lockApp();
     notifyListeners();
   }
-  
+
   void unlockApp() {
     _autoLockService.unlockApp();
     notifyListeners();
   }
-} 
+}

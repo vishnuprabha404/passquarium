@@ -43,16 +43,16 @@ class AppProvider extends ChangeNotifier {
   Future<void> initialize() async {
     _initializationStatus = InitializationStatus.loading;
     notifyListeners();
-    
+
     try {
       // Initialize services
       await _authService.initialize();
-      
+
       // Check if user is already authenticated
       if (_authService.isAuthenticated) {
         await _loadPasswords();
       }
-      
+
       _initializationStatus = InitializationStatus.completed;
       notifyListeners();
     } catch (e) {
@@ -141,7 +141,7 @@ class AppProvider extends ChangeNotifier {
 
   // Get encryption service (for password operations)
   EncryptionService get encryptionService => _encryptionService;
-  
+
   // Get current master password (for encryption/decryption)
   String? get masterPassword => _masterPassword;
 
@@ -195,8 +195,10 @@ class PasswordProvider extends ChangeNotifier {
         website: entry.title,
         domain: entry.url,
         username: entry.username,
-        password: entry.encryptedPassword, // This should be the plain password before encryption
-        masterPassword: 'temp_master_password', // In real app, get from auth state
+        password: entry
+            .encryptedPassword, // This should be the plain password before encryption
+        masterPassword:
+            'temp_master_password', // In real app, get from auth state
       );
       if (success) {
         _passwords.add(entry);
@@ -216,8 +218,10 @@ class PasswordProvider extends ChangeNotifier {
         website: entry.title,
         domain: entry.url,
         username: entry.username,
-        password: entry.encryptedPassword, // This should be the plain password before encryption
-        masterPassword: 'temp_master_password', // In real app, get from auth state
+        password: entry
+            .encryptedPassword, // This should be the plain password before encryption
+        masterPassword:
+            'temp_master_password', // In real app, get from auth state
       );
       if (success) {
         final index = _passwords.indexWhere((p) => p.id == entry.id);
@@ -276,8 +280,8 @@ class PasswordProvider extends ChangeNotifier {
           entry.username.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           entry.url.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      bool matchesCategory = _selectedCategory.isEmpty ||
-          entry.category == _selectedCategory;
+      bool matchesCategory =
+          _selectedCategory.isEmpty || entry.category == _selectedCategory;
 
       return matchesSearch && matchesCategory;
     }).toList();
@@ -287,23 +291,26 @@ class PasswordProvider extends ChangeNotifier {
   Future<List<String>> getCategories() async {
     try {
       // return await _firestoreService.getCategories();
-    return []; // Temporarily return empty list for testing
+      return []; // Temporarily return empty list for testing
     } catch (e) {
       return [];
     }
   }
 
   // Decrypt password
-  Future<String?> decryptPassword(PasswordEntry entry, String masterPassword) async {
+  Future<String?> decryptPassword(
+      PasswordEntry entry, String masterPassword) async {
     try {
-      return await _encryptionService.decryptText(entry.encryptedPassword, masterPassword);
+      return await _encryptionService.decryptText(
+          entry.encryptedPassword, masterPassword);
     } catch (e) {
       return null;
     }
   }
 
   // Encrypt password
-  Future<String?> encryptPassword(String password, String masterPassword) async {
+  Future<String?> encryptPassword(
+      String password, String masterPassword) async {
     try {
       return await _encryptionService.encryptText(password, masterPassword);
     } catch (e) {
@@ -315,7 +322,7 @@ class PasswordProvider extends ChangeNotifier {
   Future<Map<String, dynamic>> getStatistics() async {
     try {
       // return await _firestoreService.getStatistics();
-    return {}; // Temporarily return empty map for testing
+      return {}; // Temporarily return empty map for testing
     } catch (e) {
       return {};
     }
@@ -354,7 +361,8 @@ class UIProvider extends ChangeNotifier {
 
   // Toggle specific password visibility
   void togglePasswordVisibilityForEntry(String entryId) {
-    _passwordVisibilityMap[entryId] = !(_passwordVisibilityMap[entryId] ?? false);
+    _passwordVisibilityMap[entryId] =
+        !(_passwordVisibilityMap[entryId] ?? false);
     notifyListeners();
   }
 
@@ -430,4 +438,4 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> saveSettings() async {
     // In a real app, you'd save these to SharedPreferences or secure storage
   }
-} 
+}

@@ -6,7 +6,7 @@ import 'package:super_locker/services/auth_service.dart';
 class FirestoreService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String _collectionName = 'password_entries';
-  
+
   final AuthService _authService = AuthService();
 
   // Get user's device ID for data isolation
@@ -19,9 +19,9 @@ class FirestoreService {
   Future<void> addEntry(PasswordEntry entry) async {
     try {
       final deviceId = await _getDeviceId();
-      
+
       final docRef = _firestore.collection(_collectionName).doc();
-      
+
       final entryData = {
         'id': docRef.id,
         'device_id': deviceId,
@@ -49,7 +49,7 @@ class FirestoreService {
   Future<void> updateEntry(PasswordEntry entry) async {
     try {
       final deviceId = await _getDeviceId();
-      
+
       final entryData = {
         'device_id': deviceId,
         'title': entry.title,
@@ -67,7 +67,7 @@ class FirestoreService {
           .collection(_collectionName)
           .doc(entry.id)
           .update(entryData);
-      
+
       // Entry updated successfully
     } catch (e) {
       throw Exception('Failed to update password entry: $e');
@@ -77,11 +77,8 @@ class FirestoreService {
   // Delete a password entry
   Future<void> deleteEntry(String entryId) async {
     try {
-      await _firestore
-          .collection(_collectionName)
-          .doc(entryId)
-          .delete();
-      
+      await _firestore.collection(_collectionName).doc(entryId).delete();
+
       // Entry deleted successfully
     } catch (e) {
       throw Exception('Failed to delete password entry: $e');
@@ -92,7 +89,7 @@ class FirestoreService {
   Future<List<PasswordEntry>> getAllEntries() async {
     try {
       final deviceId = await _getDeviceId();
-      
+
       final querySnapshot = await _firestore
           .collection(_collectionName)
           .where('device_id', isEqualTo: deviceId)
@@ -113,7 +110,7 @@ class FirestoreService {
     try {
       final deviceId = await _getDeviceId();
       final lowerKeyword = keyword.toLowerCase();
-      
+
       // Firestore doesn't support full-text search, so we'll get all entries
       // and filter them locally for better search functionality
       final querySnapshot = await _firestore
@@ -129,10 +126,10 @@ class FirestoreService {
       // Filter entries based on keyword match
       return allEntries.where((entry) {
         return entry.title.toLowerCase().contains(lowerKeyword) ||
-               entry.username.toLowerCase().contains(lowerKeyword) ||
-               entry.url.toLowerCase().contains(lowerKeyword) ||
-               entry.notes.toLowerCase().contains(lowerKeyword) ||
-               entry.category.toLowerCase().contains(lowerKeyword);
+            entry.username.toLowerCase().contains(lowerKeyword) ||
+            entry.url.toLowerCase().contains(lowerKeyword) ||
+            entry.notes.toLowerCase().contains(lowerKeyword) ||
+            entry.category.toLowerCase().contains(lowerKeyword);
       }).toList();
     } catch (e) {
       throw Exception('Failed to search password entries: $e');
@@ -143,7 +140,7 @@ class FirestoreService {
   Future<List<PasswordEntry>> searchByField(String field, String value) async {
     try {
       final deviceId = await _getDeviceId();
-      
+
       Query query = _firestore
           .collection(_collectionName)
           .where('device_id', isEqualTo: deviceId);
@@ -151,16 +148,19 @@ class FirestoreService {
       // Add field-specific filter
       switch (field.toLowerCase()) {
         case 'title':
-          query = query.where('title', isGreaterThanOrEqualTo: value)
-                      .where('title', isLessThanOrEqualTo: '$value\uf8ff');
+          query = query
+              .where('title', isGreaterThanOrEqualTo: value)
+              .where('title', isLessThanOrEqualTo: '$value\uf8ff');
           break;
         case 'username':
-          query = query.where('username', isGreaterThanOrEqualTo: value)
-                      .where('username', isLessThanOrEqualTo: '$value\uf8ff');
+          query = query
+              .where('username', isGreaterThanOrEqualTo: value)
+              .where('username', isLessThanOrEqualTo: '$value\uf8ff');
           break;
         case 'url':
-          query = query.where('url', isGreaterThanOrEqualTo: value)
-                      .where('url', isLessThanOrEqualTo: '$value\uf8ff');
+          query = query
+              .where('url', isGreaterThanOrEqualTo: value)
+              .where('url', isLessThanOrEqualTo: '$value\uf8ff');
           break;
         case 'category':
           query = query.where('category', isEqualTo: value);
@@ -170,7 +170,7 @@ class FirestoreService {
       }
 
       final querySnapshot = await query.get();
-      
+
       return querySnapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         return PasswordEntry.fromMap(data);
@@ -201,10 +201,8 @@ class FirestoreService {
   // Get entry by ID
   Future<PasswordEntry?> getEntryById(String entryId) async {
     try {
-      final docSnapshot = await _firestore
-          .collection(_collectionName)
-          .doc(entryId)
-          .get();
+      final docSnapshot =
+          await _firestore.collection(_collectionName).doc(entryId).get();
 
       if (docSnapshot.exists) {
         final data = docSnapshot.data()!;
@@ -220,7 +218,7 @@ class FirestoreService {
   Future<List<PasswordEntry>> getEntriesByCategory(String category) async {
     try {
       final deviceId = await _getDeviceId();
-      
+
       final querySnapshot = await _firestore
           .collection(_collectionName)
           .where('device_id', isEqualTo: deviceId)
@@ -241,7 +239,7 @@ class FirestoreService {
   Future<List<String>> getCategories() async {
     try {
       final deviceId = await _getDeviceId();
-      
+
       final querySnapshot = await _firestore
           .collection(_collectionName)
           .where('device_id', isEqualTo: deviceId)
@@ -269,7 +267,7 @@ class FirestoreService {
 
       for (final entry in entries) {
         final docRef = _firestore.collection(_collectionName).doc();
-        
+
         final entryData = {
           'id': docRef.id,
           'device_id': deviceId,
@@ -299,7 +297,7 @@ class FirestoreService {
   Future<void> deleteAllEntries() async {
     try {
       final deviceId = await _getDeviceId();
-      
+
       final querySnapshot = await _firestore
           .collection(_collectionName)
           .where('device_id', isEqualTo: deviceId)
@@ -320,10 +318,10 @@ class FirestoreService {
   Future<void> syncEntries(List<PasswordEntry> localEntries) async {
     try {
       final cloudEntries = await getAllEntries();
-      
+
       // Simple sync strategy: cloud entries take precedence
       // In a production app, you'd implement proper conflict resolution
-      
+
       for (final localEntry in localEntries) {
         final cloudEntry = cloudEntries.firstWhere(
           (e) => e.id == localEntry.id,
@@ -352,7 +350,6 @@ class FirestoreService {
           await updateEntry(localEntry);
         }
       }
-      
     } catch (e) {
       throw Exception('Failed to sync entries: $e');
     }
@@ -363,16 +360,20 @@ class FirestoreService {
     try {
       final entries = await getAllEntries();
       final categories = await getCategories();
-      
+
       final stats = {
         'total_entries': entries.length,
         'total_categories': categories.length,
         'categories': categories,
-        'oldest_entry': entries.isNotEmpty 
-            ? entries.map((e) => e.createdAt).reduce((a, b) => a.isBefore(b) ? a : b)
+        'oldest_entry': entries.isNotEmpty
+            ? entries
+                .map((e) => e.createdAt)
+                .reduce((a, b) => a.isBefore(b) ? a : b)
             : null,
-        'newest_entry': entries.isNotEmpty 
-            ? entries.map((e) => e.createdAt).reduce((a, b) => a.isAfter(b) ? a : b)
+        'newest_entry': entries.isNotEmpty
+            ? entries
+                .map((e) => e.createdAt)
+                .reduce((a, b) => a.isAfter(b) ? a : b)
             : null,
       };
 
@@ -381,4 +382,4 @@ class FirestoreService {
       return {};
     }
   }
-} 
+}

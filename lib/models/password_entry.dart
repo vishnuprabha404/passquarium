@@ -6,7 +6,7 @@ class PasswordEntry {
   final String encryptedPassword;
   final DateTime createdAt;
   final DateTime updatedAt;
-  
+
   // Additional properties that are expected by the code
   final String title;
   final String url;
@@ -38,8 +38,10 @@ class PasswordEntry {
       domain: map['domain'] ?? '',
       username: map['username'] ?? '',
       encryptedPassword: map['encrypted_password'] ?? '',
-      createdAt: DateTime.parse(map['created_at'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(map['updated_at'] ?? DateTime.now().toIso8601String()),
+      createdAt:
+          DateTime.parse(map['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt:
+          DateTime.parse(map['updated_at'] ?? DateTime.now().toIso8601String()),
       title: map['title'] ?? '',
       url: map['url'] ?? '',
       notes: map['notes'] ?? '',
@@ -112,4 +114,4 @@ class PasswordEntry {
 
   @override
   int get hashCode => id.hashCode;
-} 
+}

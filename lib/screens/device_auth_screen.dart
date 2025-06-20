@@ -23,16 +23,16 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
 
   Future<void> _authenticate() async {
     if (_isAuthenticating) return;
-    
+
     setState(() {
       _isAuthenticating = true;
     });
 
     final authService = Provider.of<AuthService>(context, listen: false);
-    
+
     try {
       final success = await authService.authenticateWithDevice();
-      
+
       if (success && mounted) {
         // Navigate based on the updated auth status - NEW FLOW: Device → Email → Home
         switch (authService.authStatus) {
@@ -164,12 +164,10 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
                         ),
                 ),
               ),
-
-
             ],
           ),
         ),
       ),
     );
   }
-} 
+}

@@ -13,7 +13,7 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -56,13 +56,14 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
         success = await authService.setMasterPassword(_passwordController.text);
       } else {
         // Verify existing master password
-        success = await authService.verifyMasterPassword(_passwordController.text);
+        success =
+            await authService.verifyMasterPassword(_passwordController.text);
       }
 
       if (success && mounted) {
         Navigator.of(context).pushReplacementNamed('/home');
       } else if (mounted) {
-        _showErrorDialog(_isFirstTimeSetup 
+        _showErrorDialog(_isFirstTimeSetup
             ? 'Failed to set master password. Please try again.'
             : 'Incorrect master password. Please try again.');
       }
@@ -149,7 +150,9 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
 
                 // Title
                 Text(
-                  _isFirstTimeSetup ? 'Create Master Password' : 'Enter Master Password',
+                  _isFirstTimeSetup
+                      ? 'Create Master Password'
+                      : 'Enter Master Password',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -177,7 +180,7 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                           const SizedBox(height: 8),
                         ],
                         Text(
-                          _isFirstTimeSetup 
+                          _isFirstTimeSetup
                               ? 'Create a strong master password to secure your vault. This password will encrypt all your data.'
                               : 'Enter your master password to unlock your vault.',
                           style: const TextStyle(
@@ -203,7 +206,9 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                        _isPasswordVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                       ),
                       onPressed: () {
                         setState(() {
@@ -230,11 +235,14 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                          _isConfirmPasswordVisible
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
-                            _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                            _isConfirmPasswordVisible =
+                                !_isConfirmPasswordVisible;
                           });
                         },
                       ),
@@ -289,7 +297,9 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Text(
-                            _isFirstTimeSetup ? 'Create Password' : 'Unlock Vault',
+                            _isFirstTimeSetup
+                                ? 'Create Password'
+                                : 'Unlock Vault',
                             style: const TextStyle(fontSize: 16),
                           ),
                   ),
@@ -303,4 +313,4 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
       ),
     );
   }
-} 
+}

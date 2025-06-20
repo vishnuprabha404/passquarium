@@ -21,7 +21,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
   final TextEditingController _searchController = TextEditingController();
   final AuthService _authService = AuthService();
   final ClipboardManager _clipboardManager = ClipboardManager();
-  
+
   List<PasswordEntry> _searchResults = [];
   bool _isSearching = false;
   String _selectedCategory = '';
@@ -41,7 +41,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
   }
 
   void _loadCategories() async {
-    final passwordService = Provider.of<PasswordService>(context, listen: false);
+    final passwordService =
+        Provider.of<PasswordService>(context, listen: false);
     _categories = await passwordService.getCategories();
     if (mounted) setState(() {});
   }
@@ -64,15 +65,17 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     setState(() => _isSearching = true);
 
     try {
-      final passwordService = Provider.of<PasswordService>(context, listen: false);
+      final passwordService =
+          Provider.of<PasswordService>(context, listen: false);
       await passwordService.loadPasswords();
-      
+
       _searchResults = passwordService.searchPasswords(query);
-      
+
       // TODO: Add category filtering if needed
       if (_selectedCategory.isNotEmpty) {
-        _searchResults = _searchResults.where((entry) => 
-          entry.category == _selectedCategory).toList();
+        _searchResults = _searchResults
+            .where((entry) => entry.category == _selectedCategory)
+            .toList();
       }
     } catch (e) {
       setState(() {
@@ -176,9 +179,9 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                         child: Text('All categories'),
                       ),
                       ..._categories.map((category) => DropdownMenuItem<String>(
-                        value: category,
-                        child: Text(category),
-                      )),
+                            value: category,
+                            child: Text(category),
+                          )),
                     ],
                     onChanged: _onCategorySelected,
                   ),
@@ -300,7 +303,10 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -391,7 +397,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
 
   void _viewPassword(PasswordEntry entry) async {
     onUserInteraction();
-    
+
     // Require biometric authentication
     final authenticated = await _authService.authenticateUser(
       reason: 'Authenticate to view password for ${entry.title}',
@@ -405,7 +411,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     // Get master password and decrypt
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final masterPassword = appProvider.masterPassword;
-    
+
     if (masterPassword == null) {
       _showMessage('Master password not available', isError: true);
       return;
@@ -414,7 +420,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     try {
       final decryptedPassword = await appProvider.encryptionService
           .decryptText(entry.encryptedPassword, masterPassword);
-      
+
       if (decryptedPassword != null) {
         _showPasswordDialog(entry, decryptedPassword);
       } else {
@@ -501,7 +507,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
 
   void _copyPassword(PasswordEntry entry) async {
     onUserInteraction();
-    
+
     // Require biometric authentication
     final authenticated = await _authService.authenticateUser(
       reason: 'Authenticate to copy password for ${entry.title}',
@@ -515,7 +521,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     // Decrypt and copy password
     final appProvider = Provider.of<AppProvider>(context, listen: false);
     final masterPassword = appProvider.masterPassword;
-    
+
     if (masterPassword == null) {
       _showMessage('Master password not available', isError: true);
       return;
@@ -524,7 +530,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     try {
       final decryptedPassword = await appProvider.encryptionService
           .decryptText(entry.encryptedPassword, masterPassword);
-      
+
       if (decryptedPassword != null) {
         await _clipboardManager.copySecureData(
           decryptedPassword,
@@ -557,4 +563,4 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
       ),
     );
   }
-} 
+}

@@ -42,7 +42,7 @@ class PasswordService extends ChangeNotifier {
       //           ...doc.data(),
       //         }))
       //     .toList();
-      
+
       // Temporarily start with empty list for testing
       _passwords = [];
 
@@ -67,8 +67,9 @@ class PasswordService extends ChangeNotifier {
 
     try {
       // Encrypt the password
-      final encryptedPassword = await _encryptionService.encryptPassword(password, masterPassword);
-      
+      final encryptedPassword =
+          await _encryptionService.encryptPassword(password, masterPassword);
+
       // Create password entry
       final entry = PasswordEntry(
         id: _uuid.v4(),
@@ -115,10 +116,11 @@ class PasswordService extends ChangeNotifier {
 
     try {
       final existingEntry = _passwords.firstWhere((p) => p.id == id);
-      
+
       // Encrypt the new password
-      final encryptedPassword = await _encryptionService.encryptPassword(password, masterPassword);
-      
+      final encryptedPassword =
+          await _encryptionService.encryptPassword(password, masterPassword);
+
       // Create updated entry
       final updatedEntry = existingEntry.copyWith(
         website: website.trim(),
@@ -180,9 +182,11 @@ class PasswordService extends ChangeNotifier {
   }
 
   /// Decrypt a password
-  Future<String> decryptPassword(PasswordEntry entry, String masterPassword) async {
+  Future<String> decryptPassword(
+      PasswordEntry entry, String masterPassword) async {
     try {
-      return await _encryptionService.decryptPassword(entry.encryptedPassword, masterPassword);
+      return await _encryptionService.decryptPassword(
+          entry.encryptedPassword, masterPassword);
     } catch (e) {
       throw Exception('Failed to decrypt password: $e');
     }
@@ -190,13 +194,15 @@ class PasswordService extends ChangeNotifier {
 
   /// Search passwords by query
   List<PasswordEntry> searchPasswords(String query) {
-    if (query.isEmpty) return _passwords;
+    if (query.isEmpty) {
+      return _passwords;
+    }
 
     final lowerQuery = query.toLowerCase();
     return _passwords.where((entry) {
       return entry.website.toLowerCase().contains(lowerQuery) ||
-             entry.domain.toLowerCase().contains(lowerQuery) ||
-             entry.username.toLowerCase().contains(lowerQuery);
+          entry.domain.toLowerCase().contains(lowerQuery) ||
+          entry.username.toLowerCase().contains(lowerQuery);
     }).toList();
   }
 
@@ -205,7 +211,7 @@ class PasswordService extends ChangeNotifier {
     final lowerDomain = domain.toLowerCase();
     return _passwords.where((entry) {
       return entry.domain.toLowerCase() == lowerDomain ||
-             entry.website.toLowerCase().contains(lowerDomain);
+          entry.website.toLowerCase().contains(lowerDomain);
     }).toList();
   }
 
@@ -237,13 +243,13 @@ class PasswordService extends ChangeNotifier {
     try {
       // Remove protocol
       String cleanUrl = url.toLowerCase().replaceAll(RegExp(r'^https?://'), '');
-      
+
       // Remove www.
       cleanUrl = cleanUrl.replaceAll(RegExp(r'^www\.'), '');
-      
+
       // Remove path and query parameters
       cleanUrl = cleanUrl.split('/').first.split('?').first;
-      
+
       return cleanUrl;
     } catch (e) {
       return url.toLowerCase();
@@ -253,13 +259,24 @@ class PasswordService extends ChangeNotifier {
   /// Get password strength score (0-4)
   int getPasswordStrength(String password) {
     int score = 0;
-    
-    if (password.length >= 8) score++;
-    if (password.length >= 12) score++;
-    if (RegExp(r'[a-z]').hasMatch(password) && RegExp(r'[A-Z]').hasMatch(password)) score++;
-    if (RegExp(r'\d').hasMatch(password)) score++;
-    if (RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password)) score++;
-    
+
+    if (password.length >= 8) {
+      score++;
+    }
+    if (password.length >= 12) {
+      score++;
+    }
+    if (RegExp(r'[a-z]').hasMatch(password) &&
+        RegExp(r'[A-Z]').hasMatch(password)) {
+      score++;
+    }
+    if (RegExp(r'\d').hasMatch(password)) {
+      score++;
+    }
+    if (RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password)) {
+      score++;
+    }
+
     return score > 4 ? 4 : score;
   }
 
@@ -281,7 +298,8 @@ class PasswordService extends ChangeNotifier {
   }
 
   /// Import passwords from CSV or JSON
-  Future<bool> importPasswords(List<Map<String, String>> passwordData, String masterPassword) async {
+  Future<bool> importPasswords(
+      List<Map<String, String>> passwordData, String masterPassword) async {
     _setLoading(true);
     _clearError();
 
@@ -290,7 +308,7 @@ class PasswordService extends ChangeNotifier {
         final website = data['website'] ?? '';
         final username = data['username'] ?? '';
         final password = data['password'] ?? '';
-        
+
         if (website.isNotEmpty && username.isNotEmpty && password.isNotEmpty) {
           await addPassword(
             website: website,
@@ -301,7 +319,7 @@ class PasswordService extends ChangeNotifier {
           );
         }
       }
-      
+
       return true;
     } catch (e) {
       _setError('Failed to import passwords: $e');
@@ -343,7 +361,9 @@ class PasswordService extends ChangeNotifier {
   /// Private helper methods
   void _setLoading(bool loading) {
     _isLoading = loading;
-    if (loading) _error = null;
+    if (loading) {
+      _error = null;
+    }
     notifyListeners();
   }
 
@@ -357,4 +377,4 @@ class PasswordService extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
-} 
+}

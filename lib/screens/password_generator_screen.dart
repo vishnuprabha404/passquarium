@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:super_locker/services/encryption_service.dart';
 import 'package:super_locker/services/clipboard_manager.dart';
 import 'package:super_locker/widgets/password_strength_indicator.dart';
@@ -9,13 +8,14 @@ class PasswordGeneratorScreen extends StatefulWidget {
   const PasswordGeneratorScreen({super.key});
 
   @override
-  State<PasswordGeneratorScreen> createState() => _PasswordGeneratorScreenState();
+  State<PasswordGeneratorScreen> createState() =>
+      _PasswordGeneratorScreenState();
 }
 
 class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
   final EncryptionService _encryptionService = EncryptionService();
   final ClipboardManager _clipboardManager = ClipboardManager();
-  
+
   // Password generation settings
   int _length = 16;
   bool _includeUppercase = true;
@@ -25,14 +25,14 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
   bool _excludeAmbiguous = false;
   bool _mustStartWithLetter = false;
   bool _noRepeatingChars = false;
-  
+
   // Generated password
   String _generatedPassword = '';
   int _passwordStrength = 0;
-  
+
   // Password policy compliance
   Map<String, bool> _policyCompliance = {};
-  
+
   @override
   void initState() {
     super.initState();
@@ -49,21 +49,22 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
           includeNumbers: _includeNumbers,
           includeSymbols: _includeSymbols,
         );
-        
+
         // Apply additional constraints if needed
         if (_excludeAmbiguous) {
           _generatedPassword = _removeAmbiguousChars(_generatedPassword);
         }
-        
+
         if (_mustStartWithLetter) {
           _generatedPassword = _ensureStartsWithLetter(_generatedPassword);
         }
-        
+
         if (_noRepeatingChars) {
           _generatedPassword = _removeRepeatingChars(_generatedPassword);
         }
-        
-        _passwordStrength = _encryptionService.calculatePasswordStrength(_generatedPassword);
+
+        _passwordStrength =
+            _encryptionService.calculatePasswordStrength(_generatedPassword);
         _policyCompliance = _checkPolicyCompliance(_generatedPassword);
       });
     } catch (e) {
@@ -80,7 +81,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
     // Remove visually similar characters: 0, O, l, I, 1
     const ambiguous = ['0', 'O', 'l', 'I', '1'];
     const replacements = ['2', 'P', 'k', 'J', '3'];
-    
+
     String result = password;
     for (int i = 0; i < ambiguous.length; i++) {
       result = result.replaceAll(ambiguous[i], replacements[i]);
@@ -90,12 +91,12 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
 
   String _ensureStartsWithLetter(String password) {
     if (password.isEmpty) return password;
-    
+
     final firstChar = password[0];
     if (RegExp(r'[A-Za-z]').hasMatch(firstChar)) {
       return password;
     }
-    
+
     // Replace first character with a letter
     const letters = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
     final random = DateTime.now().millisecondsSinceEpoch % letters.length;
@@ -104,20 +105,20 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
 
   String _removeRepeatingChars(String password) {
     if (password.length <= 1) return password;
-    
+
     String result = password[0];
     for (int i = 1; i < password.length; i++) {
       if (password[i] != password[i - 1]) {
         result += password[i];
       }
     }
-    
+
     // If result is too short, regenerate
     if (result.length < _length * 0.8) {
       _generatePassword();
       return _generatedPassword;
     }
-    
+
     return result;
   }
 
@@ -127,10 +128,11 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
       'hasUppercase': RegExp(r'[A-Z]').hasMatch(password),
       'hasLowercase': RegExp(r'[a-z]').hasMatch(password),
       'hasNumbers': RegExp(r'[0-9]').hasMatch(password),
-      'hasSymbols': RegExp(r'[!@#\$%^&*()_+\-=\[\]{}|;:,.<>?]').hasMatch(password),
-      'noCommonPatterns': !password.toLowerCase().contains('password') && 
-                         !password.contains('123') && 
-                         !password.contains('abc'),
+      'hasSymbols':
+          RegExp(r'[!@#\$%^&*()_+\-=\[\]{}|;:,.<>?]').hasMatch(password),
+      'noCommonPatterns': !password.toLowerCase().contains('password') &&
+          !password.contains('123') &&
+          !password.contains('abc'),
       'goodLength': password.length >= 12,
       'strongLength': password.length >= 16,
     };
@@ -143,7 +145,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
       successMessage: 'Password copied securely! Will clear in 30 seconds.',
       clearAfterSeconds: 30,
     );
-    
+
     if (success) {
       // Generate a new password after copying for security
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -202,7 +204,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Password Display
                       Container(
                         width: double.infinity,
@@ -222,14 +224,14 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Password Strength
                       PasswordStrengthIndicator(password: _generatedPassword),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Action Buttons
                       Row(
                         children: [
@@ -241,7 +243,8 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                               ),
                             ),
                           ),
@@ -251,7 +254,8 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                             icon: const Icon(Icons.refresh),
                             label: const Text('New'),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 12, horizontal: 16),
                             ),
                           ),
                         ],
@@ -260,9 +264,9 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Password Settings
               Card(
                 elevation: 2,
@@ -285,7 +289,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Length Setting
                       Text('Length: $_length characters'),
                       const SizedBox(height: 8),
@@ -301,9 +305,9 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                           _generatePassword();
                         },
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Character Type Settings
                       SwitchListTile(
                         title: const Text('Uppercase Letters (A-Z)'),
@@ -349,9 +353,9 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                           _generatePassword();
                         },
                       ),
-                      
+
                       const Divider(),
-                      
+
                       // Advanced Settings
                       const Text(
                         'Advanced Options',
@@ -361,10 +365,11 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      
+
                       SwitchListTile(
                         title: const Text('Exclude Ambiguous Characters'),
-                        subtitle: const Text('Remove 0, O, l, I, 1 to avoid confusion'),
+                        subtitle: const Text(
+                            'Remove 0, O, l, I, 1 to avoid confusion'),
                         value: _excludeAmbiguous,
                         onChanged: (value) {
                           setState(() {
@@ -375,7 +380,8 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                       ),
                       SwitchListTile(
                         title: const Text('Start with Letter'),
-                        subtitle: const Text('First character must be a letter'),
+                        subtitle:
+                            const Text('First character must be a letter'),
                         value: _mustStartWithLetter,
                         onChanged: (value) {
                           setState(() {
@@ -386,7 +392,8 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                       ),
                       SwitchListTile(
                         title: const Text('No Repeating Characters'),
-                        subtitle: const Text('Avoid consecutive identical characters'),
+                        subtitle: const Text(
+                            'Avoid consecutive identical characters'),
                         value: _noRepeatingChars,
                         onChanged: (value) {
                           setState(() {
@@ -399,9 +406,9 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Password Policy Compliance
               Card(
                 elevation: 2,
@@ -424,12 +431,12 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Policy Checks
                       ..._policyCompliance.entries.map((entry) {
                         String title = '';
                         String subtitle = '';
-                        
+
                         switch (entry.key) {
                           case 'minLength':
                             title = 'Minimum Length (8 chars)';
@@ -464,7 +471,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                             subtitle = 'Excellent length for maximum security';
                             break;
                         }
-                        
+
                         return ListTile(
                           leading: Icon(
                             _getPolicyIcon(entry.value),
@@ -479,9 +486,9 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Security Information
               Container(
                 padding: const EdgeInsets.all(16),
@@ -523,4 +530,4 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
       ),
     );
   }
-} 
+}

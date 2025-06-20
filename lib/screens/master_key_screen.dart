@@ -12,7 +12,7 @@ class MasterKeyScreen extends StatefulWidget {
 class _MasterKeyScreenState extends State<MasterKeyScreen> {
   final _formKey = GlobalKey<FormState>();
   final _masterKeyController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isMasterKeyVisible = false;
 
@@ -32,8 +32,9 @@ class _MasterKeyScreenState extends State<MasterKeyScreen> {
     final authService = Provider.of<AuthService>(context, listen: false);
 
     try {
-      final success = await authService.verifyMasterKey(_masterKeyController.text);
-      
+      final success =
+          await authService.verifyMasterKey(_masterKeyController.text);
+
       if (success && mounted) {
         Navigator.of(context).pushReplacementNamed('/home');
       }
@@ -83,7 +84,7 @@ class _MasterKeyScreenState extends State<MasterKeyScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
-    
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -103,50 +104,50 @@ class _MasterKeyScreenState extends State<MasterKeyScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Spacer(),
-                
+
                 // Logo/Icon
                 Icon(
                   Icons.lock,
                   size: 80,
                   color: Theme.of(context).primaryColor,
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Title
                 Text(
                   'Welcome Back',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 // User email
                 Text(
                   authService.firebaseUser?.email ?? '',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                        color: Colors.grey[600],
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Description
                 Text(
                   'Enter your Master Key to access your secure password vault',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[700],
-                  ),
+                        color: Colors.grey[700],
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Master Key Form
                 Form(
                   key: _formKey,
@@ -160,7 +161,9 @@ class _MasterKeyScreenState extends State<MasterKeyScreen> {
                           prefixIcon: const Icon(Icons.key),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _isMasterKeyVisible ? Icons.visibility_off : Icons.visibility,
+                              _isMasterKeyVisible
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                             ),
                             onPressed: () {
                               setState(() {
@@ -183,9 +186,9 @@ class _MasterKeyScreenState extends State<MasterKeyScreen> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Unlock Button
                 SizedBox(
                   width: double.infinity,
@@ -209,18 +212,18 @@ class _MasterKeyScreenState extends State<MasterKeyScreen> {
                           ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Sign Out Option
                 TextButton.icon(
                   onPressed: _signOut,
                   icon: const Icon(Icons.logout, size: 16),
                   label: const Text('Sign Out'),
                 ),
-                
+
                 const Spacer(),
-                
+
                 // Security Note
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -255,4 +258,4 @@ class _MasterKeyScreenState extends State<MasterKeyScreen> {
       ),
     );
   }
-} 
+}

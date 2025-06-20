@@ -10,12 +10,13 @@ class EmailAuthScreen extends StatefulWidget {
   State<EmailAuthScreen> createState() => _EmailAuthScreenState();
 }
 
-class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderStateMixin {
+class _EmailAuthScreenState extends State<EmailAuthScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _masterKeyController = TextEditingController();
   final _confirmMasterKeyController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isMasterKeyVisible = false;
   bool _isConfirmMasterKeyVisible = false;
@@ -23,7 +24,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
   bool _showEmailVerificationMessage = false;
   bool _showMasterKeyStrength = false;
   bool _emailVerificationSent = false;
-  
+
   // Animation controllers
   late AnimationController _slideController;
   late AnimationController _fadeController;
@@ -47,9 +48,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
     );
-    
+
     _fadeController.forward();
-    
+
     // Check if user needs email verification
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkEmailVerificationStatus();
@@ -100,7 +101,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
             _emailVerificationSent = true;
           });
           _slideController.forward();
-          
+
           // Auto-check verification status every 3 seconds
           _startVerificationChecker();
         } else {
@@ -118,7 +119,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
             _emailVerificationSent = false; // They need to resend or check
           });
           _slideController.forward();
-          
+
           // Auto-check verification status
           _startVerificationChecker();
         } else {
@@ -140,7 +141,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
       if (mounted) {
         final authService = Provider.of<AuthService>(context, listen: false);
         await authService.reloadUser();
-        
+
         if (authService.isEmailVerified && mounted) {
           if (_isSignUpMode) {
             // For sign-up: redirect to login screen after verification
@@ -154,7 +155,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                   _isSignUpMode = false; // Switch to login mode
                   _showEmailVerificationMessage = false;
                   _emailVerificationSent = false;
-                  _masterKeyController.clear(); // Clear password field for security
+                  _masterKeyController
+                      .clear(); // Clear password field for security
                 });
                 _slideController.reverse(); // Hide verification UI
               },
@@ -164,7 +166,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
             _showSuccessDialog(
               'Email Verified!',
               'Your email has been verified successfully. You can now use all features.',
-              onClose: () => Navigator.of(context).pushReplacementNamed('/home'),
+              onClose: () =>
+                  Navigator.of(context).pushReplacementNamed('/home'),
             );
           }
         } else if (mounted) {
@@ -183,7 +186,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.reloadUser();
-      
+
       if (authService.isEmailVerified && mounted) {
         if (_isSignUpMode) {
           // For sign-up: redirect to login screen after verification
@@ -197,7 +200,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                 _isSignUpMode = false; // Switch to login mode
                 _showEmailVerificationMessage = false;
                 _emailVerificationSent = false;
-                _masterKeyController.clear(); // Clear password field for security
+                _masterKeyController
+                    .clear(); // Clear password field for security
               });
               _slideController.reverse(); // Hide verification UI
             },
@@ -231,7 +235,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
 
   Future<void> _forgotPassword() async {
     if (_emailController.text.trim().isEmpty) {
-      _showErrorDialog('Email Required', 'Please enter your email address first');
+      _showErrorDialog(
+          'Email Required', 'Please enter your email address first');
       return;
     }
 
@@ -280,15 +285,17 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
           ElevatedButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              
+
               setState(() {
                 _isLoading = true;
               });
 
               try {
-                final authService = Provider.of<AuthService>(context, listen: false);
-                await authService.sendPasswordResetEmail(_emailController.text.trim());
-                
+                final authService =
+                    Provider.of<AuthService>(context, listen: false);
+                await authService
+                    .sendPasswordResetEmail(_emailController.text.trim());
+
                 if (mounted) {
                   _showSuccessDialog(
                     'Reset Email Sent',
@@ -328,7 +335,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
           'Verification Email Sent',
           'Please check your email for verification instructions. Don\'t forget to check your spam folder.',
         );
-        
+
         // Restart the verification checker
         _startVerificationChecker();
       }
@@ -367,7 +374,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
     );
   }
 
-  void _showSuccessDialog(String title, String message, {VoidCallback? onClose}) {
+  void _showSuccessDialog(String title, String message,
+      {VoidCallback? onClose}) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -415,7 +423,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
       bool hasUppercase = value.contains(RegExp(r'[A-Z]'));
       bool hasLowercase = value.contains(RegExp(r'[a-z]'));
       bool hasDigits = value.contains(RegExp(r'[0-9]'));
-      
+
       if (!hasUppercase || !hasLowercase || !hasDigits) {
         return 'Master Key must contain uppercase, lowercase, and numbers';
       }
@@ -479,7 +487,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
 
                 // Description
                 Text(
-                  _isSignUpMode 
+                  _isSignUpMode
                       ? 'Create your Super Locker account. Your Master Key will be used to encrypt your vault and sync across devices.'
                       : 'Sign in to your Super Locker account. Your Master Key encrypts and protects your vault.',
                   style: const TextStyle(
@@ -515,11 +523,12 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.mark_email_unread, color: Colors.orange),
+                                  Icon(Icons.mark_email_unread,
+                                      color: Colors.orange),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
-                                      _emailVerificationSent 
+                                      _emailVerificationSent
                                           ? 'Verification email sent!'
                                           : 'Please verify your email address',
                                       style: TextStyle(
@@ -545,7 +554,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                                 children: [
                                   Expanded(
                                     child: TextButton.icon(
-                                      onPressed: _isLoading ? null : _resendVerificationEmail,
+                                      onPressed: _isLoading
+                                          ? null
+                                          : _resendVerificationEmail,
                                       icon: Icon(Icons.refresh, size: 16),
                                       label: const Text('Resend Email'),
                                     ),
@@ -553,8 +564,11 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: TextButton.icon(
-                                      onPressed: _isLoading ? null : _checkVerificationManually,
-                                      icon: Icon(Icons.check_circle_outline, size: 16),
+                                      onPressed: _isLoading
+                                          ? null
+                                          : _checkVerificationManually,
+                                      icon: Icon(Icons.check_circle_outline,
+                                          size: 16),
                                       label: const Text('Check Status'),
                                     ),
                                   ),
@@ -570,7 +584,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(Icons.info_outline, color: Colors.blue, size: 16),
+                                      Icon(Icons.info_outline,
+                                          color: Colors.blue, size: 16),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
@@ -613,8 +628,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                 // Password Field
                 TextFormField(
                   controller: _masterKeyController,
-                                      obscureText: !_isMasterKeyVisible,
-                                      validator: _validateMasterKey,
+                  obscureText: !_isMasterKeyVisible,
+                  validator: _validateMasterKey,
                   onChanged: (value) {
                     if (_isSignUpMode) {
                       setState(() {
@@ -627,7 +642,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isMasterKeyVisible ? Icons.visibility_off : Icons.visibility,
+                        _isMasterKeyVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                       ),
                       onPressed: () {
                         setState(() {
@@ -638,8 +655,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    helperText: _isSignUpMode 
-                        ? 'This Master Key will encrypt your vault' 
+                    helperText: _isSignUpMode
+                        ? 'This Master Key will encrypt your vault'
                         : null,
                   ),
                 ),
@@ -666,15 +683,18 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                     obscureText: !_isConfirmMasterKeyVisible,
                     validator: _validateConfirmMasterKey,
                     decoration: InputDecoration(
-                                              labelText: 'Confirm Master Key',
+                      labelText: 'Confirm Master Key',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _isConfirmMasterKeyVisible ? Icons.visibility_off : Icons.visibility,
+                          _isConfirmMasterKeyVisible
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
-                            _isConfirmMasterKeyVisible = !_isConfirmMasterKeyVisible;
+                            _isConfirmMasterKeyVisible =
+                                !_isConfirmMasterKeyVisible;
                           });
                         },
                       ),
@@ -732,7 +752,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      _isSignUpMode ? 'Already have an account?' : "Don't have an account?",
+                      _isSignUpMode
+                          ? 'Already have an account?'
+                          : "Don't have an account?",
                       style: const TextStyle(color: Colors.grey),
                     ),
                     TextButton(
@@ -796,8 +818,10 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
                       Wrap(
                         spacing: 8,
                         children: [
-                          _buildSecurityChip('End-to-End Encrypted', Icons.lock),
-                          _buildSecurityChip('Zero-Knowledge', Icons.visibility_off),
+                          _buildSecurityChip(
+                              'End-to-End Encrypted', Icons.lock),
+                          _buildSecurityChip(
+                              'Zero-Knowledge', Icons.visibility_off),
                           _buildSecurityChip('Open Source', Icons.code),
                         ],
                       ),
@@ -917,4 +941,4 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> with TickerProviderSt
       ),
     );
   }
-} 
+}

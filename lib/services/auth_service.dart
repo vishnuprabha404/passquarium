@@ -11,10 +11,10 @@ import 'package:super_locker/services/encryption_service.dart';
 
 enum AuthStatus {
   unauthenticated,
-  deviceAuthRequired,    // Device auth comes first (only after logout)
-  emailRequired,         // Email auth (master key becomes master password)
-  masterKeyRequired,     // Require master key verification before dashboard access
-  authenticated,         // Fully authenticated - ready for home
+  deviceAuthRequired, // Device auth comes first (only after logout)
+  emailRequired, // Email auth (master key becomes master password)
+  masterKeyRequired, // Require master key verification before dashboard access
+  authenticated, // Fully authenticated - ready for home
 }
 
 class AuthService extends ChangeNotifier {
@@ -28,7 +28,7 @@ class AuthService extends ChangeNotifier {
   final EncryptionService _encryptionService = EncryptionService();
 
   AuthStatus _authStatus = AuthStatus.unauthenticated;
-  String? _masterPassword;  // This will be the email master key
+  String? _masterPassword; // This will be the email master key
   String? _userEmail;
   User? _firebaseUser;
   bool _isDeviceAuthSupported = false;
@@ -57,7 +57,7 @@ class AuthService extends ChangeNotifier {
           return true;
         }
       }
-      
+
       // Check if device has any security (PIN, pattern, password, etc.)
       final isDeviceSupported = await _localAuth.isDeviceSupported();
       return isDeviceSupported;
@@ -73,22 +73,23 @@ class AuthService extends ChangeNotifier {
       // Check if device has any authentication configured
       final hasDeviceAuth = await _hasDeviceAuthentication();
       _isDeviceAuthSupported = await _localAuth.canCheckBiometrics;
-      
+
       if (_isDeviceAuthSupported) {
         _availableBiometrics = await _localAuth.getAvailableBiometrics();
       }
-      
+
       // Add delay to prevent Firebase threading issues
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       // Check Firebase user with proper error handling
       try {
         _firebaseUser = _firebaseAuth.currentUser;
-        
+
         // If user is signed in but email not verified, keep them on email screen
         if (_firebaseUser != null && !_firebaseUser!.emailVerified) {
           // Load stored email for display
-          final storedEmail = await _secureStorage.read(key: 'user_email_${_firebaseUser!.uid}');
+          final storedEmail = await _secureStorage.read(
+              key: 'user_email_${_firebaseUser!.uid}');
           if (storedEmail != null) {
             _userEmail = storedEmail;
           }
@@ -99,25 +100,27 @@ class AuthService extends ChangeNotifier {
       } catch (e) {
         _firebaseUser = null;
       }
-      
+
       // DEVELOPMENT SKIP: If device has no authentication configured, skip device auth
       // TODO: Remove this for production - device authentication should be mandatory
       if (!hasDeviceAuth) {
-        print('DEBUG: Device has no authentication configured - skipping device auth (DEVELOPMENT ONLY)');
+        print(
+            'DEBUG: Device has no authentication configured - skipping device auth (DEVELOPMENT ONLY)');
         _deviceAuthCompleted = true;
         _authStatus = AuthStatus.emailRequired;
         notifyListeners();
         return;
       }
-      
+
       // RESTORED FLOW: Always show device auth first if supported and device has authentication
       if (_isDeviceAuthSupported && !_deviceAuthCompleted) {
-        print('DEBUG: Device authentication required - showing device auth screen');
+        print(
+            'DEBUG: Device authentication required - showing device auth screen');
         _authStatus = AuthStatus.deviceAuthRequired;
         notifyListeners();
         return;
       }
-      
+
       // If Firebase user exists, go to email auth (which includes master key), otherwise email auth
       if (_firebaseUser != null) {
         _authStatus = AuthStatus.emailRequired;
@@ -125,10 +128,11 @@ class AuthService extends ChangeNotifier {
         _authStatus = AuthStatus.emailRequired;
       }
       notifyListeners();
-      
     } catch (e) {
       print('DEBUG: Error during auth initialization: $e');
-      _authStatus = _isDeviceAuthSupported ? AuthStatus.deviceAuthRequired : AuthStatus.emailRequired;
+      _authStatus = _isDeviceAuthSupported
+          ? AuthStatus.deviceAuthRequired
+          : AuthStatus.emailRequired;
       notifyListeners();
     }
   }
@@ -158,7 +162,7 @@ class AuthService extends ChangeNotifier {
         notifyListeners();
         return true;
       }
-      
+
       return false;
     } on PlatformException catch (e) {
       return false;
@@ -170,49 +174,51 @@ class AuthService extends ChangeNotifier {
     try {
       // Windows Firebase Auth fix: Add longer delay and retry mechanism
       await Future.delayed(const Duration(milliseconds: 300));
-      
-      UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw Exception('Registration timeout. Please check your internet connection and try again.'),
-      );
-      
+
+      UserCredential userCredential = await _firebaseAuth
+          .createUserWithEmailAndPassword(
+            email: email,
+            password: password,
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw Exception(
+                'Registration timeout. Please check your internet connection and try again.'),
+          );
+
       _firebaseUser = userCredential.user;
-      
+
       if (_firebaseUser != null) {
         // Send email verification immediately
         try {
           await _firebaseUser!.sendEmailVerification();
         } catch (e) {
           // If verification email fails, still continue but throw a specific error
-          throw Exception('Account created but verification email failed to send. Please try to resend verification email.');
+          throw Exception(
+              'Account created but verification email failed to send. Please try to resend verification email.');
         }
-        
+
         _userEmail = email;
         _masterPassword = password;
-        
+
         // Store the email master key as master password hash
         final hashedPassword = _encryptionService.hashMasterPassword(password);
         await _secureStorage.write(
-          key: 'master_password_hash_${_firebaseUser!.uid}', 
-          value: hashedPassword
-        );
-        
+            key: 'master_password_hash_${_firebaseUser!.uid}',
+            value: hashedPassword);
+
         // Store user email for future reference
         await _secureStorage.write(
-          key: 'user_email_${_firebaseUser!.uid}',
-          value: email
-        );
-        
+            key: 'user_email_${_firebaseUser!.uid}', value: email);
+
         // DO NOT set authenticated status - require email verification first
         // User must verify email before they can access the app
-        _authStatus = AuthStatus.emailRequired; // Keep them on email screen for verification
+        _authStatus = AuthStatus
+            .emailRequired; // Keep them on email screen for verification
         notifyListeners();
         return true;
       }
-      
+
       return false;
     } on FirebaseAuthException catch (e) {
       throw Exception(_getFirebaseAuthErrorMessage(e.code));
@@ -226,115 +232,112 @@ class AuthService extends ChangeNotifier {
     try {
       // Windows Firebase Auth fix: Add longer delay and retry mechanism
       await Future.delayed(const Duration(milliseconds: 300));
-      
-      UserCredential userCredential = await _firebaseAuth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw Exception('Authentication timeout. Please check your internet connection and try again.'),
-      );
-      
+
+      UserCredential userCredential = await _firebaseAuth
+          .signInWithEmailAndPassword(
+            email: email,
+            password: password,
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw Exception(
+                'Authentication timeout. Please check your internet connection and try again.'),
+          );
+
       _firebaseUser = userCredential.user;
-      
+
       if (_firebaseUser != null) {
         // Check if email is verified before allowing access
         if (!_firebaseUser!.emailVerified) {
           // Email not verified - keep user on email screen
           _userEmail = email;
           _masterPassword = password;
-          
+
           // Store credentials for after verification
-          final hashedPassword = _encryptionService.hashMasterPassword(password);
+          final hashedPassword =
+              _encryptionService.hashMasterPassword(password);
           await _secureStorage.write(
-            key: 'master_password_hash_${_firebaseUser!.uid}', 
-            value: hashedPassword
-          );
-          
+              key: 'master_password_hash_${_firebaseUser!.uid}',
+              value: hashedPassword);
+
           await _secureStorage.write(
-            key: 'user_email_${_firebaseUser!.uid}',
-            value: email
-          );
-          
-          _authStatus = AuthStatus.emailRequired; // Keep them on email screen for verification
+              key: 'user_email_${_firebaseUser!.uid}', value: email);
+
+          _authStatus = AuthStatus
+              .emailRequired; // Keep them on email screen for verification
           notifyListeners();
-          
+
           // Throw specific error to show verification message
           throw Exception('EMAIL_NOT_VERIFIED');
         }
-        
+
         // Email is verified - proceed with authentication
         _userEmail = email;
         _masterPassword = password;
-        
+
         // Store/update the email master key as master password hash
         final hashedPassword = _encryptionService.hashMasterPassword(password);
         await _secureStorage.write(
-          key: 'master_password_hash_${_firebaseUser!.uid}', 
-          value: hashedPassword
-        );
-        
+            key: 'master_password_hash_${_firebaseUser!.uid}',
+            value: hashedPassword);
+
         // Store user email for future reference
         await _secureStorage.write(
-          key: 'user_email_${_firebaseUser!.uid}',
-          value: email
-        );
-        
+            key: 'user_email_${_firebaseUser!.uid}', value: email);
+
         _authStatus = AuthStatus.authenticated;
         notifyListeners();
         return true;
       }
-      
+
       return false;
     } on FirebaseAuthException catch (e) {
       // Windows Firebase Auth fix: Retry on unknown-error
       if (e.code == 'unknown-error' || e.code == 'internal-error') {
         await Future.delayed(const Duration(seconds: 2));
-        
+
         try {
-          UserCredential retryCredential = await _firebaseAuth.signInWithEmailAndPassword(
-            email: email,
-            password: password,
-          ).timeout(const Duration(seconds: 30));
-          
+          UserCredential retryCredential = await _firebaseAuth
+              .signInWithEmailAndPassword(
+                email: email,
+                password: password,
+              )
+              .timeout(const Duration(seconds: 30));
+
           _firebaseUser = retryCredential.user;
-          
+
           if (_firebaseUser != null) {
             // Check email verification on retry as well
             if (!_firebaseUser!.emailVerified) {
               _userEmail = email;
               _masterPassword = password;
-              
-              final hashedPassword = _encryptionService.hashMasterPassword(password);
+
+              final hashedPassword =
+                  _encryptionService.hashMasterPassword(password);
               await _secureStorage.write(
-                key: 'master_password_hash_${_firebaseUser!.uid}', 
-                value: hashedPassword
-              );
-              
+                  key: 'master_password_hash_${_firebaseUser!.uid}',
+                  value: hashedPassword);
+
               await _secureStorage.write(
-                key: 'user_email_${_firebaseUser!.uid}',
-                value: email
-              );
-              
+                  key: 'user_email_${_firebaseUser!.uid}', value: email);
+
               _authStatus = AuthStatus.emailRequired;
               notifyListeners();
               throw Exception('EMAIL_NOT_VERIFIED');
             }
-            
+
             _userEmail = email;
             _masterPassword = password;
-            
-            final hashedPassword = _encryptionService.hashMasterPassword(password);
+
+            final hashedPassword =
+                _encryptionService.hashMasterPassword(password);
             await _secureStorage.write(
-              key: 'master_password_hash_${_firebaseUser!.uid}', 
-              value: hashedPassword
-            );
-            
+                key: 'master_password_hash_${_firebaseUser!.uid}',
+                value: hashedPassword);
+
             await _secureStorage.write(
-              key: 'user_email_${_firebaseUser!.uid}',
-              value: email
-            );
-            
+                key: 'user_email_${_firebaseUser!.uid}', value: email);
+
             _authStatus = AuthStatus.authenticated;
             notifyListeners();
             return true;
@@ -343,7 +346,7 @@ class AuthService extends ChangeNotifier {
           // Retry failed, fall through to main error handling
         }
       }
-      
+
       throw Exception(_getFirebaseAuthErrorMessage(e.code));
     } catch (e) {
       // Pass through EMAIL_NOT_VERIFIED exception
@@ -359,12 +362,13 @@ class AuthService extends ChangeNotifier {
     try {
       // Windows Firebase Auth fix: Add delay and timeout
       await Future.delayed(const Duration(milliseconds: 200));
-      
+
       await _firebaseAuth.sendPasswordResetEmail(email: email).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () => throw Exception('Request timeout. Please check your internet connection and try again.'),
-      );
-      
+            const Duration(seconds: 15),
+            onTimeout: () => throw Exception(
+                'Request timeout. Please check your internet connection and try again.'),
+          );
+
       // Note: Firebase will send password reset email regardless of verification status
       // After password reset, user will still need to verify email if not already verified
     } on FirebaseAuthException catch (e) {
@@ -380,11 +384,12 @@ class AuthService extends ChangeNotifier {
       try {
         // Windows Firebase Auth fix: Add delay and timeout
         await Future.delayed(const Duration(milliseconds: 200));
-        
+
         await _firebaseUser!.sendEmailVerification().timeout(
-          const Duration(seconds: 15),
-          onTimeout: () => throw Exception('Request timeout. Please check your internet connection and try again.'),
-        );
+              const Duration(seconds: 15),
+              onTimeout: () => throw Exception(
+                  'Request timeout. Please check your internet connection and try again.'),
+            );
       } on FirebaseAuthException catch (e) {
         throw Exception(_getFirebaseAuthErrorMessage(e.code));
       } catch (e) {
@@ -412,12 +417,14 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
-      final storedHash = await _secureStorage.read(key: 'master_password_hash_${_firebaseUser!.uid}');
+      final storedHash = await _secureStorage.read(
+          key: 'master_password_hash_${_firebaseUser!.uid}');
       if (storedHash == null) {
         throw Exception('Master key not found. Please sign in again.');
       }
 
-      final isValid = await _encryptionService.verifyMasterPassword(masterKey, storedHash);
+      final isValid =
+          await _encryptionService.verifyMasterPassword(masterKey, storedHash);
       if (isValid) {
         _masterPassword = masterKey;
         _authStatus = AuthStatus.authenticated;
@@ -432,7 +439,8 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Legacy method for backward compatibility
-  Future<bool> authenticateWithEmail(String email, String password, {bool isSignUp = false}) async {
+  Future<bool> authenticateWithEmail(String email, String password,
+      {bool isSignUp = false}) async {
     if (isSignUp) {
       return await signUpWithEmail(email, password);
     } else {
@@ -447,19 +455,22 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
-      final storedHash = await _secureStorage.read(key: 'master_password_hash_${_firebaseUser!.uid}');
+      final storedHash = await _secureStorage.read(
+          key: 'master_password_hash_${_firebaseUser!.uid}');
       if (storedHash == null) {
         return false;
       }
 
-      return await _encryptionService.verifyMasterPassword(password, storedHash);
+      return await _encryptionService.verifyMasterPassword(
+          password, storedHash);
     } catch (e) {
       return false;
     }
   }
 
   /// Change password (updates both Firebase and master password)
-  Future<bool> changePassword(String currentPassword, String newPassword) async {
+  Future<bool> changePassword(
+      String currentPassword, String newPassword) async {
     if (_firebaseUser == null) {
       throw Exception('Must be signed in to change password');
     }
@@ -476,17 +487,16 @@ class AuthService extends ChangeNotifier {
 
       // Update Firebase password
       await _firebaseUser!.updatePassword(newPassword);
-      
+
       // Update stored master password hash
       final hashedPassword = _encryptionService.hashMasterPassword(newPassword);
       await _secureStorage.write(
-        key: 'master_password_hash_${_firebaseUser!.uid}', 
-        value: hashedPassword
-      );
-      
+          key: 'master_password_hash_${_firebaseUser!.uid}',
+          value: hashedPassword);
+
       _masterPassword = newPassword;
       notifyListeners();
-      
+
       return true;
     } catch (e) {
       throw Exception('Failed to change password: $e');
@@ -534,7 +544,7 @@ class AuthService extends ChangeNotifier {
     if (!_isDeviceAuthSupported) {
       return 'device PIN or password';
     }
-    
+
     if (_availableBiometrics.isNotEmpty) {
       List<String> methods = [];
       if (_availableBiometrics.contains(BiometricType.fingerprint)) {
@@ -546,12 +556,12 @@ class AuthService extends ChangeNotifier {
       if (_availableBiometrics.contains(BiometricType.iris)) {
         methods.add('iris scan');
       }
-      
+
       if (methods.isNotEmpty) {
         return methods.join(' or ') + ' or device PIN';
       }
     }
-    
+
     return 'device authentication';
   }
 
@@ -582,20 +592,21 @@ class AuthService extends ChangeNotifier {
       // Don't clear stored credentials during verification sign-out
       // This allows easier re-sign-in after verification
     }
-    
+
     _masterPassword = null;
     _userEmail = null;
     _firebaseUser = null;
     _deviceAuthCompleted = false;
-    _hasLoggedOut = false; // Don't mark as logged out since this is part of verification flow
-    
+    _hasLoggedOut =
+        false; // Don't mark as logged out since this is part of verification flow
+
     // Set status to require device auth if supported, otherwise email auth
     if (_isDeviceAuthSupported) {
       _authStatus = AuthStatus.deviceAuthRequired;
     } else {
       _authStatus = AuthStatus.emailRequired;
     }
-    
+
     await _firebaseAuth.signOut();
     notifyListeners();
   }
@@ -604,23 +615,24 @@ class AuthService extends ChangeNotifier {
   Future<void> signOut() async {
     if (_firebaseUser != null) {
       // Clear stored credentials
-      await _secureStorage.delete(key: 'master_password_hash_${_firebaseUser!.uid}');
+      await _secureStorage.delete(
+          key: 'master_password_hash_${_firebaseUser!.uid}');
       await _secureStorage.delete(key: 'user_email_${_firebaseUser!.uid}');
     }
-    
+
     _masterPassword = null;
     _userEmail = null;
     _firebaseUser = null;
     _deviceAuthCompleted = false; // Reset device auth so it shows again
     _hasLoggedOut = true; // Mark that user has explicitly logged out
-    
+
     // Set status to require device auth if supported
     if (_isDeviceAuthSupported) {
       _authStatus = AuthStatus.deviceAuthRequired;
     } else {
       _authStatus = AuthStatus.emailRequired;
     }
-    
+
     await _firebaseAuth.signOut();
     notifyListeners();
   }
@@ -628,14 +640,15 @@ class AuthService extends ChangeNotifier {
   /// Check if user has completed setup
   Future<bool> hasCompletedSetup() async {
     if (_firebaseUser == null) return false;
-    final storedEmail = await _secureStorage.read(key: 'user_email_${_firebaseUser!.uid}');
+    final storedEmail =
+        await _secureStorage.read(key: 'user_email_${_firebaseUser!.uid}');
     return storedEmail != null;
   }
 
   /// Get current Firebase user info
   Map<String, dynamic>? getUserInfo() {
     if (_firebaseUser == null) return null;
-    
+
     return {
       'uid': _firebaseUser!.uid,
       'email': _firebaseUser!.email,
@@ -643,7 +656,8 @@ class AuthService extends ChangeNotifier {
       'displayName': _firebaseUser!.displayName,
       'photoURL': _firebaseUser!.photoURL,
       'creationTime': _firebaseUser!.metadata.creationTime?.toIso8601String(),
-      'lastSignInTime': _firebaseUser!.metadata.lastSignInTime?.toIso8601String(),
+      'lastSignInTime':
+          _firebaseUser!.metadata.lastSignInTime?.toIso8601String(),
     };
   }
 
@@ -654,7 +668,8 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Clear clipboard after delay
-  static void clearClipboardAfterDelay([Duration delay = const Duration(seconds: 30)]) {
+  static void clearClipboardAfterDelay(
+      [Duration delay = const Duration(seconds: 30)]) {
     Future.delayed(delay, () {
       Clipboard.setData(const ClipboardData(text: ''));
     });
@@ -688,9 +703,10 @@ class AuthService extends ChangeNotifier {
     try {
       // Check if biometric authentication is available
       final bool isAvailable = await isBiometricAvailable();
-      
+
       if (!isAvailable && biometricOnly) {
-        throw Exception('Biometric authentication is not available on this device');
+        throw Exception(
+            'Biometric authentication is not available on this device');
       }
 
       // Platform-specific authentication
@@ -717,7 +733,8 @@ class AuthService extends ChangeNotifier {
             signInTitle: 'Biometric Authentication Required',
             cancelButton: 'No thanks',
             deviceCredentialsRequiredTitle: 'Device Credentials Required',
-            deviceCredentialsSetupDescription: 'Please set up device credentials',
+            deviceCredentialsSetupDescription:
+                'Please set up device credentials',
             goToSettingsButton: 'Go to Settings',
             goToSettingsDescription: 'Please set up your device credentials',
           ),
@@ -814,17 +831,79 @@ class AuthService extends ChangeNotifier {
 
   // Check if user should be prompted for master password setup
   Future<bool> shouldSetupMasterPassword() async {
-    final hashedPassword = await _secureStorage.read(key: 'master_password_hash');
+    final hashedPassword =
+        await _secureStorage.read(key: 'master_password_hash');
     return hashedPassword == null;
+  }
+
+  /// Check if user has a master password set (for compatibility with master_password_screen)
+  Future<bool> hasMasterPassword() async {
+    if (_firebaseUser == null) return false;
+    final hashedPassword = await _secureStorage.read(
+        key: 'master_password_hash_${_firebaseUser!.uid}');
+    return hashedPassword != null;
+  }
+
+  /// Set master password (for compatibility with master_password_screen)
+  Future<bool> setMasterPassword(String password) async {
+    if (_firebaseUser == null) {
+      throw Exception('No authenticated user found');
+    }
+
+    if (password.length < 8) {
+      throw Exception('Master password must be at least 8 characters long');
+    }
+
+    try {
+      // Hash and store the master password
+      final hashedPassword = _encryptionService.hashMasterPassword(password);
+      await _secureStorage.write(
+          key: 'master_password_hash_${_firebaseUser!.uid}',
+          value: hashedPassword);
+
+      _masterPassword = password;
+      _authStatus = AuthStatus.authenticated;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      throw Exception('Failed to set master password: $e');
+    }
+  }
+
+  /// Verify master password (for compatibility with master_password_screen)
+  Future<bool> verifyMasterPassword(String password) async {
+    if (_firebaseUser == null) {
+      throw Exception('No authenticated user found');
+    }
+
+    try {
+      final storedHash = await _secureStorage.read(
+          key: 'master_password_hash_${_firebaseUser!.uid}');
+      if (storedHash == null) {
+        throw Exception('Master password not found. Please sign in again.');
+      }
+
+      final isValid =
+          await _encryptionService.verifyMasterPassword(password, storedHash);
+      if (isValid) {
+        _masterPassword = password;
+        _authStatus = AuthStatus.authenticated;
+        notifyListeners();
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
   }
 
   // Store authentication state
   Future<void> setAuthenticated(bool isAuthenticated) async {
     if (isAuthenticated) {
       await _secureStorage.write(
-        key: 'auth_timestamp', 
-        value: DateTime.now().millisecondsSinceEpoch.toString()
-      );
+          key: 'auth_timestamp',
+          value: DateTime.now().millisecondsSinceEpoch.toString());
     } else {
       await _secureStorage.delete(key: 'auth_timestamp');
     }
@@ -890,17 +969,17 @@ class AuthService extends ChangeNotifier {
     try {
       // Clear all secure storage data
       await _secureStorage.deleteAll();
-      
+
       // Reset all state variables
       _deviceAuthCompleted = false;
       _hasLoggedOut = false;
       _masterPassword = null;
       _userEmail = null;
       _firebaseUser = null;
-      
+
       // Sign out from Firebase
       await _firebaseAuth.signOut();
-      
+
       // Set to unauthenticated state
       _authStatus = AuthStatus.unauthenticated;
       notifyListeners();
@@ -908,4 +987,4 @@ class AuthService extends ChangeNotifier {
       // Handle error silently in production
     }
   }
-} 
+}

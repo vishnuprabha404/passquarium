@@ -21,7 +21,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadPasswords() async {
-    final passwordService = Provider.of<PasswordService>(context, listen: false);
+    final passwordService =
+        Provider.of<PasswordService>(context, listen: false);
     await passwordService.loadPasswords();
   }
 
@@ -34,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showSettingsMenu() {
     final authService = Provider.of<AuthService>(context, listen: false);
     final userInfo = authService.getUserInfo();
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -72,23 +73,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       children: [
                         Icon(
-                          userInfo['emailVerified'] == true 
-                              ? Icons.verified 
+                          userInfo['emailVerified'] == true
+                              ? Icons.verified
                               : Icons.warning,
                           size: 16,
-                          color: userInfo['emailVerified'] == true 
-                              ? Colors.green 
+                          color: userInfo['emailVerified'] == true
+                              ? Colors.green
                               : Colors.orange,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          userInfo['emailVerified'] == true 
-                              ? 'Email Verified' 
+                          userInfo['emailVerified'] == true
+                              ? 'Email Verified'
                               : 'Email Not Verified',
                           style: TextStyle(
                             fontSize: 12,
-                            color: userInfo['emailVerified'] == true 
-                                ? Colors.green 
+                            color: userInfo['emailVerified'] == true
+                                ? Colors.green
                                 : Colors.orange,
                           ),
                         ),
@@ -99,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
             ],
-            
+
             // Menu Options
             ListTile(
               leading: const Icon(Icons.lock_outline),
@@ -163,7 +164,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text('Quick Logout'),
           ],
         ),
-        content: const Text('Are you sure you want to logout? You will need to authenticate again to access your passwords.'),
+        content: const Text(
+            'Are you sure you want to logout? You will need to authenticate again to access your passwords.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -172,10 +174,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context); // Close dialog first
-              
-              final authService = Provider.of<AuthService>(context, listen: false);
-              final passwordService = Provider.of<PasswordService>(context, listen: false);
-              
+
+              final authService =
+                  Provider.of<AuthService>(context, listen: false);
+              final passwordService =
+                  Provider.of<PasswordService>(context, listen: false);
+
               try {
                 // Show loading indicator
                 showDialog(
@@ -191,12 +195,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 );
-                
+
                 await authService.signOut();
                 passwordService.clearLocalData();
-                
+
                 if (mounted) {
-                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                  Navigator.of(context)
+                      .pushNamedAndRemoveUntil('/', (route) => false);
                 }
               } catch (e) {
                 Navigator.pop(context); // Close loading dialog
@@ -219,7 +224,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out? This will clear all locally stored data.'),
+        content: const Text(
+            'Are you sure you want to sign out? This will clear all locally stored data.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -227,12 +233,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           TextButton(
             onPressed: () async {
-              final authService = Provider.of<AuthService>(context, listen: false);
-              final passwordService = Provider.of<PasswordService>(context, listen: false);
-              
+              final authService =
+                  Provider.of<AuthService>(context, listen: false);
+              final passwordService =
+                  Provider.of<PasswordService>(context, listen: false);
+
               await authService.signOut();
               passwordService.clearLocalData();
-              
+
               if (mounted) {
                 Navigator.of(context).pushReplacementNamed('/');
               }
@@ -249,7 +257,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Switch Account'),
-        content: const Text('This will sign you out and allow you to sign in with a different account. Your current data will be cleared from this device.'),
+        content: const Text(
+            'This will sign you out and allow you to sign in with a different account. Your current data will be cleared from this device.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -257,12 +266,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           TextButton(
             onPressed: () async {
-              final authService = Provider.of<AuthService>(context, listen: false);
-              final passwordService = Provider.of<PasswordService>(context, listen: false);
-              
+              final authService =
+                  Provider.of<AuthService>(context, listen: false);
+              final passwordService =
+                  Provider.of<PasswordService>(context, listen: false);
+
               await authService.signOut();
               passwordService.clearLocalData();
-              
+
               if (mounted) {
                 Navigator.of(context).pop(); // Close dialog
                 Navigator.of(context).pushReplacementNamed('/email-auth');
@@ -300,7 +311,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     labelText: 'Current Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(isCurrentPasswordVisible ? Icons.visibility_off : Icons.visibility),
+                      icon: Icon(isCurrentPasswordVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility),
                       onPressed: () {
                         setState(() {
                           isCurrentPasswordVisible = !isCurrentPasswordVisible;
@@ -317,7 +330,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     labelText: 'New Password',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
-                      icon: Icon(isNewPasswordVisible ? Icons.visibility_off : Icons.visibility),
+                      icon: Icon(isNewPasswordVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility),
                       onPressed: () {
                         setState(() {
                           isNewPasswordVisible = !isNewPasswordVisible;
@@ -334,7 +349,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     labelText: 'Confirm New Password',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
-                      icon: Icon(isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility),
+                      icon: Icon(isConfirmPasswordVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility),
                       onPressed: () {
                         setState(() {
                           isConfirmPasswordVisible = !isConfirmPasswordVisible;
@@ -352,51 +369,59 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: isLoading ? null : () async {
-                if (newPasswordController.text != confirmPasswordController.text) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('New passwords do not match')),
-                  );
-                  return;
-                }
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      if (newPasswordController.text !=
+                          confirmPasswordController.text) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('New passwords do not match')),
+                        );
+                        return;
+                      }
 
-                if (newPasswordController.text.length < 8) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Password must be at least 8 characters long')),
-                  );
-                  return;
-                }
+                      if (newPasswordController.text.length < 8) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Password must be at least 8 characters long')),
+                        );
+                        return;
+                      }
 
-                setState(() {
-                  isLoading = true;
-                });
+                      setState(() {
+                        isLoading = true;
+                      });
 
-                try {
-                  final authService = Provider.of<AuthService>(context, listen: false);
-                  await authService.changePassword(
-                    currentPasswordController.text,
-                    newPasswordController.text,
-                  );
-                  
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Password changed successfully')),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error: $e')),
-                    );
-                  }
-                } finally {
-                  setState(() {
-                    isLoading = false;
-                  });
-                }
-              },
-              child: isLoading 
+                      try {
+                        final authService =
+                            Provider.of<AuthService>(context, listen: false);
+                        await authService.changePassword(
+                          currentPasswordController.text,
+                          newPasswordController.text,
+                        );
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Password changed successfully')),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
+                      } finally {
+                        setState(() {
+                          isLoading = false;
+                        });
+                      }
+                    },
+              child: isLoading
                   ? const SizedBox(
                       width: 16,
                       height: 16,
@@ -414,10 +439,12 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.sendEmailVerification();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification email sent! Please check your inbox.')),
+          const SnackBar(
+              content:
+                  Text('Verification email sent! Please check your inbox.')),
         );
       }
     } catch (e) {
@@ -621,8 +648,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     }
 
-                    final passwords = passwordService.passwords.take(5).toList();
-                    
+                    final passwords =
+                        passwordService.passwords.take(5).toList();
+
                     if (passwords.isEmpty) {
                       return Center(
                         child: Column(
@@ -661,9 +689,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                              backgroundColor: Theme.of(context)
+                                  .primaryColor
+                                  .withOpacity(0.1),
                               child: Text(
-                                password.domain.isNotEmpty 
+                                password.domain.isNotEmpty
                                     ? password.domain[0].toUpperCase()
                                     : 'P',
                                 style: TextStyle(
@@ -673,8 +703,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             title: Text(
-                              password.website.isNotEmpty 
-                                  ? password.website 
+                              password.website.isNotEmpty
+                                  ? password.website
                                   : password.domain,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -684,7 +714,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                            trailing:
+                                const Icon(Icons.arrow_forward_ios, size: 16),
                             onTap: () {
                               // Navigate to password detail/edit screen
                               Navigator.of(context).pushNamed(
@@ -766,4 +797,4 @@ class _ActionCard extends StatelessWidget {
       ),
     );
   }
-} 
+}

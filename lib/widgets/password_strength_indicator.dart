@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class PasswordStrengthIndicator extends StatelessWidget {
   final String password;
-  
+
   const PasswordStrengthIndicator({
     super.key,
     required this.password,
@@ -10,23 +10,25 @@ class PasswordStrengthIndicator extends StatelessWidget {
 
   int _calculateStrength(String password) {
     int score = 0;
-    
+
     // Length bonus
     if (password.length >= 8) score += 1;
     if (password.length >= 12) score += 1;
     if (password.length >= 16) score += 1;
-    
+
     // Character variety
     if (password.contains(RegExp(r'[A-Z]'))) score += 1; // Uppercase
     if (password.contains(RegExp(r'[a-z]'))) score += 1; // Lowercase
     if (password.contains(RegExp(r'[0-9]'))) score += 1; // Numbers
-    if (password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'))) score += 1; // Symbols
-    
+    if (password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'))) {
+      score += 1; // Symbols
+    }
+
     // Penalty for common patterns
     if (password.toLowerCase().contains('password')) score -= 2;
     if (password.contains('123')) score -= 1;
     if (password.contains('abc')) score -= 1;
-    
+
     return score.clamp(0, 7);
   }
 
@@ -67,9 +69,9 @@ class PasswordStrengthIndicator extends StatelessWidget {
             Text(
               text,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ],
         ),
@@ -82,4 +84,4 @@ class PasswordStrengthIndicator extends StatelessWidget {
       ],
     );
   }
-} 
+}

@@ -20,11 +20,11 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _initializeApp() async {
     // Add a delay for splash screen effect
     await Future.delayed(AppConfig.splashScreenDuration);
-    
+
     if (mounted) {
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.initialize();
-      
+
       // Navigate based on auth status - NEW FLOW: Device → Email → Master Key → Home
       if (mounted) {
         switch (authService.authStatus) {
@@ -81,9 +81,9 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.blue,
               ),
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // App Name
             Text(
               AppConfig.appName,
@@ -93,9 +93,9 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.white,
               ),
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             // Tagline
             Text(
               AppConfig.appDescription,
@@ -104,9 +104,9 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.white70,
               ),
             ),
-            
+
             const SizedBox(height: 48),
-            
+
             // Loading indicator
             const CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -116,4 +116,4 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
-} 
+}

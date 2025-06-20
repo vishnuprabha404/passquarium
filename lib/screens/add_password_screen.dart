@@ -16,7 +16,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
   final _websiteController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   int _passwordStrength = 0;
@@ -44,9 +44,11 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
   }
 
   void _updatePasswordStrength() {
-    final passwordService = Provider.of<PasswordService>(context, listen: false);
+    final passwordService =
+        Provider.of<PasswordService>(context, listen: false);
     setState(() {
-      _passwordStrength = passwordService.getPasswordStrength(_passwordController.text);
+      _passwordStrength =
+          passwordService.getPasswordStrength(_passwordController.text);
     });
   }
 
@@ -58,7 +60,8 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
     });
 
     final authService = Provider.of<AuthService>(context, listen: false);
-    final passwordService = Provider.of<PasswordService>(context, listen: false);
+    final passwordService =
+        Provider.of<PasswordService>(context, listen: false);
 
     try {
       final masterPassword = authService.masterPassword;
@@ -67,7 +70,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
       }
 
       final domain = passwordService.extractDomain(_websiteController.text);
-      
+
       final success = await passwordService.addPassword(
         website: _websiteController.text.trim(),
         domain: domain,
@@ -208,7 +211,9 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                         ),
                         IconButton(
                           icon: Icon(
-                            _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                            _isPasswordVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                           ),
                           onPressed: () {
                             setState(() {
@@ -225,11 +230,12 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
 
                 if (_passwordController.text.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  
+
                   // Password Strength Indicator
                   Consumer<PasswordService>(
                     builder: (context, passwordService, child) {
-                      final strengthText = passwordService.getPasswordStrengthDescription(_passwordStrength);
+                      final strengthText = passwordService
+                          .getPasswordStrengthDescription(_passwordStrength);
                       return Row(
                         children: [
                           Expanded(
@@ -322,7 +328,8 @@ class _PasswordGeneratorDialog extends StatefulWidget {
   });
 
   @override
-  State<_PasswordGeneratorDialog> createState() => _PasswordGeneratorDialogState();
+  State<_PasswordGeneratorDialog> createState() =>
+      _PasswordGeneratorDialogState();
 }
 
 class _PasswordGeneratorDialogState extends State<_PasswordGeneratorDialog> {
@@ -340,7 +347,8 @@ class _PasswordGeneratorDialogState extends State<_PasswordGeneratorDialog> {
   }
 
   void _generatePassword() {
-    final passwordService = Provider.of<PasswordService>(context, listen: false);
+    final passwordService =
+        Provider.of<PasswordService>(context, listen: false);
     try {
       setState(() {
         _generatedPassword = passwordService.generatePassword(
@@ -490,4 +498,4 @@ class _PasswordGeneratorDialogState extends State<_PasswordGeneratorDialog> {
       ],
     );
   }
-} 
+}

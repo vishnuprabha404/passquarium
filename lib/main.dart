@@ -17,12 +17,12 @@ import 'package:super_locker/screens/password_generator_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
+
   runApp(const SuperLockerApp());
 }
 
@@ -70,4 +70,4 @@ class SuperLockerApp extends StatelessWidget {
       ),
     );
   }
-} 
+}

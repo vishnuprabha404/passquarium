@@ -5,11 +5,11 @@ import 'package:flutter/services.dart';
 
 class ClipboardManager {
   static const int _defaultClearSeconds = 15;
-  
+
   Timer? _clearTimer;
   bool _isSecureDataInClipboard = false;
   String _lastSecureData = '';
-  
+
   // Singleton pattern
   static final ClipboardManager _instance = ClipboardManager._internal();
   factory ClipboardManager() => _instance;
@@ -25,28 +25,29 @@ class ClipboardManager {
     try {
       // Cancel any existing timer
       _clearTimer?.cancel();
-      
+
       // Copy to clipboard
       await Clipboard.setData(ClipboardData(text: data));
-      
+
       // Track secure data
       _isSecureDataInClipboard = true;
       _lastSecureData = data;
-      
+
       // Start auto-clear timer
       _clearTimer = Timer(Duration(seconds: clearAfterSeconds), () {
         _clearClipboard();
       });
-      
+
       // Show success message
       if (context != null) {
         _showSnackBar(
           context,
-          successMessage ?? 'Password copied to clipboard. Will clear in ${clearAfterSeconds}s',
+          successMessage ??
+              'Password copied to clipboard. Will clear in ${clearAfterSeconds}s',
           isSuccess: true,
         );
       }
-      
+
       return true;
     } catch (e) {
       if (context != null) {
@@ -56,7 +57,7 @@ class ClipboardManager {
           isSuccess: false,
         );
       }
-      
+
       return false;
     }
   }
@@ -69,7 +70,7 @@ class ClipboardManager {
   }) async {
     try {
       await Clipboard.setData(ClipboardData(text: data));
-      
+
       if (context != null) {
         _showSnackBar(
           context,
@@ -77,7 +78,7 @@ class ClipboardManager {
           isSuccess: true,
         );
       }
-      
+
       return true;
     } catch (e) {
       if (context != null) {
@@ -87,7 +88,7 @@ class ClipboardManager {
           isSuccess: false,
         );
       }
-      
+
       return false;
     }
   }
@@ -103,17 +104,16 @@ class ClipboardManager {
       // Check if our secure data is still in clipboard
       final clipboardData = await Clipboard.getData('text/plain');
       final currentClipboard = clipboardData?.text ?? '';
-      
+
       // Only clear if our secure data is still there
       if (_isSecureDataInClipboard && currentClipboard == _lastSecureData) {
         await Clipboard.setData(const ClipboardData(text: ''));
       }
-      
+
       // Reset tracking
       _isSecureDataInClipboard = false;
       _lastSecureData = '';
       _clearTimer?.cancel();
-      
     } catch (e) {
       // debugPrint('Failed to clear clipboard: $e'); // Removed debug print
     }
@@ -121,7 +121,7 @@ class ClipboardManager {
 
   // Check if clipboard contains secure data
   bool get hasSecureData => _isSecureDataInClipboard;
-  
+
   // Get remaining time before auto-clear
   int get remainingClearTime {
     // This is approximate since Timer doesn't provide remaining time
@@ -154,14 +154,15 @@ class ClipboardManager {
   }
 
   // Show snackbar with message
-  void _showSnackBar(BuildContext context, String message, {required bool isSuccess}) {
+  void _showSnackBar(BuildContext context, String message,
+      {required bool isSuccess}) {
     if (!context.mounted) return;
-    
+
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
+
     // Clear any existing snackbars
     scaffoldMessenger.clearSnackBars();
-    
+
     scaffoldMessenger.showSnackBar(
       SnackBar(
         content: Row(
@@ -186,14 +187,16 @@ class ClipboardManager {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        action: !isSuccess ? null : SnackBarAction(
-          label: 'Clear Now',
-          textColor: Colors.white,
-          onPressed: () {
-            _clearClipboard();
-            scaffoldMessenger.hideCurrentSnackBar();
-          },
-        ),
+        action: !isSuccess
+            ? null
+            : SnackBarAction(
+                label: 'Clear Now',
+                textColor: Colors.white,
+                onPressed: () {
+                  _clearClipboard();
+                  scaffoldMessenger.hideCurrentSnackBar();
+                },
+              ),
       ),
     );
   }
@@ -322,10 +325,10 @@ class _SecureClipboardButtonState extends State<SecureClipboardButton> {
 // Provider for clipboard state management
 class ClipboardProvider extends ChangeNotifier {
   final ClipboardManager _clipboardManager = ClipboardManager();
-  
+
   bool get hasSecureData => _clipboardManager.hasSecureData;
   int get remainingClearTime => _clipboardManager.remainingClearTime;
-  
+
   Future<bool> copySecure(
     String data, {
     int clearAfterSeconds = 15,
@@ -341,7 +344,7 @@ class ClipboardProvider extends ChangeNotifier {
     notifyListeners();
     return result;
   }
-  
+
   Future<bool> copyRegular(
     String data, {
     String? successMessage,
@@ -355,14 +358,14 @@ class ClipboardProvider extends ChangeNotifier {
     notifyListeners();
     return result;
   }
-  
+
   Future<void> clearClipboard() async {
     await _clipboardManager.clearClipboard();
     notifyListeners();
   }
-  
+
   void cancelAutoClear() {
     _clipboardManager.cancelAutoClear();
     notifyListeners();
   }
-} 
+}
