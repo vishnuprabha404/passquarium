@@ -885,12 +885,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                       case 'browser':
                                         _openInBrowser(password);
                                         break;
-                                      case 'edit':
-                                        _editPassword(password);
-                                        break;
-                                      case 'delete':
-                                        _deletePassword(password);
-                                        break;
                                     }
                                   },
                                   itemBuilder: (context) {
@@ -927,27 +921,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ],
                                           ),
                                         ),
-                                      const PopupMenuDivider(),
-                                      const PopupMenuItem(
-                                        value: 'edit',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.edit, size: 20, color: Colors.blue),
-                                            SizedBox(width: 8),
-                                            Text('Edit', style: TextStyle(color: Colors.blue)),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.delete, size: 20, color: Colors.red),
-                                            SizedBox(width: 8),
-                                            Text('Delete', style: TextStyle(color: Colors.red)),
-                                          ],
-                                        ),
-                                      ),
                                     ];
                                   },
                                 ),
@@ -1104,6 +1077,33 @@ class _HomeScreenState extends State<HomeScreen> {
             Icon(Icons.lock_open, color: Theme.of(context).primaryColor),
             const SizedBox(width: 8),
             Expanded(child: Text(displayName)),
+            IconButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog first
+                _editPassword(entry);
+              },
+              icon: const Icon(Icons.edit, size: 20),
+              tooltip: 'Edit Password',
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.blue.withOpacity(0.1),
+                foregroundColor: Colors.blue,
+              ),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              onPressed: () async {
+                final deleted = await _deletePassword(entry);
+                if (deleted) {
+                  Navigator.of(context).pop(); // Close dialog only after successful deletion
+                }
+              },
+              icon: const Icon(Icons.delete, size: 20),
+              tooltip: 'Delete Password',
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.red.withOpacity(0.1),
+                foregroundColor: Colors.red,
+              ),
+            ),
           ],
         ),
         content: SizedBox(
@@ -1498,7 +1498,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _deletePassword(PasswordEntry entry) async {
+  Future<bool> _deletePassword(PasswordEntry entry) async {
     onUserInteraction();
 
     // Show confirmation dialog
@@ -1530,7 +1530,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (!authenticated) {
         _showMessage('Authentication failed', isError: true);
-        return;
+        return false;
       }
 
       try {
@@ -1541,13 +1541,18 @@ class _HomeScreenState extends State<HomeScreen> {
           _showMessage('Password deleted successfully');
           // Refresh the password list
           _loadPasswords();
+          return true;
         } else {
           _showMessage('Failed to delete password', isError: true);
+          return false;
         }
       } catch (e) {
         _showMessage('Error deleting password: $e', isError: true);
+        return false;
       }
     }
+    
+    return false; // User cancelled
   }
 }
 
