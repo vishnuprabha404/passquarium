@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:super_locker/models/password_entry.dart';
 import 'package:super_locker/providers/app_provider.dart';
+import 'package:super_locker/screens/edit_password_screen.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/services/password_service.dart';
 import 'package:super_locker/services/clipboard_manager.dart';
@@ -695,9 +696,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 16),
 
-              // Password List (Fixed Height)
+              // Password List (Scrollable)
               SizedBox(
-                height: 400, // Fixed height to avoid layout issues
+                height: 400, // Fixed height to prevent unbounded constraints
                 child: Consumer<PasswordService>(
                   builder: (context, passwordService, child) {
                     if (passwordService.isLoading) {
@@ -1201,29 +1202,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 
                 const SizedBox(height: 16),
                 
-                // Notes Section
-                if (entry.notes.isNotEmpty) ...[
-                  Text(
-                    'Notes',
+                // Notes Section (Always visible)
+                Text(
+                  'Notes',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                  ),
+                  child: SelectableText(
+                    entry.notes.isNotEmpty ? entry.notes : 'No notes added',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
+                      fontStyle: entry.notes.isEmpty ? FontStyle.italic : FontStyle.normal,
+                      color: entry.notes.isEmpty ? Colors.grey[600] : null,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
-                    ),
-                    child: SelectableText(entry.notes),
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                ),
+                const SizedBox(height: 16),
                 
                 // Action Buttons
                 Row(
@@ -1475,34 +1480,45 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<bool> _editPassword(PasswordEntry entry) async {
     onUserInteraction();
 
-    // Show confirmation dialog first
-    final shouldEdit = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Password'),
-        content: Text('Edit password for ${entry.title.isNotEmpty ? entry.title : entry.website}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Edit'),
-          ),
-        ],
-      ),
-    );
+    try {
+      // First, decrypt the password to pass to edit screen
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final masterPassword = authService.masterPassword;
 
-    if (shouldEdit == true) {
-      // Navigate to edit screen (you'll need to implement this screen)
-      _showMessage('Edit functionality will be implemented in a future update');
-      // For now, return false since edit is not implemented yet
-      // When edit screen is implemented, this should return true on successful edit
+      if (masterPassword == null) {
+        _showMessage('Master password not available', isError: true);
+        return false;
+      }
+
+      final passwordService = Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+
+      if (decryptedPassword.isEmpty) {
+        _showMessage('Failed to decrypt password', isError: true);
+        return false;
+      }
+
+      // Navigate to edit screen
+      final result = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (context) => EditPasswordScreen(
+            passwordEntry: entry,
+            decryptedPassword: decryptedPassword,
+          ),
+        ),
+      );
+
+      if (result == true) {
+        // Refresh the password list
+        _loadPasswords();
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      _showMessage('Error: $e', isError: true);
       return false;
     }
-    
-    return false; // User cancelled
   }
 
   Future<bool> _deletePassword(PasswordEntry entry) async {
