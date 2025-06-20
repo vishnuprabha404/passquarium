@@ -475,9 +475,11 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
             const SizedBox(width: 8),
             Expanded(child: Text(displayName)),
             IconButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog first
-                _editPassword(entry);
+              onPressed: () async {
+                final edited = await _editPassword(entry);
+                if (edited) {
+                  Navigator.of(context).pop(); // Close dialog only after successful edit
+                }
               },
               icon: const Icon(Icons.edit, size: 20),
               tooltip: 'Edit Password',
@@ -891,7 +893,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     return 'https://$input.com';
   }
 
-  void _editPassword(PasswordEntry entry) async {
+  Future<bool> _editPassword(PasswordEntry entry) async {
     onUserInteraction();
 
     // Show confirmation dialog first
@@ -916,7 +918,12 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     if (shouldEdit == true) {
       // Navigate to edit screen (you'll need to implement this screen)
       _showMessage('Edit functionality will be implemented in a future update');
+      // For now, return false since edit is not implemented yet
+      // When edit screen is implemented, this should return true on successful edit
+      return false;
     }
+    
+    return false; // User cancelled
   }
 
   Future<bool> _deletePassword(PasswordEntry entry) async {

@@ -19,7 +19,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
   final _notesController = TextEditingController();
 
   bool _isLoading = false;
-  bool _isPasswordVisible = false;
+  bool _isPasswordVisible = true;
   int _passwordStrength = 0;
 
   @override
