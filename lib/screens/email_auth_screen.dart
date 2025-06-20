@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/widgets/password_strength_indicator.dart';
 
@@ -16,6 +18,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
   final _emailController = TextEditingController();
   final _masterKeyController = TextEditingController();
   final _confirmMasterKeyController = TextEditingController();
+  final _emailFocusNode = FocusNode();
+  final _masterKeyFocusNode = FocusNode();
 
   bool _isLoading = false;
   bool _isMasterKeyVisible = false;
@@ -24,6 +28,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
   bool _showEmailVerificationMessage = false;
   bool _showMasterKeyStrength = false;
   bool _emailVerificationSent = false;
+  bool _rememberEmail = false;
 
   // Animation controllers
   late AnimationController _slideController;
@@ -51,8 +56,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
 
     _fadeController.forward();
 
-    // Check if user needs email verification
+    // Load saved email and check verification status
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSavedEmail();
       _checkEmailVerificationStatus();
     });
   }
@@ -62,9 +68,59 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     _emailController.dispose();
     _masterKeyController.dispose();
     _confirmMasterKeyController.dispose();
+    _emailFocusNode.dispose();
+    _masterKeyFocusNode.dispose();
     _slideController.dispose();
     _fadeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSavedEmail() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedEmail = prefs.getString('saved_email');
+      final rememberEmail = prefs.getBool('remember_email') ?? false;
+      
+      if (savedEmail != null && rememberEmail) {
+        setState(() {
+          _emailController.text = savedEmail;
+          _rememberEmail = true;
+        });
+        
+        // Auto-focus on Master Key field when email is remembered
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _masterKeyFocusNode.requestFocus();
+        });
+      } else {
+        // Focus on email field if no saved email
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _emailFocusNode.requestFocus();
+        });
+      }
+    } catch (e) {
+      // Ignore errors when loading saved email
+      print('Error loading saved email: $e');
+      // Default focus on email field if error
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _emailFocusNode.requestFocus();
+      });
+    }
+  }
+
+  Future<void> _saveEmail() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberEmail) {
+        await prefs.setString('saved_email', _emailController.text.trim());
+        await prefs.setBool('remember_email', true);
+      } else {
+        await prefs.remove('saved_email');
+        await prefs.setBool('remember_email', false);
+      }
+    } catch (e) {
+      // Ignore errors when saving email
+      print('Error saving email: $e');
+    }
   }
 
   Future<void> _checkEmailVerificationStatus() async {
@@ -79,6 +135,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Save email preference before attempting authentication
+    await _saveEmail();
 
     setState(() {
       _isLoading = true;
@@ -612,8 +671,14 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                 // Email Field
                 TextFormField(
                   controller: _emailController,
+                  focusNode: _emailFocusNode,
                   keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
                   validator: _validateEmail,
+                  onFieldSubmitted: (_) {
+                    // Move focus to Master Key field when pressing Enter on email
+                    _masterKeyFocusNode.requestFocus();
+                  },
                   decoration: InputDecoration(
                     labelText: 'Email Address',
                     prefixIcon: const Icon(Icons.email_outlined),
@@ -623,18 +688,43 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                   ),
                 ),
 
+                const SizedBox(height: 12),
+
+                // Remember Email Checkbox
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _rememberEmail,
+                      onChanged: (value) {
+                        setState(() {
+                          _rememberEmail = value ?? false;
+                        });
+                      },
+                    ),
+                    const Text('Remember email for future logins'),
+                  ],
+                ),
+
                 const SizedBox(height: 16),
 
                 // Password Field
                 TextFormField(
                   controller: _masterKeyController,
+                  focusNode: _masterKeyFocusNode,
                   obscureText: !_isMasterKeyVisible,
+                  textInputAction: _isSignUpMode ? TextInputAction.next : TextInputAction.done,
                   validator: _validateMasterKey,
                   onChanged: (value) {
                     if (_isSignUpMode) {
                       setState(() {
                         _showMasterKeyStrength = value.isNotEmpty;
                       });
+                    }
+                  },
+                  onFieldSubmitted: (_) {
+                    if (!_isSignUpMode) {
+                      // In sign-in mode, pressing Enter should trigger sign-in
+                      _submitForm();
                     }
                   },
                   decoration: InputDecoration(
@@ -657,7 +747,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                     ),
                     helperText: _isSignUpMode
                         ? 'This Master Key will encrypt your vault'
-                        : null,
+                        : (_rememberEmail 
+                            ? 'Email remembered - Press Enter to sign in'
+                            : 'Press Enter to sign in'),
                   ),
                 ),
 
@@ -681,7 +773,12 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                   TextFormField(
                     controller: _confirmMasterKeyController,
                     obscureText: !_isConfirmMasterKeyVisible,
+                    textInputAction: TextInputAction.done,
                     validator: _validateConfirmMasterKey,
+                    onFieldSubmitted: (_) {
+                      // In sign-up mode, pressing Enter on confirm field should trigger sign-up
+                      _submitForm();
+                    },
                     decoration: InputDecoration(
                       labelText: 'Confirm Master Key',
                       prefixIcon: const Icon(Icons.lock_outline),
@@ -701,6 +798,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      helperText: 'Press Enter to create account',
                     ),
                   ),
                 ],
@@ -764,6 +862,19 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                           _confirmMasterKeyController.clear();
                           _showEmailVerificationMessage = false;
                         });
+                        
+                        // Maintain proper focus when switching modes
+                        if (_rememberEmail && _emailController.text.isNotEmpty) {
+                          // If email is remembered, focus on Master Key field
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _masterKeyFocusNode.requestFocus();
+                          });
+                        } else {
+                          // Otherwise focus on email field
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _emailFocusNode.requestFocus();
+                          });
+                        }
                       },
                       child: Text(_isSignUpMode ? 'Sign In' : 'Sign Up'),
                     ),
