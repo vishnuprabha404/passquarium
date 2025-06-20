@@ -1,50 +1,51 @@
 import 'package:flutter/material.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import 'package:super_locker/models/password_entry.dart';
 import 'package:super_locker/services/encryption_service.dart';
 
 class PasswordService extends ChangeNotifier {
-  // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final EncryptionService _encryptionService = EncryptionService();
   final Uuid _uuid = const Uuid();
 
   List<PasswordEntry> _passwords = [];
   bool _isLoading = false;
   String? _error;
-  String _deviceId = 'default_device'; // In production, get actual device ID
 
   List<PasswordEntry> get passwords => _passwords;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Set device ID for multi-device support
-  void setDeviceId(String deviceId) {
-    _deviceId = deviceId;
-  }
+  /// Get current user ID for Firebase operations
+  String? get _userId => _firebaseAuth.currentUser?.uid;
 
   /// Load all passwords from Firebase
   Future<void> loadPasswords() async {
+    if (_userId == null) {
+      _setError('User not authenticated');
+      return;
+    }
+
     _setLoading(true);
     _clearError();
 
     try {
-      // final snapshot = await _firestore
-      //     .collection('password_vaults')
-      //     .doc(_deviceId)
-      //     .collection('passwords')
-      //     .orderBy('created_at', descending: true)
-      //     .get();
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('passwords')
+          .orderBy('created_at', descending: true)
+          .get();
 
-      // _passwords = snapshot.docs
-      //     .map((doc) => PasswordEntry.fromMap({
-      //           'id': doc.id,
-      //           ...doc.data(),
-      //         }))
-      //     .toList();
-
-      // Temporarily start with empty list for testing
-      _passwords = [];
+      _passwords = snapshot.docs
+          .map((doc) => PasswordEntry.fromMap({
+                'id': doc.id,
+                ...doc.data(),
+              }))
+          .toList();
 
       notifyListeners();
     } catch (e) {
@@ -62,6 +63,11 @@ class PasswordService extends ChangeNotifier {
     required String password,
     required String masterPassword,
   }) async {
+    if (_userId == null) {
+      _setError('User not authenticated');
+      return false;
+    }
+
     _setLoading(true);
     _clearError();
 
@@ -81,13 +87,13 @@ class PasswordService extends ChangeNotifier {
         updatedAt: DateTime.now(),
       );
 
-      // Save to Firebase - temporarily disabled
-      // await _firestore
-      //     .collection('password_vaults')
-      //     .doc(_deviceId)
-      //     .collection('passwords')
-      //     .doc(entry.id)
-      //     .set(entry.toMap());
+      // Save to Firebase
+      await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('passwords')
+          .doc(entry.id)
+          .set(entry.toMap());
 
       // Add to local list
       _passwords.insert(0, entry);
@@ -111,6 +117,11 @@ class PasswordService extends ChangeNotifier {
     required String password,
     required String masterPassword,
   }) async {
+    if (_userId == null) {
+      _setError('User not authenticated');
+      return false;
+    }
+
     _setLoading(true);
     _clearError();
 
@@ -130,13 +141,13 @@ class PasswordService extends ChangeNotifier {
         updatedAt: DateTime.now(),
       );
 
-      // Update in Firebase - temporarily disabled
-      // await _firestore
-      //     .collection('password_vaults')
-      //     .doc(_deviceId)
-      //     .collection('passwords')
-      //     .doc(id)
-      //     .update(updatedEntry.toMap());
+      // Update in Firebase
+      await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('passwords')
+          .doc(id)
+          .update(updatedEntry.toMap());
 
       // Update local list
       final index = _passwords.indexWhere((p) => p.id == id);
@@ -156,17 +167,22 @@ class PasswordService extends ChangeNotifier {
 
   /// Delete a password entry
   Future<bool> deletePassword(String id) async {
+    if (_userId == null) {
+      _setError('User not authenticated');
+      return false;
+    }
+
     _setLoading(true);
     _clearError();
 
     try {
-      // Delete from Firebase - temporarily disabled
-      // await _firestore
-      //     .collection('password_vaults')
-      //     .doc(_deviceId)
-      //     .collection('passwords')
-      //     .doc(id)
-      //     .delete();
+      // Delete from Firebase
+      await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('passwords')
+          .doc(id)
+          .delete();
 
       // Remove from local list
       _passwords.removeWhere((p) => p.id == id);
