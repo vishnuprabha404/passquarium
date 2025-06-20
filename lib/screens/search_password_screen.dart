@@ -77,6 +77,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
             .where((entry) => entry.category == _selectedCategory)
             .toList();
       }
+
+      setState(() => _isSearching = false);
     } catch (e) {
       setState(() {
         _searchResults = [];
@@ -100,6 +102,26 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     });
   }
 
+  void _viewAllPasswords() async {
+    setState(() => _isSearching = true);
+
+    try {
+      final passwordService =
+          Provider.of<PasswordService>(context, listen: false);
+      await passwordService.loadPasswords();
+
+      setState(() {
+        _searchResults = passwordService.passwords;
+        _isSearching = false;
+      });
+    } catch (e) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+    }
+  }
+
   @override
   Widget buildWithAutoLock(BuildContext context) {
     return Scaffold(
@@ -107,6 +129,11 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
         title: const Text('Search Passwords'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.list),
+            onPressed: _viewAllPasswords,
+            tooltip: 'View all passwords',
+          ),
           IconButton(
             icon: const Icon(Icons.clear_all),
             onPressed: _clearSearch,
@@ -223,7 +250,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Enter a search term or select a category',
+              'Enter a search term or tap the list icon above to view all passwords',
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
@@ -409,8 +437,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     }
 
     // Get master password and decrypt
-    final appProvider = Provider.of<AppProvider>(context, listen: false);
-    final masterPassword = appProvider.masterPassword;
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final masterPassword = authService.masterPassword;
 
     if (masterPassword == null) {
       _showMessage('Master password not available', isError: true);
@@ -418,10 +446,10 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     }
 
     try {
-      final decryptedPassword = await appProvider.encryptionService
-          .decryptText(entry.encryptedPassword, masterPassword);
+      final passwordService = Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
 
-      if (decryptedPassword != null) {
+      if (decryptedPassword.isNotEmpty) {
         _showPasswordDialog(entry, decryptedPassword);
       } else {
         _showMessage('Failed to decrypt password', isError: true);
@@ -519,8 +547,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     }
 
     // Decrypt and copy password
-    final appProvider = Provider.of<AppProvider>(context, listen: false);
-    final masterPassword = appProvider.masterPassword;
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final masterPassword = authService.masterPassword;
 
     if (masterPassword == null) {
       _showMessage('Master password not available', isError: true);
@@ -528,10 +556,10 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     }
 
     try {
-      final decryptedPassword = await appProvider.encryptionService
-          .decryptText(entry.encryptedPassword, masterPassword);
+      final passwordService = Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
 
-      if (decryptedPassword != null) {
+      if (decryptedPassword.isNotEmpty) {
         await _clipboardManager.copySecureData(
           decryptedPassword,
           context: context,
