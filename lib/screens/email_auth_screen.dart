@@ -675,6 +675,12 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   validator: _validateEmail,
+                  enableInteractiveSelection: true,
+                  autocorrect: false,
+                  enableSuggestions: true,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(RegExp(r'\s')), // No spaces in email
+                  ],
                   onFieldSubmitted: (_) {
                     // Move focus to Master Key field when pressing Enter on email
                     _masterKeyFocusNode.requestFocus();
@@ -685,6 +691,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    hintText: 'your.email@example.com',
                   ),
                 ),
 
@@ -714,6 +721,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                   obscureText: !_isMasterKeyVisible,
                   textInputAction: _isSignUpMode ? TextInputAction.next : TextInputAction.done,
                   validator: _validateMasterKey,
+                  enableInteractiveSelection: true,
+                  autocorrect: false,
+                  enableSuggestions: false,
                   onChanged: (value) {
                     if (_isSignUpMode) {
                       setState(() {
@@ -725,6 +735,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                     if (!_isSignUpMode) {
                       // In sign-in mode, pressing Enter should trigger sign-in
                       _submitForm();
+                    } else {
+                      // In sign-up mode, move to confirm field
+                      FocusScope.of(context).nextFocus();
                     }
                   },
                   decoration: InputDecoration(
@@ -750,6 +763,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                         : (_rememberEmail 
                             ? 'Email remembered - Press Enter to sign in'
                             : 'Press Enter to sign in'),
+                    hintText: _isSignUpMode ? 'Create a strong master key' : 'Enter your master key',
                   ),
                 ),
 
@@ -775,6 +789,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                     obscureText: !_isConfirmMasterKeyVisible,
                     textInputAction: TextInputAction.done,
                     validator: _validateConfirmMasterKey,
+                    enableInteractiveSelection: true,
+                    autocorrect: false,
+                    enableSuggestions: false,
                     onFieldSubmitted: (_) {
                       // In sign-up mode, pressing Enter on confirm field should trigger sign-up
                       _submitForm();
@@ -799,6 +816,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       helperText: 'Press Enter to create account',
+                      hintText: 'Re-enter your master key',
                     ),
                   ),
                 ],

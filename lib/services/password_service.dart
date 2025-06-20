@@ -62,6 +62,7 @@ class PasswordService extends ChangeNotifier {
     required String username,
     required String password,
     required String masterPassword,
+    String? notes,
   }) async {
     if (_userId == null) {
       _setError('User not authenticated');
@@ -85,6 +86,7 @@ class PasswordService extends ChangeNotifier {
         encryptedPassword: encryptedPassword,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        notes: notes?.trim() ?? '',
       );
 
       // Save to Firebase
@@ -116,6 +118,7 @@ class PasswordService extends ChangeNotifier {
     required String username,
     required String password,
     required String masterPassword,
+    String? notes,
   }) async {
     if (_userId == null) {
       _setError('User not authenticated');
@@ -139,6 +142,7 @@ class PasswordService extends ChangeNotifier {
         username: username.trim(),
         encryptedPassword: encryptedPassword,
         updatedAt: DateTime.now(),
+        notes: notes?.trim() ?? existingEntry.notes,
       );
 
       // Update in Firebase
@@ -218,7 +222,10 @@ class PasswordService extends ChangeNotifier {
     return _passwords.where((entry) {
       return entry.website.toLowerCase().contains(lowerQuery) ||
           entry.domain.toLowerCase().contains(lowerQuery) ||
-          entry.username.toLowerCase().contains(lowerQuery);
+          entry.username.toLowerCase().contains(lowerQuery) ||
+          entry.title.toLowerCase().contains(lowerQuery) ||
+          entry.category.toLowerCase().contains(lowerQuery) ||
+          entry.notes.toLowerCase().contains(lowerQuery);
     }).toList();
   }
 

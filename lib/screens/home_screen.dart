@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:super_locker/models/password_entry.dart';
+import 'package:super_locker/providers/app_provider.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/services/password_service.dart';
 import 'package:super_locker/services/clipboard_manager.dart';
 import 'package:super_locker/services/auto_lock_service.dart';
 import 'package:super_locker/widgets/password_strength_indicator.dart';
-import 'package:super_locker/models/password_entry.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -643,12 +646,12 @@ class _HomeScreenState extends State<HomeScreen> {
               // Recent Passwords with Search
               Row(
                 children: [
-                  const Text(
+              const Text(
                     'Your Passwords',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
                   ),
                   const Spacer(),
                   Text(
@@ -826,10 +829,29 @@ class _HomeScreenState extends State<HomeScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            subtitle: Text(
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
                               password.username,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                                if (password.notes.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    password.notes,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.blue[600],
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -849,10 +871,90 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                const Icon(Icons.arrow_forward_ios, size: 16),
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert, size: 24),
+                                  onSelected: (value) async {
+                                    print('🔧 DEBUG: Home PopupMenu selected: $value');
+                                    switch (value) {
+                                      case 'view':
+                                        _viewPassword(password);
+                                        break;
+                                      case 'copy':
+                                        _copyPassword(password);
+                                        break;
+                                      case 'browser':
+                                        _openInBrowser(password);
+                                        break;
+                                      case 'edit':
+                                        _editPassword(password);
+                                        break;
+                                      case 'delete':
+                                        _deletePassword(password);
+                                        break;
+                                    }
+                                  },
+                                  itemBuilder: (context) {
+                                    print('🔧 DEBUG: Building home popup menu items');
+                                    return [
+                                      const PopupMenuItem(
+                                        value: 'view',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.visibility, size: 20),
+                                            SizedBox(width: 8),
+                                            Text('View Details'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'copy',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.copy, size: 20),
+                                            SizedBox(width: 8),
+                                            Text('Copy Password'),
+                                          ],
+                                        ),
+                                      ),
+                                      if (password.website.isNotEmpty || password.url.isNotEmpty)
+                                        const PopupMenuItem(
+                                          value: 'browser',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.open_in_browser, size: 20),
+                                              SizedBox(width: 8),
+                                              Text('Open in Browser'),
+                                            ],
+                                          ),
+                                        ),
+                                      const PopupMenuDivider(),
+                                      const PopupMenuItem(
+                                        value: 'edit',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit, size: 20, color: Colors.blue),
+                                            SizedBox(width: 8),
+                                            Text('Edit', style: TextStyle(color: Colors.blue)),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.delete, size: 20, color: Colors.red),
+                                            SizedBox(width: 8),
+                                            Text('Delete', style: TextStyle(color: Colors.red)),
+                                          ],
+                                        ),
+                                      ),
+                                    ];
+                                  },
+                                ),
                               ],
                             ),
                             onTap: () => _viewPassword(password),
+                            isThreeLine: password.notes.isNotEmpty,
                           ),
                         );
                       },
@@ -1138,9 +1240,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ),
+          ),
+        ),
+      ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
@@ -1281,6 +1383,171 @@ class _HomeScreenState extends State<HomeScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  void _openInBrowser(PasswordEntry entry) async {
+    onUserInteraction();
+
+    // First authenticate to copy password
+    final displayName = entry.title.isNotEmpty ? entry.title : entry.website;
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final authenticated = await authService.authenticateUser(
+      reason: 'Authenticate to copy password and open $displayName in browser',
+    );
+
+    if (!authenticated) {
+      _showMessage('Authentication failed', isError: true);
+      return;
+    }
+
+    // Get and decrypt password
+    final masterPassword = authService.masterPassword;
+
+    if (masterPassword == null) {
+      _showMessage('Master password not available', isError: true);
+      return;
+    }
+
+    try {
+      final passwordService = Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+
+      if (decryptedPassword.isEmpty) {
+        _showMessage('Failed to decrypt password', isError: true);
+        return;
+      }
+
+      // Copy password to clipboard
+      final clipboardManager = ClipboardManager();
+      await clipboardManager.copySecureData(
+        decryptedPassword,
+        context: context,
+        successMessage: 'Password copied! Opening browser...',
+        clearAfterSeconds: 60, // Give more time for login
+      );
+
+      // Determine URL to open with improved logic
+      String url = entry.url.isNotEmpty ? entry.url : entry.website;
+      
+      // Smart URL handling
+      url = _buildSmartUrl(url);
+
+      print('🌐 DEBUG: Opening URL: $url');
+
+      // Open in browser
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        _showMessage('Browser opened! Password is in clipboard for 60 seconds.');
+      } else {
+        _showMessage('Cannot open URL: $url', isError: true);
+      }
+    } catch (e) {
+      _showMessage('Error: $e', isError: true);
+    }
+  }
+
+  String _buildSmartUrl(String input) {
+    if (input.isEmpty) return 'https://google.com';
+    
+    String url = input.trim().toLowerCase();
+    
+    // If it already has a protocol, return as is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return input; // Return original case
+    }
+    
+    // Remove www. if present for processing
+    String processUrl = url.replaceFirst('www.', '');
+    
+    // If it looks like a domain (contains a dot), use it as is
+    if (processUrl.contains('.')) {
+      return 'https://$input';
+    }
+    
+    // If it's just a name/brand, try to make it a .com domain
+    // Common patterns: facebook -> facebook.com, google -> google.com
+    return 'https://$input.com';
+  }
+
+  void _editPassword(PasswordEntry entry) async {
+    onUserInteraction();
+
+    // Show confirmation dialog first
+    final shouldEdit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Password'),
+        content: Text('Edit password for ${entry.title.isNotEmpty ? entry.title : entry.website}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Edit'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldEdit == true) {
+      // Navigate to edit screen (you'll need to implement this screen)
+      _showMessage('Edit functionality will be implemented in a future update');
+    }
+  }
+
+  void _deletePassword(PasswordEntry entry) async {
+    onUserInteraction();
+
+    // Show confirmation dialog
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Password'),
+        content: Text('Are you sure you want to delete the password for ${entry.title.isNotEmpty ? entry.title : entry.website}?\n\nThis action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      // Require authentication for deletion
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final authenticated = await authService.authenticateUser(
+        reason: 'Authenticate to delete password',
+      );
+
+      if (!authenticated) {
+        _showMessage('Authentication failed', isError: true);
+        return;
+      }
+
+      try {
+        final passwordService = Provider.of<PasswordService>(context, listen: false);
+        final success = await passwordService.deletePassword(entry.id);
+
+        if (success) {
+          _showMessage('Password deleted successfully');
+          // Refresh the password list
+          _loadPasswords();
+        } else {
+          _showMessage('Failed to delete password', isError: true);
+        }
+      } catch (e) {
+        _showMessage('Error deleting password: $e', isError: true);
+      }
+    }
   }
 }
 
