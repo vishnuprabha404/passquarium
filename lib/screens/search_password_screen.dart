@@ -305,123 +305,47 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
 
   Widget _buildPasswordCard(PasswordEntry entry) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          child: Text(
+            entry.domain.isNotEmpty
+                ? entry.domain[0].toUpperCase()
+                : (entry.website.isNotEmpty ? entry.website[0].toUpperCase() : 'P'),
+            style: TextStyle(
+              color: Theme.of(context).primaryColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          entry.title.isNotEmpty ? entry.title : entry.website,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          entry.username,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Title and category
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    entry.title.isNotEmpty ? entry.title : entry.website,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                if (entry.category.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      entry.category,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-              ],
+            IconButton(
+              icon: const Icon(Icons.copy, size: 20),
+              onPressed: () => _copyPassword(entry),
+              tooltip: 'Copy Password',
             ),
-            const SizedBox(height: 8),
-            // Username and URL
-            if (entry.username.isNotEmpty)
-              _buildInfoRow(Icons.person, 'Username', entry.username),
-            if (entry.url.isNotEmpty)
-              _buildInfoRow(Icons.link, 'Website', entry.url),
-            if (entry.notes.isNotEmpty)
-              _buildInfoRow(Icons.note, 'Notes', entry.notes),
-            const SizedBox(height: 16),
-            // Action buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => _viewPassword(entry),
-                  icon: const Icon(Icons.visibility, size: 18),
-                  label: const Text('View'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => _copyUsername(entry),
-                  icon: const Icon(Icons.copy, size: 18),
-                  label: const Text('Copy User'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => _copyPassword(entry),
-                  icon: const Icon(Icons.lock, size: 18),
-                  label: const Text('Copy Pass'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
+            const Icon(Icons.arrow_forward_ios, size: 16),
           ],
         ),
+        onTap: () => _viewPassword(entry),
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: Colors.grey[600]),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _viewPassword(PasswordEntry entry) async {
     onUserInteraction();
@@ -735,17 +659,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     return '${date.day}/${date.month}/${date.year} at ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  void _copyUsername(PasswordEntry entry) async {
-    if (entry.username.isNotEmpty) {
-      await _clipboardManager.copyData(
-        entry.username,
-        context: context,
-        successMessage: 'Username copied',
-      );
-    } else {
-      _showMessage('No username to copy', isError: true);
-    }
-  }
+
 
   void _copyPassword(PasswordEntry entry) async {
     onUserInteraction();

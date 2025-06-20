@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/services/password_service.dart';
+import 'package:super_locker/services/clipboard_manager.dart';
+import 'package:super_locker/services/auto_lock_service.dart';
+import 'package:super_locker/widgets/password_strength_indicator.dart';
+import 'package:super_locker/models/password_entry.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,19 +15,65 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  final ClipboardManager _clipboardManager = ClipboardManager();
+  late AutoLockService _autoLockService;
+  List<PasswordEntry> _filteredPasswords = [];
+  bool _isSearching = false;
+
   @override
   void initState() {
     super.initState();
+    _autoLockService = AutoLockService();
+    _searchController.addListener(_onSearchChanged);
     // Use post frame callback to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadPasswords();
     });
   }
 
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void onUserInteraction() {
+    _autoLockService.onUserActivity();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    final passwordService = Provider.of<PasswordService>(context, listen: false);
+    
+    if (query.isEmpty) {
+      setState(() {
+        _filteredPasswords = passwordService.passwords;
+        _isSearching = false;
+      });
+    } else {
+      setState(() {
+        _isSearching = true;
+        _filteredPasswords = passwordService.passwords.where((password) {
+          return password.website.toLowerCase().contains(query) ||
+                 password.domain.toLowerCase().contains(query) ||
+                 password.username.toLowerCase().contains(query) ||
+                 password.title.toLowerCase().contains(query) ||
+                 password.category.toLowerCase().contains(query);
+        }).toList();
+      });
+    }
+  }
+
   Future<void> _loadPasswords() async {
     final passwordService =
         Provider.of<PasswordService>(context, listen: false);
     await passwordService.loadPasswords();
+    // Initialize filtered passwords
+    setState(() {
+      _filteredPasswords = passwordService.passwords;
+    });
   }
 
   void _lockApp() {
@@ -553,12 +603,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: _ActionCard(
-                      icon: Icons.search_rounded,
-                      title: 'Search Passwords',
-                      subtitle: 'Find your passwords',
+                      icon: Icons.security,
+                      title: 'Security Center',
+                      subtitle: 'Check password strength',
                       color: Colors.blue,
                       onTap: () {
-                        Navigator.of(context).pushNamed('/search-password');
+                        _showSecurityCenter();
                       },
                     ),
                   ),
@@ -590,20 +640,61 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 32),
 
-              // Recent Passwords
-              const Text(
-                'Recent Passwords',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+              // Recent Passwords with Search
+              Row(
+                children: [
+                  const Text(
+                    'Your Passwords',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${_filteredPasswords.length} found',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Search Bar
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search passwords...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surface,
                 ),
+                onChanged: (value) {
+                  // Trigger rebuild to show/hide clear button
+                  setState(() {});
+                },
               ),
 
               const SizedBox(height: 16),
 
-              // Recent Passwords List (Fixed Height)
+              // Password List (Fixed Height)
               SizedBox(
-                height: 300, // Fixed height to avoid overflow
+                height: 400, // Fixed height to avoid layout issues
                 child: Consumer<PasswordService>(
                   builder: (context, passwordService, child) {
                     if (passwordService.isLoading) {
@@ -648,10 +739,37 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     }
 
-                    final passwords =
-                        passwordService.passwords.take(5).toList();
+                    if (_filteredPasswords.isEmpty && passwordService.passwords.isNotEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No passwords found',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Try a different search term',
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
 
-                    if (passwords.isEmpty) {
+                    if (_filteredPasswords.isEmpty) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -682,9 +800,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
 
                     return ListView.builder(
-                      itemCount: passwords.length,
+                      padding: const EdgeInsets.only(bottom: 16),
+                      itemCount: _filteredPasswords.length,
                       itemBuilder: (context, index) {
-                        final password = passwords[index];
+                        final password = _filteredPasswords[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
@@ -695,7 +814,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Text(
                                 password.domain.isNotEmpty
                                     ? password.domain[0].toUpperCase()
-                                    : 'P',
+                                    : (password.website.isNotEmpty ? password.website[0].toUpperCase() : 'P'),
                                 style: TextStyle(
                                   color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.bold,
@@ -703,9 +822,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             title: Text(
-                              password.website.isNotEmpty
-                                  ? password.website
-                                  : password.domain,
+                              password.title.isNotEmpty ? password.title : password.website,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -714,14 +831,18 @@ class _HomeScreenState extends State<HomeScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            trailing:
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.copy, size: 20),
+                                  onPressed: () => _copyPassword(password),
+                                  tooltip: 'Copy Password',
+                                ),
                                 const Icon(Icons.arrow_forward_ios, size: 16),
-                            onTap: () {
-                              // Navigate to password detail/edit screen
-                              Navigator.of(context).pushNamed(
-                                '/search-password',
-                              );
-                            },
+                              ],
+                            ),
+                            onTap: () => _viewPassword(password),
                           ),
                         );
                       },
@@ -732,6 +853,422 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showSecurityCenter() {
+    // Show a simple security overview dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.security, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 8),
+            const Text('Security Center'),
+          ],
+        ),
+        content: Consumer<PasswordService>(
+          builder: (context, passwordService, child) {
+            final passwords = passwordService.passwords;
+            final weakPasswords = passwords.where((p) => p.encryptedPassword.length < 50).length; // Rough estimate
+            
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSecurityItem(
+                  'Total Passwords', 
+                  '${passwords.length}', 
+                  Icons.lock_outline,
+                  Colors.blue,
+                ),
+                const SizedBox(height: 12),
+                _buildSecurityItem(
+                  'Potentially Weak', 
+                  '$weakPasswords', 
+                  Icons.warning,
+                  weakPasswords > 0 ? Colors.orange : Colors.green,
+                ),
+                const SizedBox(height: 12),
+                _buildSecurityItem(
+                  'Security Score', 
+                  '${((passwords.length - weakPasswords) / (passwords.length > 0 ? passwords.length : 1) * 100).round()}%', 
+                  Icons.shield,
+                  Colors.green,
+                ),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecurityItem(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _viewPassword(PasswordEntry entry) async {
+    onUserInteraction();
+
+    final displayName = entry.title.isNotEmpty ? entry.title : entry.website;
+    
+    // Require biometric authentication
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final authenticated = await authService.authenticateUser(
+      reason: 'Authenticate to view password for $displayName',
+    );
+
+    if (!authenticated) {
+      _showMessage('Authentication failed', isError: true);
+      return;
+    }
+
+    // Get master password and decrypt
+    final masterPassword = authService.masterPassword;
+
+    if (masterPassword == null) {
+      _showMessage('Master password not available', isError: true);
+      return;
+    }
+
+    try {
+      final passwordService = Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+
+      if (decryptedPassword.isNotEmpty) {
+        _showPasswordDialog(entry, decryptedPassword);
+      } else {
+        _showMessage('Failed to decrypt password', isError: true);
+      }
+    } catch (e) {
+      _showMessage('Error decrypting password: $e', isError: true);
+    }
+  }
+
+  void _showPasswordDialog(PasswordEntry entry, String password) {
+    final displayName = entry.title.isNotEmpty ? entry.title : entry.website;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.lock_open, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 8),
+            Expanded(child: Text(displayName)),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Service Details
+                if (entry.website.isNotEmpty || entry.url.isNotEmpty || entry.category.isNotEmpty) ...[
+                  Text(
+                    'Service Details',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (entry.website.isNotEmpty)
+                    _buildDetailRow('Website', entry.website, Icons.language),
+                  if (entry.url.isNotEmpty && entry.url != entry.website)
+                    _buildDetailRow('URL', entry.url, Icons.link),
+                  if (entry.category.isNotEmpty)
+                    _buildDetailRow('Category', entry.category, Icons.category),
+                  const SizedBox(height: 16),
+                ],
+                
+                // Account Details
+                Text(
+                  'Account Details',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (entry.username.isNotEmpty)
+                  _buildDetailRow('Username', entry.username, Icons.person, copyable: true),
+                
+                const SizedBox(height: 16),
+                
+                // Password Section
+                Text(
+                  'Password',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.lock, size: 20, color: Colors.grey[600]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SelectableText(
+                          password,
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          _clipboardManager.copySecureData(
+                            password,
+                            context: context,
+                            successMessage: 'Password copied securely',
+                          );
+                        },
+                        icon: const Icon(Icons.copy, size: 20),
+                        tooltip: 'Copy Password',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                PasswordStrengthIndicator(password: password),
+                
+                const SizedBox(height: 16),
+                
+                // Notes Section
+                if (entry.notes.isNotEmpty) ...[
+                  Text(
+                    'Notes',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                    ),
+                    child: SelectableText(entry.notes),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          _clipboardManager.copySecureData(
+                            password,
+                            context: context,
+                            successMessage: 'Password copied securely',
+                          );
+                        },
+                        icon: const Icon(Icons.copy),
+                        label: const Text('Copy Password'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          if (entry.username.isNotEmpty) {
+                            _clipboardManager.copyData(
+                              entry.username,
+                              context: context,
+                              successMessage: 'Username copied',
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.person),
+                        label: const Text('Copy Username'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, IconData icon, {bool copyable = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: Colors.grey[600]),
+            const SizedBox(width: 8),
+            Text(
+              '$label: ',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
+            ),
+            Expanded(
+              child: SelectableText(
+                value,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+            if (copyable)
+              IconButton(
+                onPressed: () {
+                  _clipboardManager.copyData(
+                    value,
+                    context: context,
+                    successMessage: '$label copied',
+                  );
+                },
+                icon: const Icon(Icons.copy, size: 16),
+                tooltip: 'Copy $label',
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _copyPassword(PasswordEntry entry) async {
+    onUserInteraction();
+
+    // Require biometric authentication
+    final displayName = entry.title.isNotEmpty ? entry.title : entry.website;
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final authenticated = await authService.authenticateUser(
+      reason: 'Authenticate to copy password for $displayName',
+    );
+
+    if (!authenticated) {
+      _showMessage('Authentication failed', isError: true);
+      return;
+    }
+
+    // Decrypt and copy password
+    final masterPassword = authService.masterPassword;
+
+    if (masterPassword == null) {
+      _showMessage('Master password not available', isError: true);
+      return;
+    }
+
+    try {
+      final passwordService = Provider.of<PasswordService>(context, listen: false);
+      final decryptedPassword = await passwordService.decryptPassword(entry, masterPassword);
+
+      if (decryptedPassword.isNotEmpty) {
+        await _clipboardManager.copySecureData(
+          decryptedPassword,
+          context: context,
+          successMessage: 'Password copied securely',
+        );
+      } else {
+        _showMessage('Failed to decrypt password', isError: true);
+      }
+    } catch (e) {
+      _showMessage('Error copying password: $e', isError: true);
+    }
+  }
+
+  void _showMessage(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error : Icons.info,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError ? Colors.red : Colors.blue,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
