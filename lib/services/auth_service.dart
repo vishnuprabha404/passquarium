@@ -506,9 +506,9 @@ class AuthService extends ChangeNotifier {
   String _getFirebaseAuthErrorMessage(String code) {
     switch (code) {
       case 'user-not-found':
-        return 'No account found with this email address.';
+        return 'Incorrect username or password.';
       case 'wrong-password':
-        return 'Incorrect password.';
+        return 'Incorrect username or password.';
       case 'email-already-in-use':
         return 'An account already exists with this email address.';
       case 'weak-password':
@@ -522,19 +522,19 @@ class AuthService extends ChangeNotifier {
       case 'operation-not-allowed':
         return 'This operation is not allowed.';
       case 'invalid-credential':
-        return 'Invalid credentials provided.';
+        return 'Incorrect username or password.';
       case 'network-request-failed':
         return 'Network error. Please check your connection.';
       case 'unknown-error':
-        return 'Authentication service temporarily unavailable. This is a known Windows issue. Please try again in a few moments or restart the app.';
+        return 'Incorrect username or password.';
       case 'internal-error':
-        return 'Internal authentication error. Please restart the app and try again. If the issue persists, this may be a Windows Firebase compatibility issue.';
+        return 'Incorrect username or password.';
       case 'app-not-authorized':
         return 'App is not authorized to use Firebase Authentication. Please check your configuration.';
       case 'api-key-not-valid':
         return 'Invalid API key. Please check your Firebase configuration.';
       default:
-        return 'Authentication failed. Please try again.';
+        return 'Incorrect username or password.';
     }
   }
 

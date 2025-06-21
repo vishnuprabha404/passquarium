@@ -425,8 +425,17 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
         content: Text(message),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            autofocus: true,
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Clear the master key field for security and user convenience
+              _masterKeyController.clear();
+              // Refocus on the master key field and select all text
+              Future.delayed(const Duration(milliseconds: 100), () {
+                _masterKeyFocusNode.requestFocus();
+              });
+            },
+            child: const Text('Try Again'),
           ),
         ],
       ),
