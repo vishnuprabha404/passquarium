@@ -43,6 +43,12 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Android build artifacts (APK/AAB files)
+*.apk
+*.aab
+/android/app/build/
+/build/app/outputs/
+
 # iOS/macOS
 /ios/Flutter/flutter_assets/
 /ios/Flutter/flutter_export_environment.sh
