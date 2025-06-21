@@ -24,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<PasswordEntry> _filteredPasswords = [];
   bool _isSearching = false;
 
-
   @override
   void initState() {
     super.initState();
@@ -259,8 +258,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       .pushNamedAndRemoveUntil('/', (route) => false);
                 }
               } catch (e) {
-                Navigator.pop(context); // Close loading dialog
                 if (mounted) {
+                  Navigator.pop(context); // Close loading dialog
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Logout failed: $e')),
                   );

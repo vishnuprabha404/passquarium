@@ -112,8 +112,6 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-
-
   // Lock the app
   void lockApp() {
     _authService.setAuthenticated(false);

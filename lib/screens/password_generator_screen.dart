@@ -29,7 +29,6 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
   // Generated password
   String _generatedPassword = '';
 
-
   // Password policy compliance
   Map<String, bool> _policyCompliance = {};
 
@@ -62,7 +61,6 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
         if (_noRepeatingChars) {
           _generatedPassword = _removeRepeatingChars(_generatedPassword);
         }
-
 
         _policyCompliance = _checkPolicyCompliance(_generatedPassword);
       });

@@ -58,7 +58,7 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
         setState(() {
           _lastError = 'Authentication failed. Please try again.';
         });
-        
+
         // Show error dialog only after multiple attempts
         if (_attemptCount >= 2) {
           _showErrorDialog(_lastError!);
@@ -70,7 +70,7 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
         setState(() {
           _lastError = errorMessage;
         });
-        
+
         _showErrorDialog(errorMessage);
       }
     } finally {
@@ -106,8 +106,6 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
       ),
     );
   }
-
-
 
   @override
   Widget build(BuildContext context) {

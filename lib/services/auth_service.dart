@@ -36,7 +36,6 @@ class AuthService extends ChangeNotifier {
   bool _deviceAuthCompleted = false;
   bool _hasLoggedOut = false; // Track if user has explicitly logged out
 
-
   AuthStatus get authStatus => _authStatus;
   bool get isAuthenticated => _authStatus == AuthStatus.authenticated;
   bool get isDeviceAuthSupported => _isDeviceAuthSupported;
@@ -45,8 +44,6 @@ class AuthService extends ChangeNotifier {
   String? get userEmail => _userEmail;
   User? get firebaseUser => _firebaseUser;
   bool get deviceAuthCompleted => _deviceAuthCompleted;
-
-
 
   /// Initialize the authentication service
   Future<void> initialize() async {
@@ -102,8 +99,6 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-
-
   /// Authenticate using device biometrics or PIN (first step)
   Future<bool> authenticateWithDevice() async {
     if (!_isDeviceAuthSupported) {
@@ -116,12 +111,13 @@ class AuthService extends ChangeNotifier {
     try {
       // Add a small delay to ensure UI is ready
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       final bool didAuthenticate = await _localAuth.authenticate(
         localizedReason: 'Please authenticate to access Super Locker',
         options: const AuthenticationOptions(
           biometricOnly: false,
-          stickyAuth: false, // Changed to false for better Samsung compatibility
+          stickyAuth:
+              false, // Changed to false for better Samsung compatibility
           useErrorDialogs: true,
           sensitiveTransaction: true,
         ),
@@ -134,9 +130,11 @@ class AuthService extends ChangeNotifier {
             biometricSuccess: 'Authentication successful',
             cancelButton: 'Cancel',
             deviceCredentialsRequiredTitle: 'Device Authentication Required',
-            deviceCredentialsSetupDescription: 'Please set up device authentication in Settings',
+            deviceCredentialsSetupDescription:
+                'Please set up device authentication in Settings',
             goToSettingsButton: 'Settings',
-            goToSettingsDescription: 'Authentication is not set up on this device.',
+            goToSettingsDescription:
+                'Authentication is not set up on this device.',
           ),
         ],
       );
@@ -154,27 +152,31 @@ class AuthService extends ChangeNotifier {
       return false;
     } on PlatformException catch (e) {
       print('Device authentication error: ${e.code} - ${e.message}');
-      
+
       // Handle specific error cases
       switch (e.code) {
         case 'NotAvailable':
-          print('Device authentication not available - proceeding to email auth');
+          print(
+              'Device authentication not available - proceeding to email auth');
           _deviceAuthCompleted = true;
           _authStatus = AuthStatus.emailRequired;
           notifyListeners();
           return true;
         case 'NotEnrolled':
-          print('No authentication methods enrolled - proceeding to email auth');
+          print(
+              'No authentication methods enrolled - proceeding to email auth');
           _deviceAuthCompleted = true;
           _authStatus = AuthStatus.emailRequired;
           notifyListeners();
           return true;
         case 'LockedOut':
           print('Device authentication locked out - too many attempts');
-          throw Exception('Too many failed attempts. Please wait and try again.');
+          throw Exception(
+              'Too many failed attempts. Please wait and try again.');
         case 'PermanentlyLockedOut':
           print('Device authentication permanently locked out');
-          throw Exception('Authentication is locked. Please use your device PIN.');
+          throw Exception(
+              'Authentication is locked. Please use your device PIN.');
         case 'UserCancel':
           print('User cancelled authentication');
           return false;

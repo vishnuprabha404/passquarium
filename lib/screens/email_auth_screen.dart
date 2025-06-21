@@ -635,7 +635,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                                       onPressed: _isLoading
                                           ? null
                                           : _checkVerificationManually,
-                                      icon: const Icon(Icons.check_circle_outline,
+                                      icon: const Icon(
+                                          Icons.check_circle_outline,
                                           size: 16),
                                       label: const Text('Check Status'),
                                     ),
