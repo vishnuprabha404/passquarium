@@ -57,7 +57,7 @@ class _MasterKeyScreenState extends State<MasterKeyScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.red),
+            const Icon(Icons.error_outline, color: Colors.red),
             const SizedBox(width: 8),
             Text(title),
           ],
@@ -233,7 +233,7 @@ class _MasterKeyScreenState extends State<MasterKeyScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.security,
                         color: Colors.blue,
                         size: 20,

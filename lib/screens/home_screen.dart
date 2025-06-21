@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:super_locker/models/password_entry.dart';
@@ -1000,7 +999,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 12),
                 _buildSecurityItem(
                   'Security Score',
-                  '${((passwords.length - weakPasswords) / (passwords.length > 0 ? passwords.length : 1) * 100).round()}%',
+                  '${((passwords.length - weakPasswords) / (passwords.isNotEmpty ? passwords.length : 1) * 100).round()}%',
                   Icons.shield,
                   Colors.green,
                 ),

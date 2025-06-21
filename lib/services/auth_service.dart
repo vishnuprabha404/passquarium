@@ -163,7 +163,7 @@ class AuthService extends ChangeNotifier {
       }
 
       return false;
-    } on PlatformException catch (e) {
+    } on PlatformException {
       return false;
     }
   }
@@ -557,7 +557,7 @@ class AuthService extends ChangeNotifier {
       }
 
       if (methods.isNotEmpty) {
-        return methods.join(' or ') + ' or device PIN';
+        return '${methods.join(' or ')} or device PIN';
       }
     }
 
@@ -746,7 +746,7 @@ class AuthService extends ChangeNotifier {
       );
 
       return didAuthenticate;
-    } on PlatformException catch (e) {
+    } on PlatformException {
       return false;
     }
   }
@@ -767,7 +767,7 @@ class AuthService extends ChangeNotifier {
       );
 
       return didAuthenticate;
-    } on PlatformException catch (e) {
+    } on PlatformException {
       return false;
     }
   }
@@ -785,7 +785,7 @@ class AuthService extends ChangeNotifier {
       );
 
       return didAuthenticate;
-    } on PlatformException catch (e) {
+    } on PlatformException {
       return false;
     }
   }

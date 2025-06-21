@@ -182,11 +182,11 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
-                          const Icon(Icons.vpn_key, color: Colors.blue),
-                          const SizedBox(width: 8),
-                          const Text(
+                          Icon(Icons.vpn_key, color: Colors.blue),
+                          SizedBox(width: 8),
+                          Text(
                             'Generated Password',
                             style: TextStyle(
                               fontSize: 18,
@@ -287,11 +287,11 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
-                          const Icon(Icons.settings, color: Colors.blue),
-                          const SizedBox(width: 8),
-                          const Text(
+                          Icon(Icons.settings, color: Colors.blue),
+                          SizedBox(width: 8),
+                          Text(
                             'Password Settings',
                             style: TextStyle(
                               fontSize: 18,
@@ -429,11 +429,11 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
-                          const Icon(Icons.security, color: Colors.blue),
-                          const SizedBox(width: 8),
-                          const Text(
+                          Icon(Icons.security, color: Colors.blue),
+                          SizedBox(width: 8),
+                          Text(
                             'Password Policy Compliance',
                             style: TextStyle(
                               fontSize: 18,
@@ -493,7 +493,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                           subtitle: Text(subtitle),
                           dense: true,
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
                 ),

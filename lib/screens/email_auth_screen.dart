@@ -316,7 +316,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Send a Master Key reset email to:'),
+            const Text('Send a Master Key reset email to:'),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -417,7 +417,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.red),
+            const Icon(Icons.error_outline, color: Colors.red),
             const SizedBox(width: 8),
             Text(title),
           ],
@@ -449,7 +449,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.check_circle_outline, color: Colors.green),
+            const Icon(Icons.check_circle_outline, color: Colors.green),
             const SizedBox(width: 8),
             Text(title),
           ],
@@ -591,7 +591,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.mark_email_unread,
+                                  const Icon(Icons.mark_email_unread,
                                       color: Colors.orange),
                                   const SizedBox(width: 12),
                                   Expanded(
@@ -625,7 +625,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                                       onPressed: _isLoading
                                           ? null
                                           : _resendVerificationEmail,
-                                      icon: Icon(Icons.refresh, size: 16),
+                                      icon: const Icon(Icons.refresh, size: 16),
                                       label: const Text('Resend Email'),
                                     ),
                                   ),
@@ -635,7 +635,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                                       onPressed: _isLoading
                                           ? null
                                           : _checkVerificationManually,
-                                      icon: Icon(Icons.check_circle_outline,
+                                      icon: const Icon(Icons.check_circle_outline,
                                           size: 16),
                                       label: const Text('Check Status'),
                                     ),
@@ -652,7 +652,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(Icons.info_outline,
+                                      const Icon(Icons.info_outline,
                                           color: Colors.blue, size: 16),
                                       const SizedBox(width: 8),
                                       Expanded(
@@ -932,7 +932,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                     children: [
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.security,
                             color: Colors.blue,
                             size: 20,
@@ -978,7 +978,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                 // Additional Help
                 TextButton.icon(
                   onPressed: () => _showHelpDialog(),
-                  icon: Icon(Icons.help_outline, size: 16),
+                  icon: const Icon(Icons.help_outline, size: 16),
                   label: const Text('Need Help?'),
                 ),
               ],

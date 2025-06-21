@@ -266,7 +266,7 @@ packages:
     source: hosted
     version: "5.6.0"
   firebase_auth_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: firebase_auth_platform_interface
       sha256: fde52352bfd553f5e38239b868e1e6fe6c1a6af542f5cc547554c61fef30b99b
@@ -521,7 +521,7 @@ packages:
     source: hosted
     version: "2.3.0"
   local_auth_android:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: local_auth_android
       sha256: "63ad7ca6396290626dc0cb34725a939e4cfe965d80d36112f08d49cf13a8136e"
@@ -529,7 +529,7 @@ packages:
     source: hosted
     version: "1.0.49"
   local_auth_darwin:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: local_auth_darwin
       sha256: "630996cd7b7f28f5ab92432c4b35d055dd03a747bc319e5ffbb3c4806a3e50d2"
@@ -545,7 +545,7 @@ packages:
     source: hosted
     version: "1.0.10"
   local_auth_windows:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: local_auth_windows
       sha256: bc4e66a29b0fdf751aafbec923b5bed7ad6ed3614875d8151afe2578520b2ab5

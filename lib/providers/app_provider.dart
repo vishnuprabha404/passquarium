@@ -25,7 +25,7 @@ class AppProvider extends ChangeNotifier {
   final ClipboardManager _clipboardManager = ClipboardManager();
 
   InitializationStatus _initializationStatus = InitializationStatus.notStarted;
-  bool _isInitialized = false;
+  final bool _isInitialized = false;
   bool _isAuthenticated = false;
   bool _isMasterPasswordSet = false;
   String? _masterPassword;
@@ -328,7 +328,7 @@ class UIProvider extends ChangeNotifier {
   bool _isDarkMode = false;
   String _currentRoute = '/';
   bool _isPasswordVisible = false;
-  Map<String, bool> _passwordVisibilityMap = {};
+  final Map<String, bool> _passwordVisibilityMap = {};
 
   // Getters
   bool get isDarkMode => _isDarkMode;

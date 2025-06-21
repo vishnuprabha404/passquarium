@@ -1,24 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/services/password_service.dart';
 import 'package:super_locker/services/encryption_service.dart';
 import 'package:super_locker/models/password_entry.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:local_auth/local_auth.dart';
 
 // Mock classes for testing
-@GenerateMocks([
-  FirebaseAuth,
-  User,
-  UserCredential,
-  LocalAuthentication,
-  FlutterSecureStorage,
-])
-import 'super_locker_test.mocks.dart';
 
 void main() {
   group('Super Locker Tests', () {
