@@ -50,20 +50,33 @@ class AuthService extends ChangeNotifier {
   /// This is more comprehensive than just canCheckBiometrics
   Future<bool> _hasDeviceAuthentication() async {
     try {
-      // First check if biometrics are available
+      // Check if device supports authentication at all
+      final isDeviceSupported = await _localAuth.isDeviceSupported();
+      if (!isDeviceSupported) {
+        return false;
+      }
+
+      // Check if biometrics are available and configured
       final canCheckBiometrics = await _localAuth.canCheckBiometrics;
       if (canCheckBiometrics) {
         final availableBiometrics = await _localAuth.getAvailableBiometrics();
         if (availableBiometrics.isNotEmpty) {
-          return true;
+          return true; // Device has biometrics configured
         }
       }
 
-      // Check if device has any security (PIN, pattern, password, etc.)
-      final isDeviceSupported = await _localAuth.isDeviceSupported();
-      return isDeviceSupported;
+      // If canCheckBiometrics is true but no biometrics available,
+      // it usually means device has PIN/Pattern/Password configured
+      if (canCheckBiometrics) {
+        return true; // Device authentication is available (PIN/Pattern/Password)
+      }
+
+      // If we reach here, device might have no authentication configured
+      // Return false to skip device auth for devices with only swipe-to-unlock
+      return false;
     } catch (e) {
       // If we can't determine, assume authentication is available for security
+      // This is safer for production - better to show auth screen than skip it
       return true;
     }
   }
@@ -102,33 +115,30 @@ class AuthService extends ChangeNotifier {
         _firebaseUser = null;
       }
 
-      // DEVELOPMENT SKIP: If device has no authentication configured, skip device auth
-      // TODO: Remove this for production - device authentication should be mandatory
+      // Determine authentication flow based on device security configuration
       if (!hasDeviceAuth) {
-              // DEBUG: Device has no authentication configured - skipping device auth (DEVELOPMENT ONLY)
-      _deviceAuthCompleted = true;
-      _authStatus = AuthStatus.emailRequired;
-      notifyListeners();
-      return;
-    }
+        // Device has no authentication configured (swipe-only) - skip device auth
+        print('Device has no authentication configured - skipping device auth');
+        _deviceAuthCompleted = true;
+        _authStatus = AuthStatus.emailRequired;
+        notifyListeners();
+        return;
+      }
 
-    // RESTORED FLOW: Always show device auth first if supported and device has authentication
-    if (_isDeviceAuthSupported && !_deviceAuthCompleted) {
-      // DEBUG: Device authentication required - showing device auth screen
+      // Device has authentication configured (PIN/Pattern/Biometrics) - require device auth
+      if (_isDeviceAuthSupported && !_deviceAuthCompleted) {
+        print('Device authentication required - showing device auth screen');
         _authStatus = AuthStatus.deviceAuthRequired;
         notifyListeners();
         return;
       }
 
-      // If Firebase user exists, go to email auth (which includes master key), otherwise email auth
-      if (_firebaseUser != null) {
-        _authStatus = AuthStatus.emailRequired;
-      } else {
-        _authStatus = AuthStatus.emailRequired;
-      }
+      // Device auth completed or not supported - proceed to email auth
+      _authStatus = AuthStatus.emailRequired;
       notifyListeners();
     } catch (e) {
-      // DEBUG: Error during auth initialization: $e
+      print('Error during auth initialization: $e');
+      // On error, default to requiring device auth if supported for security
       _authStatus = _isDeviceAuthSupported
           ? AuthStatus.deviceAuthRequired
           : AuthStatus.emailRequired;
@@ -152,9 +162,24 @@ class AuthService extends ChangeNotifier {
           biometricOnly: false,
           stickyAuth: true,
         ),
+        authMessages: const [
+          AndroidAuthMessages(
+            signInTitle: 'Super Locker Authentication',
+            biometricHint: 'Use your fingerprint or device PIN to continue',
+            biometricNotRecognized: 'Authentication failed, please try again',
+            biometricRequiredTitle: 'Authentication Required',
+            biometricSuccess: 'Authentication successful',
+            cancelButton: 'Cancel',
+            deviceCredentialsRequiredTitle: 'Device Authentication Required',
+            deviceCredentialsSetupDescription: 'Please set up device authentication in Settings',
+            goToSettingsButton: 'Go to Settings',
+            goToSettingsDescription: 'Device authentication is not set up. Please go to Settings to set up.',
+          ),
+        ],
       );
 
       if (didAuthenticate) {
+        print('Device authentication successful');
         _deviceAuthCompleted = true;
         // After device auth, always go to email auth (which includes master key verification)
         _authStatus = AuthStatus.emailRequired;
@@ -162,8 +187,30 @@ class AuthService extends ChangeNotifier {
         return true;
       }
 
+      print('Device authentication failed or cancelled by user');
       return false;
-    } on PlatformException {
+    } on PlatformException catch (e) {
+      print('Device authentication error: ${e.code} - ${e.message}');
+      
+      // Handle specific error cases
+      switch (e.code) {
+        case 'NotAvailable':
+          // Device doesn't support authentication
+          _deviceAuthCompleted = true;
+          _authStatus = AuthStatus.emailRequired;
+          notifyListeners();
+          return true;
+        case 'NotEnrolled':
+          // No authentication methods configured
+          _deviceAuthCompleted = true;
+          _authStatus = AuthStatus.emailRequired;
+          notifyListeners();
+          return true;
+        default:
+          return false;
+      }
+    } catch (e) {
+      print('Unexpected device authentication error: $e');
       return false;
     }
   }

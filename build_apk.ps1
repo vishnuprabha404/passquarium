@@ -24,7 +24,14 @@ flutter build apk --target-platform android-arm64 --release
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ APK built successfully!" -ForegroundColor Green
-    Write-Host "APK location: build\app\outputs\flutter-apk\app-release.apk" -ForegroundColor Green
+    $apkPath = "build\app\outputs\flutter-apk\app-release.apk"
+    Write-Host "APK location: $apkPath" -ForegroundColor Green
+    
+    # Open APK location in Windows Explorer
+    Write-Host "Opening APK location in Explorer..." -ForegroundColor Cyan
+    $fullPath = Resolve-Path $apkPath
+    explorer.exe /select,"$fullPath"
+    
     exit 0
 }
 
@@ -34,7 +41,14 @@ flutter build apk --target-platform android-arm64 --debug
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Debug APK built successfully!" -ForegroundColor Green
-    Write-Host "APK location: build\app\outputs\flutter-apk\app-debug.apk" -ForegroundColor Green
+    $apkPath = "build\app\outputs\flutter-apk\app-debug.apk"
+    Write-Host "APK location: $apkPath" -ForegroundColor Green
+    
+    # Open APK location in Windows Explorer
+    Write-Host "Opening APK location in Explorer..." -ForegroundColor Cyan
+    $fullPath = Resolve-Path $apkPath
+    explorer.exe /select,"$fullPath"
+    
     exit 0
 }
 
@@ -44,10 +58,17 @@ flutter build apk --split-per-abi --release
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Split APKs built successfully!" -ForegroundColor Green
-    Write-Host "APK location: build\app\outputs\flutter-apk\" -ForegroundColor Green
-    Get-ChildItem -Path "build\app\outputs\flutter-apk\" -Filter "*.apk" | ForEach-Object {
+    $apkDir = "build\app\outputs\flutter-apk\"
+    Write-Host "APK location: $apkDir" -ForegroundColor Green
+    Get-ChildItem -Path $apkDir -Filter "*.apk" | ForEach-Object {
         Write-Host "  - $($_.Name)" -ForegroundColor Green
     }
+    
+    # Open APK directory in Windows Explorer
+    Write-Host "Opening APK directory in Explorer..." -ForegroundColor Cyan
+    $fullDir = Resolve-Path $apkDir
+    explorer.exe "$fullDir"
+    
     exit 0
 }
 
