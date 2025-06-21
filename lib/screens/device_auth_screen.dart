@@ -96,15 +96,6 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
             },
             child: const Text('Retry'),
           ),
-          // Add skip option for troubleshooting
-          if (_attemptCount >= 3)
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _skipAuthentication();
-              },
-              child: const Text('Skip'),
-            ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
@@ -116,34 +107,7 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
     );
   }
 
-  void _skipAuthentication() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Skip Device Authentication'),
-        content: const Text(
-          'You can continue with email authentication instead. '
-          'Device authentication provides an additional security layer, '
-          'but email + master key authentication will still keep your passwords secure.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              final authService = Provider.of<AuthService>(context, listen: false);
-              authService.skipDeviceAuth();
-              Navigator.of(context).pushReplacementNamed('/email-auth');
-            },
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -263,74 +227,6 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
                         ),
                 ),
               ),
-
-              // Alternative authentication option
-              Padding(
-                padding: const EdgeInsets.only(top: 24),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Having trouble with device authentication?',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: _skipAuthentication,
-                      child: const Text(
-                        'Use Email Authentication Instead',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Skip button for troubleshooting (after failed attempts)
-              if (_attemptCount >= 2 && _lastError != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.info_outline, color: Colors.orange),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Device authentication seems to be having issues.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.orange,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: _skipAuthentication,
-                          child: const Text(
-                            'Continue with Email Authentication',
-                            style: TextStyle(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
             ],
           ),
         ),

@@ -46,64 +46,12 @@ class AuthService extends ChangeNotifier {
   User? get firebaseUser => _firebaseUser;
   bool get deviceAuthCompleted => _deviceAuthCompleted;
 
-  /// Check if device has any authentication configured (biometrics or device lock)
-  /// This is more comprehensive than just canCheckBiometrics
-  Future<bool> _hasDeviceAuthentication() async {
-    try {
-      // First, try the more reliable canCheckBiometrics method
-      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
-      print('DEBUG: canCheckBiometrics = $canCheckBiometrics');
-      
-      if (canCheckBiometrics) {
-        final availableBiometrics = await _localAuth.getAvailableBiometrics();
-        print('DEBUG: availableBiometrics = $availableBiometrics');
-        
-        // If biometrics are available, device definitely has authentication
-        if (availableBiometrics.isNotEmpty) {
-          print('DEBUG: Device has biometrics configured: $availableBiometrics');
-          return true;
-        }
-        
-        // If canCheckBiometrics is true but no biometrics available,
-        // it usually means device has PIN/Pattern/Password configured
-        print('DEBUG: Device authentication available (PIN/Pattern/Password)');
-        return true;
-      }
 
-      // Fallback: Check if device supports authentication at all
-      // Note: isDeviceSupported() can be unreliable on some devices
-      final isDeviceSupported = await _localAuth.isDeviceSupported();
-      print('DEBUG: isDeviceSupported = $isDeviceSupported');
-      
-      if (isDeviceSupported) {
-        print('DEBUG: Device supports authentication (fallback check)');
-        return true;
-      }
-
-      // If both checks fail, device likely has no authentication configured
-      print('DEBUG: No device authentication configured (both checks failed)');
-      return false;
-    } catch (e) {
-      // If we can't determine, assume authentication is available for security
-      // This is safer for production - better to show auth screen than skip it
-      print('DEBUG: Error checking device authentication: $e');
-      return true;
-    }
-  }
-
-  /// Force skip device authentication for problematic devices
-  void forceSkipDeviceAuth() {
-    print('Device authentication force-skipped due to device compatibility issues');
-    _deviceAuthCompleted = true;
-    _authStatus = AuthStatus.emailRequired;
-    notifyListeners();
-  }
 
   /// Initialize the authentication service
   Future<void> initialize() async {
     try {
-      // Check if device has any authentication configured
-      final hasDeviceAuth = await _hasDeviceAuthentication();
+      // Initialize device authentication capabilities
       _isDeviceAuthSupported = await _localAuth.canCheckBiometrics;
 
       if (_isDeviceAuthSupported) {
@@ -133,19 +81,7 @@ class AuthService extends ChangeNotifier {
         _firebaseUser = null;
       }
 
-      // Determine authentication flow based on device security configuration
-      if (!hasDeviceAuth) {
-        // Device has no authentication configured (swipe-only) - skip device auth
-        print('Device has no authentication configured - skipping device auth');
-        _deviceAuthCompleted = true;
-        _authStatus = AuthStatus.emailRequired;
-        notifyListeners();
-        return;
-      }
-
-
-
-      // Device has authentication configured (PIN/Pattern/Biometrics) - require device auth
+      // Require device authentication if supported (all platforms)
       if (_isDeviceAuthSupported && !_deviceAuthCompleted) {
         print('Device authentication required - showing device auth screen');
         _authStatus = AuthStatus.deviceAuthRequired;
@@ -166,13 +102,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Skip device authentication (for troubleshooting)
-  void skipDeviceAuth() {
-    print('Device authentication skipped by user - proceeding with email authentication');
-    _deviceAuthCompleted = true;
-    _authStatus = AuthStatus.emailRequired;
-    notifyListeners();
-  }
+
 
   /// Authenticate using device biometrics or PIN (first step)
   Future<bool> authenticateWithDevice() async {
