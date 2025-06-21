@@ -50,35 +50,53 @@ class AuthService extends ChangeNotifier {
   /// This is more comprehensive than just canCheckBiometrics
   Future<bool> _hasDeviceAuthentication() async {
     try {
-      // Check if device supports authentication at all
-      final isDeviceSupported = await _localAuth.isDeviceSupported();
-      if (!isDeviceSupported) {
-        return false;
-      }
-
-      // Check if biometrics are available and configured
+      // First, try the more reliable canCheckBiometrics method
       final canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      print('DEBUG: canCheckBiometrics = $canCheckBiometrics');
+      
       if (canCheckBiometrics) {
         final availableBiometrics = await _localAuth.getAvailableBiometrics();
+        print('DEBUG: availableBiometrics = $availableBiometrics');
+        
+        // If biometrics are available, device definitely has authentication
         if (availableBiometrics.isNotEmpty) {
-          return true; // Device has biometrics configured
+          print('DEBUG: Device has biometrics configured: $availableBiometrics');
+          return true;
         }
+        
+        // If canCheckBiometrics is true but no biometrics available,
+        // it usually means device has PIN/Pattern/Password configured
+        print('DEBUG: Device authentication available (PIN/Pattern/Password)');
+        return true;
       }
 
-      // If canCheckBiometrics is true but no biometrics available,
-      // it usually means device has PIN/Pattern/Password configured
-      if (canCheckBiometrics) {
-        return true; // Device authentication is available (PIN/Pattern/Password)
+      // Fallback: Check if device supports authentication at all
+      // Note: isDeviceSupported() can be unreliable on some devices
+      final isDeviceSupported = await _localAuth.isDeviceSupported();
+      print('DEBUG: isDeviceSupported = $isDeviceSupported');
+      
+      if (isDeviceSupported) {
+        print('DEBUG: Device supports authentication (fallback check)');
+        return true;
       }
 
-      // If we reach here, device might have no authentication configured
-      // Return false to skip device auth for devices with only swipe-to-unlock
+      // If both checks fail, device likely has no authentication configured
+      print('DEBUG: No device authentication configured (both checks failed)');
       return false;
     } catch (e) {
       // If we can't determine, assume authentication is available for security
       // This is safer for production - better to show auth screen than skip it
+      print('DEBUG: Error checking device authentication: $e');
       return true;
     }
+  }
+
+  /// Force skip device authentication for problematic devices
+  void forceSkipDeviceAuth() {
+    print('Device authentication force-skipped due to device compatibility issues');
+    _deviceAuthCompleted = true;
+    _authStatus = AuthStatus.emailRequired;
+    notifyListeners();
   }
 
   /// Initialize the authentication service
@@ -125,6 +143,8 @@ class AuthService extends ChangeNotifier {
         return;
       }
 
+
+
       // Device has authentication configured (PIN/Pattern/Biometrics) - require device auth
       if (_isDeviceAuthSupported && !_deviceAuthCompleted) {
         print('Device authentication required - showing device auth screen');
@@ -146,6 +166,14 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Skip device authentication (for troubleshooting)
+  void skipDeviceAuth() {
+    print('Device authentication skipped by user - proceeding with email authentication');
+    _deviceAuthCompleted = true;
+    _authStatus = AuthStatus.emailRequired;
+    notifyListeners();
+  }
+
   /// Authenticate using device biometrics or PIN (first step)
   Future<bool> authenticateWithDevice() async {
     if (!_isDeviceAuthSupported) {
@@ -156,24 +184,29 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
+      // Add a small delay to ensure UI is ready
+      await Future.delayed(const Duration(milliseconds: 500));
+      
       final bool didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Please authenticate to access your passwords',
+        localizedReason: 'Please authenticate to access Super Locker',
         options: const AuthenticationOptions(
           biometricOnly: false,
-          stickyAuth: true,
+          stickyAuth: false, // Changed to false for better Samsung compatibility
+          useErrorDialogs: true,
+          sensitiveTransaction: true,
         ),
         authMessages: const [
           AndroidAuthMessages(
-            signInTitle: 'Super Locker Authentication',
-            biometricHint: 'Use your fingerprint or device PIN to continue',
-            biometricNotRecognized: 'Authentication failed, please try again',
-            biometricRequiredTitle: 'Authentication Required',
+            signInTitle: 'Super Locker',
+            biometricHint: 'Touch the fingerprint sensor or use your PIN',
+            biometricNotRecognized: 'Fingerprint not recognized. Try again.',
+            biometricRequiredTitle: 'Biometric Authentication',
             biometricSuccess: 'Authentication successful',
             cancelButton: 'Cancel',
             deviceCredentialsRequiredTitle: 'Device Authentication Required',
             deviceCredentialsSetupDescription: 'Please set up device authentication in Settings',
-            goToSettingsButton: 'Go to Settings',
-            goToSettingsDescription: 'Device authentication is not set up. Please go to Settings to set up.',
+            goToSettingsButton: 'Settings',
+            goToSettingsDescription: 'Authentication is not set up on this device.',
           ),
         ],
       );
@@ -195,23 +228,36 @@ class AuthService extends ChangeNotifier {
       // Handle specific error cases
       switch (e.code) {
         case 'NotAvailable':
-          // Device doesn't support authentication
+          print('Device authentication not available - proceeding to email auth');
           _deviceAuthCompleted = true;
           _authStatus = AuthStatus.emailRequired;
           notifyListeners();
           return true;
         case 'NotEnrolled':
-          // No authentication methods configured
+          print('No authentication methods enrolled - proceeding to email auth');
           _deviceAuthCompleted = true;
           _authStatus = AuthStatus.emailRequired;
           notifyListeners();
           return true;
+        case 'LockedOut':
+          print('Device authentication locked out - too many attempts');
+          throw Exception('Too many failed attempts. Please wait and try again.');
+        case 'PermanentlyLockedOut':
+          print('Device authentication permanently locked out');
+          throw Exception('Authentication is locked. Please use your device PIN.');
+        case 'UserCancel':
+          print('User cancelled authentication');
+          return false;
+        case 'AuthenticationFailed':
+          print('Authentication failed - incorrect biometric/PIN');
+          return false;
         default:
+          print('Unknown authentication error: ${e.code}');
           return false;
       }
     } catch (e) {
       print('Unexpected device authentication error: $e');
-      return false;
+      rethrow; // Re-throw to show user-friendly error messages
     }
   }
 
