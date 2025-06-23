@@ -359,7 +359,7 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Text(
-                            'Update Password',
+                            'Update',
                             style: TextStyle(fontSize: 16),
                           ),
                   ),

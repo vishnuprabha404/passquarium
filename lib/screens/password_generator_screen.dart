@@ -238,34 +238,49 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _generatedPassword.isEmpty
-                                  ? null
-                                  : _copyToClipboard,
-                              icon: const Icon(Icons.copy),
-                              label: const Text('Copy to Clipboard'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _generatedPassword.isEmpty
-                                    ? Colors.grey
-                                    : Colors.green,
-                                foregroundColor: Colors.white,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
+                            child: Container(
+                              height: 48,
+                              child: ElevatedButton.icon(
+                                onPressed: _generatedPassword.isEmpty
+                                    ? null
+                                    : _copyToClipboard,
+                                icon: const Icon(Icons.copy, size: 18),
+                                label: const Text('Copy'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _generatedPassword.isEmpty
+                                      ? Colors.grey
+                                      : Colors.green,
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
-                          ElevatedButton.icon(
-                            onPressed: _generatePassword,
-                            icon: const Icon(Icons.auto_awesome, size: 20),
-                            label: const Text('Generate Password'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 12, horizontal: 20),
-                              elevation: 4,
-                              shadowColor: Colors.blue.withOpacity(0.5),
+                          Expanded(
+                            flex: 2,
+                            child: Container(
+                              height: 48,
+                              child: ElevatedButton.icon(
+                                onPressed: _generatePassword,
+                                icon: const Icon(Icons.auto_awesome, size: 20),
+                                label: const Text('Generate'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12, horizontal: 20),
+                                  elevation: 4,
+                                  shadowColor: Colors.blue.withOpacity(0.5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ],

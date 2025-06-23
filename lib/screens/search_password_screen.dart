@@ -644,39 +644,51 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                 Row(
                   children: [
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          _clipboardManager.copySecureData(
-                            password,
-                            context: context,
-                            successMessage: 'Password copied securely',
-                          );
-                        },
-                        icon: const Icon(Icons.copy),
-                        label: const Text('Copy Password'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+                      child: Container(
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            _clipboardManager.copySecureData(
+                              password,
+                              context: context,
+                              successMessage: 'Password copied securely',
+                            );
+                          },
+                          icon: const Icon(Icons.copy, size: 18),
+                          label: const Text('Copy'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          if (entry.username.isNotEmpty) {
-                            _clipboardManager.copyData(
-                              entry.username,
-                              context: context,
-                              successMessage: 'Username copied',
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.person),
-                        label: const Text('Copy Username'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
+                      child: Container(
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            if (entry.username.isNotEmpty) {
+                              _clipboardManager.copyData(
+                                entry.username,
+                                context: context,
+                                successMessage: 'Username copied',
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.person, size: 18),
+                          label: const Text('User'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -746,16 +758,22 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
               ),
             ),
             if (copyable)
-              IconButton(
-                onPressed: () {
-                  _clipboardManager.copyData(
-                    value,
-                    context: context,
-                    successMessage: '$label copied',
-                  );
-                },
-                icon: const Icon(Icons.copy, size: 16),
-                tooltip: 'Copy $label',
+              Container(
+                width: 32,
+                height: 32,
+                child: IconButton(
+                  onPressed: () {
+                    _clipboardManager.copyData(
+                      value,
+                      context: context,
+                      successMessage: '$label copied',
+                    );
+                  },
+                  icon: const Icon(Icons.copy, size: 14),
+                  tooltip: 'Copy $label',
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
               ),
           ],
         ),
@@ -882,11 +900,25 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
       // Open in browser
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        await launchUrl(
+          uri, 
+          mode: LaunchMode.externalApplication,
+          webViewConfiguration: const WebViewConfiguration(
+            enableJavaScript: true,
+            enableDomStorage: true,
+          ),
+        );
         _showMessage(
             'Browser opened! Password is in clipboard for 60 seconds.');
       } else {
-        _showMessage('Cannot open URL: $url', isError: true);
+        // Fallback: try with different launch modes
+        try {
+          await launchUrl(uri, mode: LaunchMode.platformDefault);
+          _showMessage(
+              'Browser opened! Password is in clipboard for 60 seconds.');
+        } catch (e) {
+          _showMessage('Cannot open URL: $url\nError: $e', isError: true);
+        }
       }
     } catch (e) {
       _showMessage('Error: $e', isError: true);

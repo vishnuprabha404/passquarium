@@ -863,85 +863,62 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               ],
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ElevatedButton.icon(
-                                  onPressed: () => _copyPassword(password),
-                                  icon: const Icon(Icons.copy, size: 16),
-                                  label: const Text('Copy Pass'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    textStyle: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                            trailing: PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert, size: 24),
+                              onSelected: (value) async {
+                                print(
+                                    '🔧 DEBUG: Home PopupMenu selected: $value');
+                                switch (value) {
+                                  case 'view':
+                                    _viewPassword(password);
+                                    break;
+                                  case 'copy':
+                                    _copyPassword(password);
+                                    break;
+                                  case 'browser':
+                                    _openInBrowser(password);
+                                    break;
+                                }
+                              },
+                              itemBuilder: (context) {
+                                print(
+                                    '🔧 DEBUG: Building home popup menu items');
+                                return [
+                                  const PopupMenuItem(
+                                    value: 'view',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.visibility, size: 20),
+                                        SizedBox(width: 8),
+                                        Text('View Details'),
+                                      ],
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert, size: 24),
-                                  onSelected: (value) async {
-                                    print(
-                                        '🔧 DEBUG: Home PopupMenu selected: $value');
-                                    switch (value) {
-                                      case 'view':
-                                        _viewPassword(password);
-                                        break;
-                                      case 'copy':
-                                        _copyPassword(password);
-                                        break;
-                                      case 'browser':
-                                        _openInBrowser(password);
-                                        break;
-                                    }
-                                  },
-                                  itemBuilder: (context) {
-                                    print(
-                                        '🔧 DEBUG: Building home popup menu items');
-                                    return [
-                                      const PopupMenuItem(
-                                        value: 'view',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.visibility, size: 20),
-                                            SizedBox(width: 8),
-                                            Text('View Details'),
-                                          ],
-                                        ),
+                                  const PopupMenuItem(
+                                    value: 'copy',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.copy, size: 20),
+                                        SizedBox(width: 8),
+                                        Text('Copy Password'),
+                                      ],
+                                    ),
+                                  ),
+                                  if (password.website.isNotEmpty ||
+                                      password.url.isNotEmpty)
+                                    const PopupMenuItem(
+                                      value: 'browser',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.open_in_browser,
+                                              size: 20),
+                                          SizedBox(width: 8),
+                                          Text('Open in Browser'),
+                                        ],
                                       ),
-                                      const PopupMenuItem(
-                                        value: 'copy',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.copy, size: 20),
-                                            SizedBox(width: 8),
-                                            Text('Copy Password'),
-                                          ],
-                                        ),
-                                      ),
-                                      if (password.website.isNotEmpty ||
-                                          password.url.isNotEmpty)
-                                        const PopupMenuItem(
-                                          value: 'browser',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.open_in_browser,
-                                                  size: 20),
-                                              SizedBox(width: 8),
-                                              Text('Open in Browser'),
-                                            ],
-                                          ),
-                                        ),
-                                    ];
-                                  },
-                                ),
-                              ],
+                                    ),
+                                ];
+                              },
                             ),
                             onTap: () => _viewPassword(password),
                             isThreeLine: password.notes.isNotEmpty,
@@ -1151,13 +1128,41 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Theme.of(context).primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  if (entry.website.isNotEmpty)
-                    _buildDetailRow('Website', entry.website, Icons.language),
-                  if (entry.url.isNotEmpty && entry.url != entry.website)
-                    _buildDetailRow('URL', entry.url, Icons.link),
-                  if (entry.category.isNotEmpty)
-                    _buildDetailRow('Category', entry.category, Icons.category),
+                  const SizedBox(height: 12),
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          if (entry.website.isNotEmpty)
+                            _buildEnhancedDetailRow(
+                              'Website', 
+                              entry.website, 
+                              Icons.language,
+                              Colors.blue,
+                            ),
+                          if (entry.url.isNotEmpty && entry.url != entry.website)
+                            _buildEnhancedDetailRow(
+                              'URL', 
+                              entry.url, 
+                              Icons.link,
+                              Colors.teal,
+                            ),
+                          if (entry.category.isNotEmpty)
+                            _buildEnhancedDetailRow(
+                              'Category', 
+                              entry.category, 
+                              Icons.category,
+                              Colors.orange,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                 ],
 
@@ -1170,10 +1175,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Theme.of(context).primaryColor,
                   ),
                 ),
-                const SizedBox(height: 8),
-                if (entry.username.isNotEmpty)
-                  _buildDetailRow('Username', entry.username, Icons.person,
-                      copyable: true),
+                const SizedBox(height: 12),
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        if (entry.username.isNotEmpty)
+                          _buildEnhancedDetailRow(
+                            'Username', 
+                            entry.username, 
+                            Icons.person,
+                            Colors.purple,
+                            copyable: true,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
 
                 const SizedBox(height: 16),
 
@@ -1262,39 +1285,51 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          _clipboardManager.copySecureData(
-                            password,
-                            context: context,
-                            successMessage: 'Password copied securely',
-                          );
-                        },
-                        icon: const Icon(Icons.copy),
-                        label: const Text('Copy Password'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+                      child: Container(
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            _clipboardManager.copySecureData(
+                              password,
+                              context: context,
+                              successMessage: 'Password copied securely',
+                            );
+                          },
+                          icon: const Icon(Icons.copy, size: 18),
+                          label: const Text('Copy'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          if (entry.username.isNotEmpty) {
-                            _clipboardManager.copyData(
-                              entry.username,
-                              context: context,
-                              successMessage: 'Username copied',
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.person),
-                        label: const Text('Copy Username'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
+                      child: Container(
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            if (entry.username.isNotEmpty) {
+                              _clipboardManager.copyData(
+                                entry.username,
+                                context: context,
+                                successMessage: 'Username copied',
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.person, size: 18),
+                          label: const Text('User'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -1314,8 +1349,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, IconData icon,
-      {bool copyable = false}) {
+  Widget _buildEnhancedDetailRow(String label, String value, IconData icon, Color color, {bool copyable = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
@@ -1343,18 +1377,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: const TextStyle(fontSize: 14),
               ),
             ),
-            if (copyable)
-              IconButton(
-                onPressed: () {
-                  _clipboardManager.copyData(
-                    value,
-                    context: context,
-                    successMessage: '$label copied',
-                  );
-                },
-                icon: const Icon(Icons.copy, size: 16),
-                tooltip: 'Copy $label',
-              ),
           ],
         ),
       ),
@@ -1477,11 +1499,25 @@ class _HomeScreenState extends State<HomeScreen> {
       // Open in browser
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        await launchUrl(
+          uri, 
+          mode: LaunchMode.externalApplication,
+          webViewConfiguration: const WebViewConfiguration(
+            enableJavaScript: true,
+            enableDomStorage: true,
+          ),
+        );
         _showMessage(
             'Browser opened! Password is in clipboard for 60 seconds.');
       } else {
-        _showMessage('Cannot open URL: $url', isError: true);
+        // Fallback: try with different launch modes
+        try {
+          await launchUrl(uri, mode: LaunchMode.platformDefault);
+          _showMessage(
+              'Browser opened! Password is in clipboard for 60 seconds.');
+        } catch (e) {
+          _showMessage('Cannot open URL: $url\nError: $e', isError: true);
+        }
       }
     } catch (e) {
       _showMessage('Error: $e', isError: true);
