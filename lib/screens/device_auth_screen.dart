@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:super_locker/services/auth_service.dart';
+import 'package:super_locker/services/auto_lock_service.dart';
 
 class DeviceAuthScreen extends StatefulWidget {
   const DeviceAuthScreen({super.key});
@@ -42,17 +43,29 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
       final success = await authService.authenticateWithDevice();
 
       if (success && mounted) {
-        // Navigate based on the updated auth status - NEW FLOW: Device → Email → Home
-        switch (authService.authStatus) {
-          case AuthStatus.emailRequired:
-            Navigator.of(context).pushReplacementNamed('/email-auth');
-            break;
-          case AuthStatus.authenticated:
-            Navigator.of(context).pushReplacementNamed('/home');
-            break;
-          default:
-            // Default to email if status unclear
-            Navigator.of(context).pushReplacementNamed('/email-auth');
+        // Check if we need master key verification based on timeout
+        final autoLockService = AutoLockService();
+        final requiresMasterKey = autoLockService.shouldRequireMasterKey() || 
+                                 authService.requiresMasterKeyVerification();
+
+        if (requiresMasterKey) {
+          // 15-minute timeout reached - require master key verification
+          Navigator.of(context).pushReplacementNamed('/email-auth');
+        } else {
+          // Navigate based on the updated auth status
+          switch (authService.authStatus) {
+            case AuthStatus.emailRequired:
+              Navigator.of(context).pushReplacementNamed('/email-auth');
+              break;
+            case AuthStatus.authenticated:
+              // Unlock the auto-lock service
+              autoLockService.unlockApp();
+              Navigator.of(context).pushReplacementNamed('/home');
+              break;
+            default:
+              // Default to email if status unclear
+              Navigator.of(context).pushReplacementNamed('/email-auth');
+          }
         }
       } else if (mounted) {
         setState(() {

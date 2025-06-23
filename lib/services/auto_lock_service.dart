@@ -1,19 +1,25 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:super_locker/services/auth_service.dart';
+import 'package:super_locker/config/app_config.dart';
+
+enum LockLevel {
+  deviceAuth,      // Require device authentication only
+  masterKey,       // Require device auth + master key
+}
 
 class AutoLockService with WidgetsBindingObserver {
-  static const int _defaultTimeoutSeconds = 60;
-
-  Timer? _inactivityTimer;
-  int _timeoutSeconds = _defaultTimeoutSeconds;
+  Timer? _deviceAuthTimer;
+  Timer? _masterKeyTimer;
   bool _isLocked = false;
   bool _isEnabled = true;
+  DateTime? _lastActivity;
+  DateTime? _sessionStartTime;
 
   final AuthService _authService = AuthService();
 
   // Callbacks
-  VoidCallback? _onAutoLock;
+  Function(LockLevel)? _onAutoLock;
   VoidCallback? _onUserActivity;
 
   // Singleton pattern
@@ -23,69 +29,92 @@ class AutoLockService with WidgetsBindingObserver {
 
   // Initialize the service
   void initialize({
-    int timeoutSeconds = _defaultTimeoutSeconds,
-    VoidCallback? onAutoLock,
+    Function(LockLevel)? onAutoLock,
     VoidCallback? onUserActivity,
   }) {
-    _timeoutSeconds = timeoutSeconds;
     _onAutoLock = onAutoLock;
     _onUserActivity = onUserActivity;
+    _sessionStartTime = DateTime.now();
 
     // Add observer for app lifecycle changes
     WidgetsBinding.instance.addObserver(this);
 
-    // Start the inactivity timer
-    _resetTimer();
+    // Start the inactivity timers
+    _resetTimers();
   }
 
   // Dispose of the service
   void dispose() {
-    _inactivityTimer?.cancel();
+    _deviceAuthTimer?.cancel();
+    _masterKeyTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
   }
 
-  // Reset the inactivity timer (called on user activity)
-  void _resetTimer() {
+  // Reset the inactivity timers (called on user activity)
+  void _resetTimers() {
     if (!_isEnabled || _isLocked) return;
 
-    _inactivityTimer?.cancel();
-    _inactivityTimer = Timer(Duration(seconds: _timeoutSeconds), () {
-      _lockApp();
-    });
+    _lastActivity = DateTime.now();
+    
+    _deviceAuthTimer?.cancel();
+    _masterKeyTimer?.cancel();
+
+    // Set device auth timer (5 minutes)
+    _deviceAuthTimer = Timer(
+      Duration(seconds: AppConfig.autoLockTimeoutSeconds), 
+      () => _lockApp(LockLevel.deviceAuth)
+    );
+
+    // Set master key timer (15 minutes)
+    _masterKeyTimer = Timer(
+      Duration(seconds: AppConfig.masterKeyTimeoutSeconds), 
+      () => _lockApp(LockLevel.masterKey)
+    );
 
     // Notify about user activity
     _onUserActivity?.call();
   }
 
-  // Lock the app
-  void _lockApp() {
+  // Lock the app with specified level
+  void _lockApp(LockLevel level) {
     if (_isLocked) return;
 
     _isLocked = true;
-    _inactivityTimer?.cancel();
+    _deviceAuthTimer?.cancel();
+    _masterKeyTimer?.cancel();
 
-    // Clear authentication state
-    _authService.logout();
+    // Clear authentication state based on lock level
+    if (level == LockLevel.masterKey) {
+      // For master key timeout, require complete re-authentication
+      _authService.logout();
+      _sessionStartTime = null;
+    } else {
+      // For device auth timeout, only clear device auth
+      _authService.lock();
+    }
 
-    // Notify about auto-lock
-    _onAutoLock?.call();
+    // Notify about auto-lock with the level
+    _onAutoLock?.call(level);
   }
 
   // Manually lock the app
-  void lockApp() {
-    _lockApp();
+  void lockApp([LockLevel level = LockLevel.deviceAuth]) {
+    _lockApp(level);
   }
 
   // Unlock the app (after successful authentication)
   void unlockApp() {
     _isLocked = false;
-    _resetTimer();
+    if (_sessionStartTime == null) {
+      _sessionStartTime = DateTime.now();
+    }
+    _resetTimers();
   }
 
   // Handle user activity (tap, scroll, keyboard input, etc.)
   void onUserActivity() {
     if (!_isLocked) {
-      _resetTimer();
+      _resetTimers();
     }
   }
 
@@ -93,32 +122,61 @@ class AutoLockService with WidgetsBindingObserver {
   void setEnabled(bool enabled) {
     _isEnabled = enabled;
     if (enabled) {
-      _resetTimer();
+      _resetTimers();
     } else {
-      _inactivityTimer?.cancel();
-    }
-  }
-
-  // Update timeout duration
-  void setTimeoutSeconds(int seconds) {
-    _timeoutSeconds = seconds;
-    if (_isEnabled && !_isLocked) {
-      _resetTimer();
+      _deviceAuthTimer?.cancel();
+      _masterKeyTimer?.cancel();
     }
   }
 
   // Get current state
   bool get isLocked => _isLocked;
   bool get isEnabled => _isEnabled;
-  int get timeoutSeconds => _timeoutSeconds;
+  
+  // Get time since last activity
+  Duration? get timeSinceLastActivity {
+    if (_lastActivity == null) return null;
+    return DateTime.now().difference(_lastActivity!);
+  }
 
-  // Get remaining time before auto-lock
-  int get remainingSeconds {
-    if (_inactivityTimer == null || !_inactivityTimer!.isActive) {
-      return 0;
+  // Get session duration
+  Duration? get sessionDuration {
+    if (_sessionStartTime == null) return null;
+    return DateTime.now().difference(_sessionStartTime!);
+  }
+
+  // Get remaining time before device auth lock
+  Duration get timeUntilDeviceLock {
+    if (_deviceAuthTimer == null || !_deviceAuthTimer!.isActive || _lastActivity == null) {
+      return Duration.zero;
     }
-    // This is an approximation since Timer doesn't provide remaining time
-    return _timeoutSeconds;
+    
+    final elapsed = DateTime.now().difference(_lastActivity!);
+    final timeout = Duration(seconds: AppConfig.autoLockTimeoutSeconds);
+    final remaining = timeout - elapsed;
+    
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  // Get remaining time before master key lock
+  Duration get timeUntilMasterKeyLock {
+    if (_masterKeyTimer == null || !_masterKeyTimer!.isActive || _lastActivity == null) {
+      return Duration.zero;
+    }
+    
+    final elapsed = DateTime.now().difference(_lastActivity!);
+    final timeout = Duration(seconds: AppConfig.masterKeyTimeoutSeconds);
+    final remaining = timeout - elapsed;
+    
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  // Check if we need master key re-authentication based on session time
+  bool shouldRequireMasterKey() {
+    if (_sessionStartTime == null) return true;
+    
+    final sessionDuration = DateTime.now().difference(_sessionStartTime!);
+    return sessionDuration.inSeconds >= AppConfig.masterKeyTimeoutSeconds;
   }
 
   // App lifecycle observer methods
@@ -126,26 +184,36 @@ class AutoLockService with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.resumed:
-        // App came back to foreground
+        // App came back to foreground - check if we need to lock
         if (_isEnabled && !_isLocked) {
-          _resetTimer();
+          final timeSinceActivity = timeSinceLastActivity;
+          if (timeSinceActivity != null) {
+            if (timeSinceActivity.inSeconds >= AppConfig.masterKeyTimeoutSeconds) {
+              _lockApp(LockLevel.masterKey);
+            } else if (timeSinceActivity.inSeconds >= AppConfig.autoLockTimeoutSeconds) {
+              _lockApp(LockLevel.deviceAuth);
+            } else {
+              _resetTimers();
+            }
+          } else {
+            _resetTimers();
+          }
         }
         break;
 
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
-        // App went to background
-        _inactivityTimer?.cancel();
+        // App went to background - keep timers running but don't reset them
+        // This allows the app to lock even when in background
         break;
 
       case AppLifecycleState.detached:
         // App is being terminated
-        _lockApp();
+        _lockApp(LockLevel.masterKey);
         break;
 
       case AppLifecycleState.hidden:
         // App is hidden (iOS specific)
-        _inactivityTimer?.cancel();
         break;
     }
   }
@@ -207,20 +275,39 @@ class AutoLockProvider extends ChangeNotifier {
 
   bool get isEnabled => _autoLockService.isEnabled;
   bool get isLocked => _autoLockService.isLocked;
-  int get timeoutSeconds => _autoLockService.timeoutSeconds;
+  
+  // Get time since last activity
+  Duration? get timeSinceLastActivity {
+    return _autoLockService.timeSinceLastActivity;
+  }
+
+  // Get session duration
+  Duration? get sessionDuration {
+    return _autoLockService.sessionDuration;
+  }
+
+  // Get remaining time before device auth lock
+  Duration get timeUntilDeviceLock {
+    return _autoLockService.timeUntilDeviceLock;
+  }
+
+  // Get remaining time before master key lock
+  Duration get timeUntilMasterKeyLock {
+    return _autoLockService.timeUntilMasterKeyLock;
+  }
+
+  // Check if we need master key re-authentication based on session time
+  bool shouldRequireMasterKey() {
+    return _autoLockService.shouldRequireMasterKey();
+  }
 
   void setEnabled(bool enabled) {
     _autoLockService.setEnabled(enabled);
     notifyListeners();
   }
 
-  void setTimeoutSeconds(int seconds) {
-    _autoLockService.setTimeoutSeconds(seconds);
-    notifyListeners();
-  }
-
-  void lockApp() {
-    _autoLockService.lockApp();
+  void lockApp([LockLevel level = LockLevel.deviceAuth]) {
+    _autoLockService.lockApp(level);
     notifyListeners();
   }
 

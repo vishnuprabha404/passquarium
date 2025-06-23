@@ -520,26 +520,87 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Website/Service Details
-                _buildDetailSection('Service Details', [
-                  if (entry.website.isNotEmpty)
-                    _buildDetailRow('Website', entry.website, Icons.language),
-                  if (entry.url.isNotEmpty && entry.url != entry.website)
-                    _buildDetailRow('URL', entry.url, Icons.link),
-                  if (entry.domain.isNotEmpty && entry.domain != entry.website)
-                    _buildDetailRow('Domain', entry.domain, Icons.dns),
-                  if (entry.category.isNotEmpty)
-                    _buildDetailRow('Category', entry.category, Icons.category),
-                ]),
-
-                const SizedBox(height: 16),
+                // Service Details
+                if (entry.website.isNotEmpty ||
+                    entry.url.isNotEmpty ||
+                    entry.category.isNotEmpty) ...[
+                  Text(
+                    'Service Details',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          if (entry.website.isNotEmpty)
+                            _buildEnhancedDetailRow(
+                              'Website', 
+                              entry.website, 
+                              Icons.language,
+                              Colors.blue,
+                            ),
+                          if (entry.url.isNotEmpty && entry.url != entry.website)
+                            _buildEnhancedDetailRow(
+                              'URL', 
+                              entry.url, 
+                              Icons.link,
+                              Colors.teal,
+                            ),
+                          if (entry.category.isNotEmpty)
+                            _buildEnhancedDetailRow(
+                              'Category', 
+                              entry.category, 
+                              Icons.category,
+                              Colors.orange,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // Account Details
-                _buildDetailSection('Account Details', [
-                  if (entry.username.isNotEmpty)
-                    _buildDetailRow('Username', entry.username, Icons.person,
-                        copyable: true),
-                ]),
+                Text(
+                  'Account Details',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        if (entry.username.isNotEmpty)
+                          _buildEnhancedDetailRow(
+                            'Username', 
+                            entry.username, 
+                            Icons.person,
+                            Colors.purple,
+                            copyable: true,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
 
                 const SizedBox(height: 16),
 
@@ -1050,5 +1111,79 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     }
 
     return false; // User cancelled
+  }
+
+  Widget _buildEnhancedDetailRow(
+    String label, 
+    String value, 
+    IconData icon, 
+    Color iconColor, {
+    bool copyable = false
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon, 
+              size: 20, 
+              color: iconColor,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                SelectableText(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (copyable)
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: IconButton(
+                onPressed: () {
+                  _clipboardManager.copyData(
+                    value,
+                    context: context,
+                    successMessage: '$label copied',
+                  );
+                },
+                icon: const Icon(Icons.copy, size: 16),
+                tooltip: 'Copy $label',
+                padding: EdgeInsets.zero,
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

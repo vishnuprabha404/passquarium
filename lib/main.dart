@@ -6,6 +6,7 @@ import 'package:super_locker/config/app_config.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/services/password_service.dart';
 import 'package:super_locker/services/encryption_service.dart';
+import 'package:super_locker/services/auto_lock_service.dart';
 import 'package:super_locker/screens/splash_screen.dart';
 import 'package:super_locker/screens/email_auth_screen.dart';
 import 'package:super_locker/screens/device_auth_screen.dart';
@@ -26,8 +27,52 @@ void main() async {
   runApp(const SuperLockerApp());
 }
 
-class SuperLockerApp extends StatelessWidget {
+class SuperLockerApp extends StatefulWidget {
   const SuperLockerApp({super.key});
+
+  @override
+  State<SuperLockerApp> createState() => _SuperLockerAppState();
+}
+
+class _SuperLockerAppState extends State<SuperLockerApp> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAutoLock();
+  }
+
+  void _initializeAutoLock() {
+    AutoLockService().initialize(
+      onAutoLock: (lockLevel) {
+        final context = _navigatorKey.currentContext;
+        if (context != null) {
+          // Handle different lock levels
+          switch (lockLevel) {
+            case LockLevel.deviceAuth:
+              // 5-minute timeout - require device authentication only
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/device-auth', 
+                (route) => false,
+              );
+              break;
+            case LockLevel.masterKey:
+              // 15-minute timeout - require device auth + master key
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/device-auth', 
+                (route) => false,
+              );
+              break;
+          }
+        }
+      },
+      onUserActivity: () {
+        // Optional: Handle user activity events
+        // print('User activity detected');
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +83,7 @@ class SuperLockerApp extends StatelessWidget {
         Provider(create: (_) => EncryptionService()),
       ],
       child: MaterialApp(
+        navigatorKey: _navigatorKey,
         title: AppConfig.appName,
         debugShowCheckedModeBanner: AppConfig.showDebugBanner,
         theme: ThemeData(

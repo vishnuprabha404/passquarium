@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:super_locker/config/app_config.dart';
 import 'package:super_locker/services/auth_service.dart';
+import 'package:super_locker/services/auto_lock_service.dart';
 import 'package:super_locker/widgets/password_strength_indicator.dart';
 
 class EmailAuthScreen extends StatefulWidget {
@@ -165,6 +167,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
           _startVerificationChecker();
         } else {
           // Sign-in successful and email verified - navigate to home
+          AutoLockService().unlockApp();
           Navigator.of(context).pushReplacementNamed('/home');
         }
       }
@@ -225,8 +228,10 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
             _showSuccessDialog(
               'Email Verified!',
               'Your email has been verified successfully. You can now use all features.',
-              onClose: () =>
-                  Navigator.of(context).pushReplacementNamed('/home'),
+              onClose: () {
+                AutoLockService().unlockApp();
+                Navigator.of(context).pushReplacementNamed('/home');
+              },
             );
           }
         } else if (mounted) {
@@ -270,7 +275,10 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
           _showSuccessDialog(
             'Email Verified!',
             'Your email has been verified successfully. You can now access all features.',
-            onClose: () => Navigator.of(context).pushReplacementNamed('/home'),
+            onClose: () {
+              AutoLockService().unlockApp();
+              Navigator.of(context).pushReplacementNamed('/home');
+            },
           );
         }
       } else if (mounted) {

@@ -29,6 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _autoLockService = AutoLockService();
     _searchController.addListener(_onSearchChanged);
+    
+    // Ensure auto-lock service is unlocked when home screen is accessed
+    _autoLockService.unlockApp();
+    
     // Use post frame callback to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadPasswords();
@@ -1349,36 +1353,76 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEnhancedDetailRow(String label, String value, IconData icon, Color color, {bool copyable = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: Colors.grey[600]),
-            const SizedBox(width: 8),
-            Text(
-              '$label: ',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
+  Widget _buildEnhancedDetailRow(
+    String label, 
+    String value, 
+    IconData icon, 
+    Color iconColor, {
+    bool copyable = false
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon, 
+              size: 20, 
+              color: iconColor,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                SelectableText(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (copyable)
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: IconButton(
+                onPressed: () {
+                  _clipboardManager.copyData(
+                    value,
+                    context: context,
+                    successMessage: '$label copied',
+                  );
+                },
+                icon: const Icon(Icons.copy, size: 16),
+                tooltip: 'Copy $label',
+                padding: EdgeInsets.zero,
               ),
             ),
-            Expanded(
-              child: SelectableText(
-                value,
-                style: const TextStyle(fontSize: 14),
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

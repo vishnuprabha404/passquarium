@@ -601,6 +601,27 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Lock the app and require master key re-entry (for 15-minute timeout)
+  void lockWithMasterKeyRequired() {
+    _masterPassword = null;
+    _deviceAuthCompleted = false;
+    _userEmail = null; // Clear email to force re-authentication
+    if (_isDeviceAuthSupported) {
+      _authStatus = AuthStatus.deviceAuthRequired;
+    } else {
+      _authStatus = AuthStatus.emailRequired;
+    }
+    notifyListeners();
+  }
+
+  /// Check if master key verification is required
+  bool requiresMasterKeyVerification() {
+    // If we don't have the master password, we need verification
+    return _masterPassword == null || 
+           _userEmail == null || 
+           _firebaseUser == null;
+  }
+
   /// Reset authentication state for fresh start
   void resetAuthState() {
     _deviceAuthCompleted = false;
