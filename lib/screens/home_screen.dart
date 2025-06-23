@@ -1057,7 +1057,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
       final decryptedPassword =
-          await passwordService.decryptPassword(entry, masterPassword);
+          await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isNotEmpty) {
         _showPasswordDialog(entry, decryptedPassword);
@@ -1454,7 +1454,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
       final decryptedPassword =
-          await passwordService.decryptPassword(entry, masterPassword);
+          await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isNotEmpty) {
         await _clipboardManager.copySecureData(
@@ -1516,7 +1516,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
       final decryptedPassword =
-          await passwordService.decryptPassword(entry, masterPassword);
+          await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);
@@ -1607,7 +1607,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
       final decryptedPassword =
-          await passwordService.decryptPassword(entry, masterPassword);
+          await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);

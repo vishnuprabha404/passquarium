@@ -301,13 +301,12 @@ class PasswordProvider extends ChangeNotifier {
   }
 
   // Encrypt password
-  Future<String?> encryptPassword(
-      String password, String masterPassword) async {
-    try {
-      return await _encryptionService.encryptText(password, masterPassword);
-    } catch (e) {
-      return null;
+  Future<String> encryptPassword(String password, String masterPassword) async {
+    // Use the new vault key encryption system
+    if (!_encryptionService.isVaultUnlocked) {
+      throw Exception('Vault not unlocked. Please authenticate first.');
     }
+    return await _encryptionService.encryptPassword(password);
   }
 
   // Get password statistics

@@ -451,7 +451,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
       final decryptedPassword =
-          await passwordService.decryptPassword(entry, masterPassword);
+          await passwordService.decryptPassword(entry);
 
       print(
           '🔍 DEBUG: Decryption result: ${decryptedPassword.isNotEmpty ? "SUCCESS" : "FAILED"}');
@@ -873,7 +873,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
       final decryptedPassword =
-          await passwordService.decryptPassword(entry, masterPassword);
+          await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isNotEmpty) {
         await _clipboardManager.copySecureData(
@@ -935,7 +935,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
       final decryptedPassword =
-          await passwordService.decryptPassword(entry, masterPassword);
+          await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);
@@ -1025,7 +1025,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
       final decryptedPassword =
-          await passwordService.decryptPassword(entry, masterPassword);
+          await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);

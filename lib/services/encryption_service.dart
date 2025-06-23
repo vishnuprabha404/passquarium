@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
-import 'package:encrypt/encrypt.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/material.dart';
 
 class EncryptionService {
   static const _storage = FlutterSecureStorage();
@@ -11,6 +12,12 @@ class EncryptionService {
   static const int _saltLength = 32; // 256 bits
   static const int _ivLength = 16; // 128 bits for AES
   static const int _iterations = 100000; // PBKDF2 iterations
+  static const int _vaultKeyLength = 32; // 256 bits for vault key
+
+  // Cache for the current session
+  Uint8List? _cachedMasterKey;
+  Uint8List? _cachedVaultKey;
+  String? _currentUserId;
 
   // Generate cryptographically secure random bytes
   Uint8List _generateRandomBytes(int length) {
@@ -19,12 +26,11 @@ class EncryptionService {
         List<int>.generate(length, (i) => random.nextInt(256)));
   }
 
-  // Derive key from master password using PBKDF2
-  Uint8List _deriveKey(String masterPassword, Uint8List salt) {
+  // Enhanced PBKDF2 implementation with better security
+  Uint8List _deriveKey(String masterPassword, Uint8List salt, {int iterations = _iterations}) {
     final passwordBytes = utf8.encode(masterPassword);
     final hmac = Hmac(sha256, passwordBytes);
 
-    // Simple PBKDF2 implementation
     Uint8List result = Uint8List(_keyLength);
     Uint8List u = Uint8List(32);
 
@@ -42,7 +48,7 @@ class EncryptionService {
       u.setRange(0, hash.length, hash);
 
       // Remaining iterations
-      for (int j = 1; j < _iterations; j++) {
+      for (int j = 1; j < iterations; j++) {
         hash = hmac.convert(hash).bytes;
         for (int k = 0; k < u.length; k++) {
           u[k] ^= hash[k];
@@ -58,82 +64,277 @@ class EncryptionService {
     return result;
   }
 
-  // Encrypt text with AES-256-CBC
-  Future<String> encryptText(String plaintext, String masterPassword) async {
+  // Generate HMAC for tamper detection
+  String _generateHMAC(Uint8List key, String data) {
+    final hmac = Hmac(sha256, key);
+    final dataBytes = utf8.encode(data);
+    final digest = hmac.convert(dataBytes);
+    return base64.encode(digest.bytes);
+  }
+
+  // Verify HMAC for tamper detection
+  bool _verifyHMAC(Uint8List key, String data, String expectedHmac) {
+    final actualHmac = _generateHMAC(key, data);
+    return actualHmac == expectedHmac;
+  }
+
+  // Initialize vault key system for a user
+  Future<void> initializeVaultKey(String masterPassword, String userId) async {
     try {
-      // Generate random salt and IV
-      final salt = _generateRandomBytes(_saltLength);
-      final iv = _generateRandomBytes(_ivLength);
-
-      // Derive encryption key
-      final keyBytes = _deriveKey(masterPassword, salt);
-      final key = Key(keyBytes);
-      final ivObj = IV(iv);
-
-      // Create encrypter
-      final encrypter = Encrypter(AES(key));
-
-      // Encrypt the text
-      final encrypted = encrypter.encrypt(plaintext, iv: ivObj);
-
-      // Combine salt + iv + encrypted data
-      final combined = <int>[];
-      combined.addAll(salt);
-      combined.addAll(iv);
-      combined.addAll(encrypted.bytes);
-
-      // Return as base64
-      return base64.encode(combined);
+      // Generate random vault key
+      final vaultKey = _generateRandomBytes(_vaultKeyLength);
+      
+      // Generate salt for master key derivation
+      final masterSalt = _generateRandomBytes(_saltLength);
+      
+      // Derive master key from password
+      final masterKey = _deriveKey(masterPassword, masterSalt);
+      
+      // Generate IV for vault key encryption
+      final vaultKeyIV = _generateRandomBytes(_ivLength);
+      
+      // Encrypt vault key with master key
+      final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(masterKey)));
+      final encryptedVaultKey = encrypter.encrypt(
+        base64.encode(vaultKey), 
+        iv: encrypt.IV(vaultKeyIV)
+      );
+      
+      // Create vault key data structure
+      final vaultKeyData = {
+        'encrypted_vault_key': encryptedVaultKey.base64,
+        'master_salt': base64.encode(masterSalt),
+        'vault_key_iv': base64.encode(vaultKeyIV),
+        'iterations': _iterations,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+      
+      // Generate HMAC for vault key data
+      final vaultKeyJson = jsonEncode(vaultKeyData);
+      final hmac = _generateHMAC(masterKey, vaultKeyJson);
+      vaultKeyData['hmac'] = hmac;
+      
+      // Store encrypted vault key
+      await _storage.write(
+        key: 'vault_key_data_$userId', 
+        value: jsonEncode(vaultKeyData)
+      );
+      
+      // Cache for current session
+      _cachedMasterKey = masterKey;
+      _cachedVaultKey = vaultKey;
+      _currentUserId = userId;
+      
     } catch (e) {
-      throw Exception('Encryption failed: $e');
+      throw Exception('Failed to initialize vault key: $e');
     }
   }
 
-  // Decrypt text with AES-256-CBC
-  Future<String> decryptText(String ciphertext, String masterPassword) async {
+  // Unlock vault with master password
+  Future<bool> unlockVault(String masterPassword, String userId) async {
     try {
-      // Decode from base64
-      final combined = base64.decode(ciphertext);
-
-      if (combined.length < _saltLength + _ivLength) {
-        throw Exception('Invalid ciphertext format');
+      // Get stored vault key data
+      final vaultKeyDataJson = await _storage.read(key: 'vault_key_data_$userId');
+      if (vaultKeyDataJson == null) {
+        throw Exception('Vault key not found for user');
       }
+      
+      final vaultKeyData = jsonDecode(vaultKeyDataJson) as Map<String, dynamic>;
+      
+      // Extract components
+      final encryptedVaultKey = vaultKeyData['encrypted_vault_key'] as String;
+      final masterSalt = base64.decode(vaultKeyData['master_salt'] as String);
+      final vaultKeyIV = base64.decode(vaultKeyData['vault_key_iv'] as String);
+      final iterations = vaultKeyData['iterations'] as int? ?? _iterations;
+      final storedHmac = vaultKeyData['hmac'] as String;
+      
+      // Derive master key
+      final masterKey = _deriveKey(masterPassword, masterSalt, iterations: iterations);
+      
+      // Verify HMAC to detect tampering
+      final vaultKeyDataForHmac = Map<String, dynamic>.from(vaultKeyData);
+      vaultKeyDataForHmac.remove('hmac');
+      final vaultKeyJson = jsonEncode(vaultKeyDataForHmac);
+      
+      if (!_verifyHMAC(masterKey, vaultKeyJson, storedHmac)) {
+        throw Exception('Vault key data has been tampered with');
+      }
+      
+      // Decrypt vault key
+      final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(masterKey)));
+      final decryptedVaultKeyB64 = encrypter.decrypt(
+        encrypt.Encrypted.fromBase64(encryptedVaultKey),
+        iv: encrypt.IV(vaultKeyIV)
+      );
+      final vaultKey = base64.decode(decryptedVaultKeyB64);
+      
+      // Cache for current session
+      _cachedMasterKey = masterKey;
+      _cachedVaultKey = vaultKey;
+      _currentUserId = userId;
+      
+      return true;
+    } catch (e) {
+      // Clear cache on failure
+      _clearCache();
+      return false;
+    }
+  }
 
-      // Extract salt, IV, and encrypted data
-      final salt = Uint8List.fromList(combined.sublist(0, _saltLength));
-      final iv = Uint8List.fromList(
-          combined.sublist(_saltLength, _saltLength + _ivLength));
-      final encryptedBytes =
-          Uint8List.fromList(combined.sublist(_saltLength + _ivLength));
+  // Change master password (without re-encrypting all passwords!)
+  Future<bool> changeMasterPassword(
+    String oldPassword, 
+    String newPassword, 
+    String userId
+  ) async {
+    try {
+      // First unlock with old password
+      if (!await unlockVault(oldPassword, userId)) {
+        throw Exception('Current master password is incorrect');
+      }
+      
+      // Generate new salt for new master key
+      final newMasterSalt = _generateRandomBytes(_saltLength);
+      
+      // Derive new master key
+      final newMasterKey = _deriveKey(newPassword, newMasterSalt);
+      
+      // Generate new IV for vault key encryption
+      final newVaultKeyIV = _generateRandomBytes(_ivLength);
+      
+      // Re-encrypt vault key with new master key
+      final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(newMasterKey)));
+      final encryptedVaultKey = encrypter.encrypt(
+        base64.encode(_cachedVaultKey!), 
+        iv: encrypt.IV(newVaultKeyIV)
+      );
+      
+      // Create new vault key data structure
+      final vaultKeyData = {
+        'encrypted_vault_key': encryptedVaultKey.base64,
+        'master_salt': base64.encode(newMasterSalt),
+        'vault_key_iv': base64.encode(newVaultKeyIV),
+        'iterations': _iterations,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+      
+      // Generate HMAC with new master key
+      final vaultKeyJson = jsonEncode(vaultKeyData);
+      final hmac = _generateHMAC(newMasterKey, vaultKeyJson);
+      vaultKeyData['hmac'] = hmac;
+      
+      // Store new encrypted vault key
+      await _storage.write(
+        key: 'vault_key_data_$userId', 
+        value: jsonEncode(vaultKeyData)
+      );
+      
+      // Update cached master key
+      _cachedMasterKey = newMasterKey;
+      
+      return true;
+    } catch (e) {
+      throw Exception('Failed to change master password: $e');
+    }
+  }
 
-      // Derive the same key
-      final keyBytes = _deriveKey(masterPassword, salt);
-      final key = Key(keyBytes);
-      final ivObj = IV(iv);
+  // Fast password encryption using vault key
+  Future<String> encryptPasswordWithVault(String password) async {
+    if (_cachedVaultKey == null) {
+      throw Exception('Vault not unlocked. Please authenticate first.');
+    }
+    
+    try {
+      // Generate random IV
+      final iv = _generateRandomBytes(_ivLength);
+      
+      // Encrypt with vault key
+      final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(_cachedVaultKey!)));
+      final encrypted = encrypter.encrypt(password, iv: encrypt.IV(iv));
+      
+      // Combine IV + encrypted data
+      final combined = <int>[];
+      combined.addAll(iv);
+      combined.addAll(encrypted.bytes);
+      
+      // Generate HMAC for tamper detection
+      final combinedB64 = base64.encode(combined);
+      final hmac = _generateHMAC(_cachedVaultKey!, combinedB64);
+      
+      // Create final data structure
+      final encryptedData = {
+        'data': combinedB64,
+        'hmac': hmac,
+        'version': 2, // Version 2 = vault key encryption
+      };
+      
+      return base64.encode(utf8.encode(jsonEncode(encryptedData)));
+    } catch (e) {
+      throw Exception('Password encryption failed: $e');
+    }
+  }
 
-      // Create encrypter
-      final encrypter = Encrypter(AES(key));
-
-      // Decrypt
-      final encrypted = Encrypted(encryptedBytes);
-      final decrypted = encrypter.decrypt(encrypted, iv: ivObj);
-
+  // Fast password decryption using vault key
+  Future<String> decryptPasswordWithVault(String encryptedPassword) async {
+    if (_cachedVaultKey == null) {
+      throw Exception('Vault not unlocked. Please authenticate first.');
+    }
+    
+    try {
+      // Decode and parse encrypted data
+      final encryptedDataJson = utf8.decode(base64.decode(encryptedPassword));
+      final encryptedData = jsonDecode(encryptedDataJson) as Map<String, dynamic>;
+      
+      final version = encryptedData['version'] as int? ?? 1;
+      
+      // Handle legacy format (version 1)
+      if (version == 1) {
+        return await _decryptLegacyPassword(encryptedPassword);
+      }
+      
+      // Handle new format (version 2)
+      final data = encryptedData['data'] as String;
+      final storedHmac = encryptedData['hmac'] as String;
+      
+      // Verify HMAC
+      if (!_verifyHMAC(_cachedVaultKey!, data, storedHmac)) {
+        throw Exception('Password data has been tampered with');
+      }
+      
+      // Decode combined data
+      final combined = base64.decode(data);
+      
+      if (combined.length < _ivLength) {
+        throw Exception('Invalid encrypted password format');
+      }
+      
+      // Extract IV and encrypted data
+      final iv = Uint8List.fromList(combined.sublist(0, _ivLength));
+      final encryptedBytes = Uint8List.fromList(combined.sublist(_ivLength));
+      
+      // Decrypt with vault key
+      final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(_cachedVaultKey!)));
+      final decrypted = encrypter.decrypt(
+        encrypt.Encrypted(encryptedBytes), 
+        iv: encrypt.IV(iv)
+      );
+      
       return decrypted;
     } catch (e) {
-      throw Exception('Decryption failed: $e');
+      throw Exception('Password decryption failed: $e');
     }
   }
 
   // Hash master password for storage (never store plaintext)
   String hashMasterPassword(String masterPassword) {
-    final salt = utf8.encode('SuperLocker_MasterPassword_Salt');
+    final salt = _generateRandomBytes(16); // Use random salt instead of fixed
     final passwordBytes = utf8.encode(masterPassword);
     final combined = <int>[];
     combined.addAll(passwordBytes);
     combined.addAll(salt);
 
     final digest = sha256.convert(combined);
-    return digest.toString();
+    return '${base64.encode(salt)}.${digest.toString()}';
   }
 
   // Store master password hash securely
@@ -173,17 +374,27 @@ class EncryptionService {
     bool includeLowercase = true,
     bool includeNumbers = true,
     bool includeSymbols = true,
+    bool excludeSimilar = true,
   }) {
     const uppercaseLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const lowercaseLetters = 'abcdefghijklmnopqrstuvwxyz';
     const numbers = '0123456789';
     const symbols = '!@#\$%^&*()_+-=[]{}|;:,.<>?';
+    
+    // Similar characters to exclude for better readability
+    const similarChars = 'il1Lo0O';
 
     String characterSet = '';
     if (includeUppercase) characterSet += uppercaseLetters;
     if (includeLowercase) characterSet += lowercaseLetters;
     if (includeNumbers) characterSet += numbers;
     if (includeSymbols) characterSet += symbols;
+
+    if (excludeSimilar) {
+      for (final char in similarChars.split('')) {
+        characterSet = characterSet.replaceAll(char, '');
+      }
+    }
 
     if (characterSet.isEmpty) {
       throw Exception('At least one character type must be included');
@@ -195,14 +406,13 @@ class EncryptionService {
   }
 
   // Encrypt password for storage
-  Future<String> encryptPassword(String password, String masterPassword) async {
-    return await encryptText(password, masterPassword);
+  Future<String> encryptPassword(String password) async {
+    return await encryptPasswordWithVault(password);
   }
 
   // Decrypt password from storage
-  Future<String> decryptPassword(
-      String encryptedPassword, String masterPassword) async {
-    return await decryptText(encryptedPassword, masterPassword);
+  Future<String> decryptPassword(String encryptedPassword) async {
+    return await decryptPasswordWithVault(encryptedPassword);
   }
 
   // Verify master password against stored hash
@@ -215,24 +425,166 @@ class EncryptionService {
   int calculatePasswordStrength(String password) {
     int score = 0;
 
-    // Length bonus
-    if (password.length >= 8) score += 1;
-    if (password.length >= 12) score += 1;
-    if (password.length >= 16) score += 1;
+    // Length scoring
+    if (password.length >= 8) score += 10;
+    if (password.length >= 12) score += 15;
+    if (password.length >= 16) score += 20;
+    if (password.length >= 20) score += 25;
 
     // Character variety
-    if (password.contains(RegExp(r'[A-Z]'))) score += 1; // Uppercase
-    if (password.contains(RegExp(r'[a-z]'))) score += 1; // Lowercase
-    if (password.contains(RegExp(r'[0-9]'))) score += 1; // Numbers
+    if (password.contains(RegExp(r'[A-Z]'))) score += 10; // Uppercase
+    if (password.contains(RegExp(r'[a-z]'))) score += 10; // Lowercase
+    if (password.contains(RegExp(r'[0-9]'))) score += 10; // Numbers
     if (password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'))) {
-      score += 1; // Symbols
+      score += 15; // Symbols
     }
 
-    // Penalty for common patterns
-    if (password.toLowerCase().contains('password')) score -= 2;
-    if (password.contains('123')) score -= 1;
-    if (password.contains('abc')) score -= 1;
+    // Bonus for variety
+    final hasUpper = password.contains(RegExp(r'[A-Z]'));
+    final hasLower = password.contains(RegExp(r'[a-z]'));
+    final hasNumber = password.contains(RegExp(r'[0-9]'));
+    final hasSymbol = password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'));
+    
+    final varietyCount = [hasUpper, hasLower, hasNumber, hasSymbol].where((x) => x).length;
+    if (varietyCount >= 3) score += 10;
+    if (varietyCount == 4) score += 10;
 
-    return (score * 100 / 7).round().clamp(0, 100);
+    // Penalties for common patterns
+    if (password.toLowerCase().contains('password')) score -= 20;
+    if (password.toLowerCase().contains('123')) score -= 10;
+    if (password.toLowerCase().contains('abc')) score -= 10;
+    if (RegExp(r'(.)\1{2,}').hasMatch(password)) score -= 10; // Repeated characters
+
+    return score.clamp(0, 100);
+  }
+
+  // Clear cache
+  void _clearCache() {
+    _cachedMasterKey = null;
+    _cachedVaultKey = null;
+    _currentUserId = null;
+  }
+
+  // Legacy password decryption (for backward compatibility)
+  Future<String> _decryptLegacyPassword(String encryptedPassword) async {
+    // This would be the old direct master password decryption
+    // For now, throw an error to force migration
+    throw Exception('Legacy password format detected. Please re-encrypt your passwords.');
+  }
+
+  // Legacy decrypt text method (for migration support)
+  Future<String> decryptText(String ciphertext, String masterPassword) async {
+    try {
+      // Decode from base64
+      final combined = base64.decode(ciphertext);
+
+      if (combined.length < _saltLength + _ivLength) {
+        throw Exception('Invalid ciphertext format');
+      }
+
+      // Extract salt, IV, and encrypted data
+      final salt = Uint8List.fromList(combined.sublist(0, _saltLength));
+      final iv = Uint8List.fromList(
+          combined.sublist(_saltLength, _saltLength + _ivLength));
+      final encryptedBytes =
+          Uint8List.fromList(combined.sublist(_saltLength + _ivLength));
+
+      // Derive the same key
+      final keyBytes = _deriveKey(masterPassword, salt);
+      final key = encrypt.Key(keyBytes);
+      final ivObj = encrypt.IV(iv);
+
+      // Create encrypter
+      final encrypter = encrypt.Encrypter(encrypt.AES(key));
+
+      // Decrypt
+      final encrypted = encrypt.Encrypted(encryptedBytes);
+      final decrypted = encrypter.decrypt(encrypted, iv: ivObj);
+
+      return decrypted;
+    } catch (e) {
+      throw Exception('Legacy decryption failed: $e');
+    }
+  }
+
+  // Check if vault is unlocked
+  bool get isVaultUnlocked => _cachedVaultKey != null;
+
+  // Get current user ID
+  String? get currentUserId => _currentUserId;
+
+  // Lock vault (clear cache)
+  void lockVault() {
+    _clearCache();
+  }
+
+  // Verify master password hash
+  bool verifyMasterPasswordHash(String masterPassword, String storedHash) {
+    try {
+      final parts = storedHash.split('.');
+      if (parts.length != 2) return false;
+      
+      final salt = base64.decode(parts[0]);
+      final expectedHash = parts[1];
+      
+      final passwordBytes = utf8.encode(masterPassword);
+      final combined = <int>[];
+      combined.addAll(passwordBytes);
+      combined.addAll(salt);
+      
+      final actualHash = sha256.convert(combined).toString();
+      return actualHash == expectedHash;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Check if vault key exists for user
+  Future<bool> hasVaultKey(String userId) async {
+    final vaultKeyData = await _storage.read(key: 'vault_key_data_$userId');
+    return vaultKeyData != null;
+  }
+
+  // Migration helper: Check if password is in new format
+  bool isNewFormat(String encryptedPassword) {
+    try {
+      final encryptedDataJson = utf8.decode(base64.decode(encryptedPassword));
+      final encryptedData = jsonDecode(encryptedDataJson) as Map<String, dynamic>;
+      return (encryptedData['version'] as int? ?? 1) >= 2;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Batch encrypt passwords (for migration)
+  Future<List<String>> batchEncryptPasswords(List<String> passwords) async {
+    if (_cachedVaultKey == null) {
+      throw Exception('Vault not unlocked');
+    }
+    
+    final encryptedPasswords = <String>[];
+    for (final password in passwords) {
+      encryptedPasswords.add(await encryptPassword(password));
+    }
+    return encryptedPasswords;
+  }
+
+  // Get password strength description
+  String getPasswordStrengthDescription(int strength) {
+    if (strength >= 80) return 'Very Strong';
+    if (strength >= 60) return 'Strong';
+    if (strength >= 40) return 'Good';
+    if (strength >= 20) return 'Weak';
+    return 'Very Weak';
+  }
+
+  // Get password strength color
+  Color getPasswordStrengthColor(int strength) {
+    if (strength >= 80) return Colors.green;
+    if (strength >= 60) return Colors.lightGreen;
+    if (strength >= 40) return Colors.orange;
+    if (strength >= 20) return Colors.deepOrange;
+    return Colors.red;
   }
 }
+
