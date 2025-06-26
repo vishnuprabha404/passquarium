@@ -23,6 +23,7 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   crypto: ^3.0.3
   encrypt: ^5.0.3
+  pointycastle: ^3.7.3
   
   # UI & Navigation
   cupertino_icons: ^1.0.2
@@ -42,11 +43,8 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   mockito: ^5.4.6
   build_runner: ^2.5.2
-
   firebase_auth_platform_interface: any
-  local_auth_android: any
   local_auth_darwin: any
-  local_auth_windows: any
 flutter:
   uses-material-design: true
   assets:
