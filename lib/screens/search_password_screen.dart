@@ -356,16 +356,18 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             // Copy Password Button
-            IconButton(
-              icon: const Icon(Icons.copy, size: 20),
-              tooltip: 'Copy Password',
+            ElevatedButton.icon(
               onPressed: () => _copyPassword(entry),
-              style: IconButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                foregroundColor: Theme.of(context).primaryColor,
+              icon: const Icon(Icons.copy, size: 16),
+              label: const Text('Copy Pass'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: const Size(0, 36),
               ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
             // Three Dots Menu
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, size: 24),
@@ -374,9 +376,6 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                 switch (value) {
                   case 'view':
                     _viewPassword(entry);
-                    break;
-                  case 'copy':
-                    _copyPassword(entry);
                     break;
                   case 'browser':
                     _openInBrowser(entry);
@@ -393,16 +392,6 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                         Icon(Icons.visibility, size: 20),
                         SizedBox(width: 8),
                         Text('View Details'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'copy',
-                    child: Row(
-                      children: [
-                        Icon(Icons.copy, size: 20),
-                        SizedBox(width: 8),
-                        Text('Copy Password'),
                       ],
                     ),
                   ),
