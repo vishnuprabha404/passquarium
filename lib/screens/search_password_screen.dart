@@ -308,54 +308,63 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
   Widget _buildPasswordCard(PasswordEntry entry) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          child: Text(
-            entry.domain.isNotEmpty
-                ? entry.domain[0].toUpperCase()
-                : (entry.website.isNotEmpty
-                    ? entry.website[0].toUpperCase()
-                    : 'P'),
-            style: TextStyle(
-              color: Theme.of(context).primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        title: Text(
-          entry.title.isNotEmpty ? entry.title : entry.website,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              entry.username,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-            if (entry.notes.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                entry.notes,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+            // Avatar
+            CircleAvatar(
+              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+              child: Text(
+                entry.domain.isNotEmpty
+                    ? entry.domain[0].toUpperCase()
+                    : (entry.website.isNotEmpty
+                        ? entry.website[0].toUpperCase()
+                        : 'P'),
                 style: TextStyle(
-                  color: Colors.blue[600],
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Copy Password Button
+            ),
+            const SizedBox(width: 16),
+            // Username and Web URL
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.title.isNotEmpty ? entry.title : entry.website,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    entry.username,
+                    style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (entry.notes.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      entry.notes,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.blue[600],
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Copy Pass Button
             ElevatedButton.icon(
               onPressed: () => _copyPassword(entry),
               icon: const Icon(Icons.copy, size: 16),
@@ -411,8 +420,6 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
             ),
           ],
         ),
-        onTap: () => _viewPassword(entry),
-        isThreeLine: entry.notes.isNotEmpty,
       ),
     );
   }

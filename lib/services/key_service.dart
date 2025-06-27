@@ -46,27 +46,51 @@ class KeyService {
 
   /// Initialize vault key for user (first login)
   Future<void> initializeVaultKeyForUser(String userId, String masterPassword) async {
+    print('[DEBUG] KeyService: Starting vault key initialization for user: $userId');
+    
     final salt = await encryptionService.generateRandomBytes(32);
+    print('[DEBUG] KeyService: Salt generated');
+    
     final masterKey = await encryptionService.deriveMasterKey(masterPassword, salt);
+    print('[DEBUG] KeyService: Master key derived');
+    
     final vaultKey = await generateVaultKey();
+    print('[DEBUG] KeyService: Vault key generated');
+    
     final encrypted = await encryptVaultKey(vaultKey, masterKey);
+    print('[DEBUG] KeyService: Vault key encrypted');
+    
     await FirebaseFirestore.instance.collection('users').doc(userId).set({
       'salt': base64.encode(salt),
       'vaultKeyIV': encrypted['vaultKeyIV'],
       'encryptedVaultKey': encrypted['encryptedVaultKey'],
     }, SetOptions(merge: true));
+    
+    print('[DEBUG] KeyService: Vault key data stored in Firestore');
   }
 
   /// Unlock vault key for user (subsequent logins)
   Future<Uint8List?> unlockVaultKeyForUser(String userId, String masterPassword) async {
+    print('[DEBUG] KeyService: Starting vault key unlock for user: $userId');
+    
     final doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    if (!doc.exists) return null;
+    if (!doc.exists) {
+      print('[DEBUG] KeyService: No vault data found for user');
+      return null;
+    }
+    
     final data = doc.data()!;
+    print('[DEBUG] KeyService: Vault data retrieved from Firestore');
+    
     final salt = base64.decode(data['salt']);
     final masterKey = await encryptionService.deriveMasterKey(masterPassword, salt);
+    print('[DEBUG] KeyService: Master key derived from stored salt');
+    
     final vaultKeyIV = data['vaultKeyIV'];
     final encryptedVaultKey = data['encryptedVaultKey'];
     final vaultKey = await decryptVaultKey(encryptedVaultKey, vaultKeyIV, masterKey);
+    
+    print('[DEBUG] KeyService: Vault key decrypted successfully');
     return vaultKey;
   }
 } 

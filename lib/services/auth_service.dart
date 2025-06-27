@@ -268,35 +268,23 @@ class AuthService extends ChangeNotifier {
   /// Sign in with email and password
   Future<bool> signInWithEmail(String email, String password) async {
     try {
-      // Windows Firebase Auth fix: Add longer delay and retry mechanism
-      await Future.delayed(const Duration(milliseconds: 300));
+      // Windows Firebase Auth fix: Add delay and timeout
+      await Future.delayed(const Duration(milliseconds: 200));
 
-      UserCredential userCredential = await _firebaseAuth
+      UserCredential credential = await _firebaseAuth
           .signInWithEmailAndPassword(
             email: email,
             password: password,
           )
-          .timeout(
-            const Duration(seconds: 30),
-            onTimeout: () => throw Exception(
-                'Authentication timeout. Please check your internet connection and try again.'),
-          );
+          .timeout(const Duration(seconds: 30));
 
-      _firebaseUser = userCredential.user;
+      _firebaseUser = credential.user;
 
       if (_firebaseUser != null) {
-        // Check if email is verified before allowing access
         if (!_firebaseUser!.emailVerified) {
-          // Email not verified - keep user on email screen
+          // Email not verified - store email and redirect to verification
           _userEmail = email;
           _masterPassword = password;
-
-          // Store credentials for after verification
-          final hashedPassword =
-              _encryptionService.hashMasterPassword(password);
-          await _secureStorage.write(
-              key: 'master_password_hash_${_firebaseUser!.uid}',
-              value: hashedPassword);
 
           await _secureStorage.write(
               key: 'user_email_${_firebaseUser!.uid}', value: email);
@@ -313,15 +301,23 @@ class AuthService extends ChangeNotifier {
         _userEmail = email;
         _masterPassword = password;
 
+        print('[DEBUG] AuthService: Starting vault key operations...');
+
         // Check if vault key exists for this user
         final doc = await FirebaseFirestore.instance.collection('users').doc(_firebaseUser!.uid).get();
         if (!doc.exists || doc.data()?['encryptedVaultKey'] == null) {
           // First time login - initialize vault key system
+          print('[DEBUG] AuthService: Initializing vault key for new user...');
           await _keyService.initializeVaultKeyForUser(_firebaseUser!.uid, password);
+          print('[DEBUG] AuthService: Vault key initialized successfully');
+        } else {
+          print('[DEBUG] AuthService: Vault key found, unlocking...');
         }
+        
         // Unlock and cache the vault key
         _cachedVaultKey = await _keyService.unlockVaultKeyForUser(_firebaseUser!.uid, password);
         _encryptionService.setCachedVaultKey(_cachedVaultKey!, _firebaseUser!.uid);
+        print('[DEBUG] AuthService: Vault key unlocked and cached');
 
         // Store/update the email master key as master password hash (for compatibility)
         final hashedPassword = _encryptionService.hashMasterPassword(password);
@@ -335,6 +331,7 @@ class AuthService extends ChangeNotifier {
 
         _authStatus = AuthStatus.authenticated;
         notifyListeners();
+        print('[DEBUG] AuthService: Authentication completed successfully');
         return true;
       }
 

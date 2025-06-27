@@ -901,58 +901,63 @@ class _HomeScreenState extends State<HomeScreen> {
                         final password = _filteredPasswords[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Theme.of(context)
-                                  .primaryColor
-                                  .withOpacity(0.1),
-                              child: Text(
-                                password.domain.isNotEmpty
-                                    ? password.domain[0].toUpperCase()
-                                    : (password.website.isNotEmpty
-                                        ? password.website[0].toUpperCase()
-                                        : 'P'),
-                                style: TextStyle(
-                                  color: Theme.of(context).primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            title: Text(
-                              password.title.isNotEmpty
-                                  ? password.title
-                                  : password.website,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Text(
-                                  password.username,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: Colors.grey[600]),
-                                ),
-                                if (password.notes.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    password.notes,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                                // Avatar
+                                CircleAvatar(
+                                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                                  child: Text(
+                                    password.domain.isNotEmpty
+                                        ? password.domain[0].toUpperCase()
+                                        : (password.website.isNotEmpty
+                                            ? password.website[0].toUpperCase()
+                                            : 'P'),
                                     style: TextStyle(
-                                      color: Colors.blue[600],
-                                      fontSize: 12,
-                                      fontStyle: FontStyle.italic,
+                                      color: Theme.of(context).primaryColor,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                ],
-                              ],
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Copy Password Button
+                                ),
+                                const SizedBox(width: 16),
+                                // Username and Web URL
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        password.title.isNotEmpty ? password.title : password.website,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        password.username,
+                                        style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (password.notes.isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          password.notes,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: Colors.blue[600],
+                                            fontSize: 12,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Copy Pass Button
                                 ElevatedButton.icon(
                                   onPressed: () => _copyPassword(password),
                                   icon: const Icon(Icons.copy, size: 16),
@@ -969,8 +974,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 PopupMenuButton<String>(
                                   icon: const Icon(Icons.more_vert, size: 24),
                                   onSelected: (value) async {
-                                    print(
-                                        '🔧 DEBUG: Home PopupMenu selected: $value');
+                                    print('🔧 DEBUG: Home PopupMenu selected: $value');
                                     switch (value) {
                                       case 'view':
                                         _viewPassword(password);
@@ -981,8 +985,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     }
                                   },
                                   itemBuilder: (context) {
-                                    print(
-                                        '🔧 DEBUG: Building home popup menu items');
+                                    print('🔧 DEBUG: Building home popup menu items');
                                     return [
                                       const PopupMenuItem(
                                         value: 'view',
@@ -994,14 +997,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ],
                                         ),
                                       ),
-                                      if (password.website.isNotEmpty ||
-                                          password.url.isNotEmpty)
+                                      if (password.website.isNotEmpty || password.url.isNotEmpty)
                                         const PopupMenuItem(
                                           value: 'browser',
                                           child: Row(
                                             children: [
-                                              Icon(Icons.open_in_browser,
-                                                  size: 20),
+                                              Icon(Icons.open_in_browser, size: 20),
                                               SizedBox(width: 8),
                                               Text('Open in Browser'),
                                             ],
@@ -1012,8 +1013,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                            onTap: () => _viewPassword(password),
-                            isThreeLine: password.notes.isNotEmpty,
                           ),
                         );
                       },

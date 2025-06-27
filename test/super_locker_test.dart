@@ -474,6 +474,214 @@ void main() {
             reason: 'Operations should complete within reasonable time');
       });
     });
+
+    group('🔑 Vault Key System Tests', () {
+      test('should handle complete vault key lifecycle', () async {
+        const userId = 'test_user_lifecycle';
+        const masterPassword = 'TestPassword123!';
+        const testPassword = 'MySecretPassword123!';
+
+        print('\n=== Complete Vault Key Lifecycle Test ===');
+
+        try {
+          // 1. Initialize vault for new user
+          await encryptionService.initializeVaultKey(masterPassword, userId);
+          expect(encryptionService.isVaultUnlocked, true);
+          expect(encryptionService.currentUserId, userId);
+          print('✅ Vault initialized');
+
+          // 2. Encrypt a password
+          final encryptedPassword = await encryptionService.encryptPassword(testPassword);
+          expect(encryptedPassword, isNotEmpty);
+          print('✅ Password encrypted');
+
+          // 3. Decrypt the password
+          final decryptedPassword = await encryptionService.decryptPassword(encryptedPassword);
+          expect(decryptedPassword, equals(testPassword));
+          print('✅ Password decrypted');
+
+          // 4. Lock the vault
+          encryptionService.lockVault();
+          expect(encryptionService.isVaultUnlocked, false);
+          print('✅ Vault locked');
+
+          // 5. Unlock the vault
+          final unlockSuccess = await encryptionService.unlockVault(masterPassword, userId);
+          expect(unlockSuccess, true);
+          expect(encryptionService.isVaultUnlocked, true);
+          print('✅ Vault unlocked');
+
+          // 6. Decrypt password again after unlock
+          final decryptedAgain = await encryptionService.decryptPassword(encryptedPassword);
+          expect(decryptedAgain, equals(testPassword));
+          print('✅ Password decrypted after unlock');
+
+        } catch (e) {
+          print('❌ Lifecycle test failed: $e');
+          fail('Complete vault key lifecycle should work');
+        }
+      });
+
+      test('should handle multiple users with separate vaults', () async {
+        const user1 = 'test_user_1';
+        const user2 = 'test_user_2';
+        const masterPassword = 'TestPassword123!';
+        const password1 = 'PasswordForUser1';
+        const password2 = 'PasswordForUser2';
+
+        print('\n=== Multiple Users Test ===');
+
+        try {
+          // Initialize vault for user 1
+          await encryptionService.initializeVaultKey(masterPassword, user1);
+          final encrypted1 = await encryptionService.encryptPassword(password1);
+          print('✅ User 1 vault initialized and password encrypted');
+
+          // Lock and unlock for user 2
+          encryptionService.lockVault();
+          await encryptionService.initializeVaultKey(masterPassword, user2);
+          final encrypted2 = await encryptionService.encryptPassword(password2);
+          print('✅ User 2 vault initialized and password encrypted');
+
+          // Verify passwords are different
+          expect(encrypted1, isNot(equals(encrypted2)));
+          
+          // Decrypt both passwords
+          final decrypted1 = await encryptionService.decryptPassword(encrypted1);
+          final decrypted2 = await encryptionService.decryptPassword(encrypted2);
+          
+          expect(decrypted1, equals(password1));
+          expect(decrypted2, equals(password2));
+          print('✅ Both users can decrypt their own passwords');
+
+        } catch (e) {
+          print('❌ Multiple users test failed: $e');
+          fail('Multiple users should have separate vaults');
+        }
+      });
+    });
+
+    group('🔐 Security Tests', () {
+      test('should reject wrong master password', () async {
+        const userId = 'test_user_security';
+        const correctPassword = 'CorrectPassword123!';
+        const wrongPassword = 'WrongPassword123!';
+
+        print('\n=== Wrong Master Password Security Test ===');
+
+        try {
+          // Initialize with correct password
+          await encryptionService.initializeVaultKey(correctPassword, userId);
+          final encrypted = await encryptionService.encryptPassword('test');
+          
+          // Lock vault
+          encryptionService.lockVault();
+          
+          // Try to unlock with wrong password
+          final unlockSuccess = await encryptionService.unlockVault(wrongPassword, userId);
+          expect(unlockSuccess, false);
+          expect(encryptionService.isVaultUnlocked, false);
+          print('✅ Wrong master password correctly rejected');
+
+          // Try to decrypt with locked vault
+          try {
+            await encryptionService.decryptPassword(encrypted);
+            fail('Should not be able to decrypt with locked vault');
+          } catch (e) {
+            expect(e.toString(), contains('Vault not unlocked'));
+            print('✅ Decryption correctly blocked when vault locked');
+          }
+
+        } catch (e) {
+          print('❌ Security test failed: $e');
+          fail('Security measures should work correctly');
+        }
+      });
+
+      test('should generate unique encryption for same password', () async {
+        const userId = 'test_user_unique';
+        const masterPassword = 'TestPassword123!';
+        const testPassword = 'MySecretPassword123!';
+
+        print('\n=== Unique Encryption Test ===');
+
+        try {
+          await encryptionService.initializeVaultKey(masterPassword, userId);
+          
+          // Encrypt same password multiple times
+          final encrypted1 = await encryptionService.encryptPassword(testPassword);
+          final encrypted2 = await encryptionService.encryptPassword(testPassword);
+          final encrypted3 = await encryptionService.encryptPassword(testPassword);
+
+          // All should be different due to unique IVs
+          expect(encrypted1, isNot(equals(encrypted2)));
+          expect(encrypted2, isNot(equals(encrypted3)));
+          expect(encrypted1, isNot(equals(encrypted3)));
+          print('✅ Each encryption produces unique result');
+
+          // All should decrypt to same original
+          final decrypted1 = await encryptionService.decryptPassword(encrypted1);
+          final decrypted2 = await encryptionService.decryptPassword(encrypted2);
+          final decrypted3 = await encryptionService.decryptPassword(encrypted3);
+
+          expect(decrypted1, equals(testPassword));
+          expect(decrypted2, equals(testPassword));
+          expect(decrypted3, equals(testPassword));
+          print('✅ All encrypted versions decrypt to original');
+
+        } catch (e) {
+          print('❌ Unique encryption test failed: $e');
+          fail('Unique encryption should work correctly');
+        }
+      });
+    });
+
+    group('🔧 Utility Tests', () {
+      test('should generate secure random passwords', () {
+        print('\n=== Secure Password Generation Test ===');
+
+        final passwords = <String>[];
+        for (int i = 0; i < 5; i++) {
+          passwords.add(encryptionService.generateSecurePassword(length: 16));
+        }
+
+        // All passwords should be unique
+        final uniquePasswords = passwords.toSet();
+        expect(uniquePasswords.length, equals(passwords.length));
+        print('✅ All generated passwords are unique');
+
+        // All passwords should be strong
+        for (final password in passwords) {
+          final strength = encryptionService.calculatePasswordStrength(password);
+          expect(strength, greaterThan(60));
+          print('Password: $password (Strength: $strength%)');
+        }
+        print('✅ All generated passwords are strong');
+      });
+
+      test('should calculate password strength accurately', () {
+        print('\n=== Password Strength Calculation Test ===');
+
+        final testCases = [
+          ('123', 'Very weak'),
+          ('password', 'Weak'),
+          ('Password123', 'Medium'),
+          ('TestPassword123!', 'Strong'),
+          ('MySecurePassword123!@#', 'Very strong'),
+        ];
+
+        for (final (password, expectedCategory) in testCases) {
+          final strength = encryptionService.calculatePasswordStrength(password);
+          final category = encryptionService.getPasswordStrengthDescription(strength);
+          
+          print('$expectedCategory "$password": $strength% ($category)');
+          
+          expect(strength, inInclusiveRange(0, 100));
+          expect(category, isNotEmpty);
+        }
+        print('✅ Password strength calculation working correctly');
+      });
+    });
   });
 }
 

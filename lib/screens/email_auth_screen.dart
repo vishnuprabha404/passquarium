@@ -148,6 +148,27 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     final authService = Provider.of<AuthService>(context, listen: false);
 
     try {
+      // Show authentication progress
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 16),
+                Text(_isSignUpMode ? 'Creating account...' : 'Signing in...'),
+              ],
+            ),
+            duration: const Duration(seconds: 10),
+            backgroundColor: Theme.of(context).primaryColor,
+          ),
+        );
+      }
+
       final success = await authService.authenticateWithEmail(
         _emailController.text.trim(),
         _masterKeyController.text,
@@ -155,6 +176,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       );
 
       if (success && mounted) {
+        // Clear the loading snackbar
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        
         if (_isSignUpMode) {
           // Sign-up successful - show verification message
           setState(() {
@@ -171,6 +195,11 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
         }
       }
     } catch (e) {
+      // Clear the loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
+      
       if (mounted) {
         // Check if this is an email verification error
         if (e.toString().contains('EMAIL_NOT_VERIFIED')) {
@@ -519,474 +548,199 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 60),
-
-                // App Icon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    Icons.security_rounded,
-                    size: 40,
+      body: Stack(
+        children: [
+          // Main content
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 60),
+                  
+                  // App Logo/Title
+                  Icon(
+                    Icons.lock_outline,
+                    size: 80,
                     color: Theme.of(context).primaryColor,
                   ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Title
-                Text(
-                  _isSignUpMode ? 'Create Account' : 'Welcome Back',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 16),
-
-                // Description
-                Text(
-                  _isSignUpMode
-                      ? 'Create your Super Locker account. Your Master Key will be used to encrypt your vault and sync across devices.'
-                      : 'Sign in to your Super Locker account. Your Master Key encrypts and protects your vault.',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 48),
-
-                // Email Verification Message
-                if (_showEmailVerificationMessage) ...[
-                  AnimatedBuilder(
-                    animation: _slideAnimation,
-                    builder: (context, child) => Transform.translate(
-                      offset: Offset(0, 20 * (1 - _slideAnimation.value)),
-                      child: Opacity(
-                        opacity: _slideAnimation.value,
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.orange.withOpacity(0.1),
-                                Colors.orange.withOpacity(0.05),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.orange),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.mark_email_unread,
-                                      color: Colors.orange),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      _emailVerificationSent
-                                          ? 'Verification email sent!'
-                                          : 'Please verify your email address',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.orange.shade700,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _emailVerificationSent
-                                    ? 'We\'ve sent a verification email to ${_emailController.text}. Please check your inbox and click the verification link. We\'ll automatically detect when you\'ve verified your email.'
-                                    : 'We\'ve sent a verification email to ${_emailController.text}. Please check your inbox and click the verification link.',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.orange.shade700,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextButton.icon(
-                                      onPressed: _isLoading
-                                          ? null
-                                          : _resendVerificationEmail,
-                                      icon: const Icon(Icons.refresh, size: 16),
-                                      label: const Text('Resend Email'),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: TextButton.icon(
-                                      onPressed: _isLoading
-                                          ? null
-                                          : _checkVerificationManually,
-                                      icon: const Icon(
-                                          Icons.check_circle_outline,
-                                          size: 16),
-                                      label: const Text('Check Status'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (_emailVerificationSent) ...[
-                                const SizedBox(height: 12),
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.info_outline,
-                                          color: Colors.blue, size: 16),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          'Don\'t see the email? Check your spam folder or try a different email address.',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.blue.shade700,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Super Locker',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                ],
-
-                // Email Field
-                TextFormField(
-                  controller: _emailController,
-                  focusNode: _emailFocusNode,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  validator: _validateEmail,
-                  enableInteractiveSelection: true,
-                  autocorrect: false,
-                  enableSuggestions: true,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.deny(
-                        RegExp(r'\s')), // No spaces in email
-                  ],
-                  onFieldSubmitted: (_) {
-                    // Move focus to Master Key field when pressing Enter on email
-                    _masterKeyFocusNode.requestFocus();
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'Email Address',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    hintText: 'your.email@example.com',
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Remember Email Checkbox
-                Row(
-                  children: [
-                    Checkbox(
-                      value: _rememberEmail,
-                      onChanged: (value) {
-                        setState(() {
-                          _rememberEmail = value ?? false;
-                        });
-                      },
-                    ),
-                    const Text('Remember email for future logins'),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Password Field
-                TextFormField(
-                  controller: _masterKeyController,
-                  focusNode: _masterKeyFocusNode,
-                  obscureText: !_isMasterKeyVisible,
-                  textInputAction: _isSignUpMode
-                      ? TextInputAction.next
-                      : TextInputAction.done,
-                  validator: _validateMasterKey,
-                  enableInteractiveSelection: true,
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  onChanged: (value) {
-                    if (_isSignUpMode) {
-                      setState(() {
-                        _showMasterKeyStrength = value.isNotEmpty;
-                      });
-                    }
-                  },
-                  onFieldSubmitted: (_) {
-                    if (!_isSignUpMode) {
-                      // In sign-in mode, pressing Enter should trigger sign-in
-                      _submitForm();
-                    } else {
-                      // In sign-up mode, move to confirm field
-                      FocusScope.of(context).nextFocus();
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'Master Key',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isMasterKeyVisible
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isMasterKeyVisible = !_isMasterKeyVisible;
-                        });
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    helperText: _isSignUpMode
-                        ? 'This Master Key will encrypt your vault'
-                        : (_rememberEmail
-                            ? 'Email remembered - Press Enter to sign in'
-                            : 'Press Enter to sign in'),
-                    hintText: _isSignUpMode
-                        ? 'Create a strong master key'
-                        : 'Enter your master key',
-                  ),
-                ),
-
-                // Master Key Strength Indicator (Sign Up only)
-                if (_isSignUpMode && _showMasterKeyStrength) ...[
                   const SizedBox(height: 8),
-                  AnimatedBuilder(
-                    animation: _fadeAnimation,
-                    builder: (context, child) => Opacity(
-                      opacity: _fadeAnimation.value,
-                      child: PasswordStrengthIndicator(
-                        password: _masterKeyController.text,
-                      ),
+                  Text(
+                    'Secure Password Manager',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
                     ),
                   ),
-                ],
+                  const SizedBox(height: 40),
 
-                // Confirm Master Key Field (Sign Up only)
-                if (_isSignUpMode) ...[
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _confirmMasterKeyController,
-                    obscureText: !_isConfirmMasterKeyVisible,
-                    textInputAction: TextInputAction.done,
-                    validator: _validateConfirmMasterKey,
-                    enableInteractiveSelection: true,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    onFieldSubmitted: (_) {
-                      // In sign-up mode, pressing Enter on confirm field should trigger sign-up
-                      _submitForm();
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Confirm Master Key',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isConfirmMasterKeyVisible
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isConfirmMasterKeyVisible =
-                                !_isConfirmMasterKeyVisible;
-                          });
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      helperText: 'Press Enter to create account',
-                      hintText: 'Re-enter your master key',
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 24),
-
-                // Forgot Password (Sign In only)
-                if (!_isSignUpMode) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: _isLoading ? null : _forgotPassword,
-                        child: const Text('Forgot Master Key?'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            _isSignUpMode ? 'Create Account' : 'Sign In',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Toggle Sign Up/Sign In
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _isSignUpMode
-                          ? 'Already have an account?'
-                          : "Don't have an account?",
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _isSignUpMode = !_isSignUpMode;
-                          _confirmMasterKeyController.clear();
-                          _showEmailVerificationMessage = false;
-                        });
-
-                        // Maintain proper focus when switching modes
-                        if (_rememberEmail &&
-                            _emailController.text.isNotEmpty) {
-                          // If email is remembered, focus on Master Key field
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            _masterKeyFocusNode.requestFocus();
-                          });
-                        } else {
-                          // Otherwise focus on email field
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            _emailFocusNode.requestFocus();
-                          });
-                        }
-                      },
-                      child: Text(_isSignUpMode ? 'Sign In' : 'Sign Up'),
-                    ),
+                  // Email Verification Message (if shown)
+                  if (_showEmailVerificationMessage) ...[
+                    _buildEmailVerificationUI(),
+                    const SizedBox(height: 40),
                   ],
-                ),
 
-                const SizedBox(height: 32),
-
-                // Security Note
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.blue.withOpacity(0.1),
-                        Colors.blue.withOpacity(0.05),
+                  // Main Authentication Form
+                  if (!_showEmailVerificationMessage) ...[
+                    _buildAuthenticationForm(),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          
+          // Loading overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: Center(
+                child: Card(
+                  margin: const EdgeInsets.all(32),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 16),
+                        Text(
+                          _isSignUpMode ? 'Creating your secure vault...' : 'Unlocking your vault...',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'This may take a few seconds',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.security,
-                            color: Colors.blue,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Security & Privacy',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Your email is only used for account creation and sync. Your Master Key encrypts all data with AES-256 and is never stored in plain text on our servers.',
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmailVerificationUI() {
+    return AnimatedBuilder(
+      animation: _slideAnimation,
+      builder: (context, child) => Transform.translate(
+        offset: Offset(0, 20 * (1 - _slideAnimation.value)),
+        child: Opacity(
+          opacity: _slideAnimation.value,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.orange.withOpacity(0.1),
+                  Colors.orange.withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.orange),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.mark_email_unread, color: Colors.orange),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _emailVerificationSent
+                            ? 'Verification email sent!'
+                            : 'Please verify your email address',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue.shade700,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange.shade700,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          _buildSecurityChip(
-                              'End-to-End Encrypted', Icons.lock),
-                          _buildSecurityChip(
-                              'Zero-Knowledge', Icons.visibility_off),
-                          _buildSecurityChip('Open Source', Icons.code),
-                        ],
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _emailVerificationSent
+                      ? 'We\'ve sent a verification email to ${_emailController.text}. Please check your inbox and click the verification link. We\'ll automatically detect when you\'ve verified your email.'
+                      : 'We\'ve sent a verification email to ${_emailController.text}. Please check your inbox and click the verification link.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.orange.shade700,
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
-                // Additional Help
-                TextButton.icon(
-                  onPressed: () => _showHelpDialog(),
-                  icon: const Icon(Icons.help_outline, size: 16),
-                  label: const Text('Need Help?'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: _isLoading
+                            ? null
+                            : _resendVerificationEmail,
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Resend Email'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: _isLoading
+                            ? null
+                            : _checkVerificationManually,
+                        icon: const Icon(
+                            Icons.check_circle_outline,
+                            size: 16),
+                        label: const Text('Check Status'),
+                      ),
+                    ),
+                  ],
                 ),
+                if (_emailVerificationSent) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            color: Colors.blue, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Don\'t see the email? Check your spam folder or try a different email address.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -995,100 +749,210 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     );
   }
 
-  Widget _buildSecurityChip(String label, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: Colors.blue.shade600),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.blue.shade600,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+  Widget _buildAuthenticationForm() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Removed: App Icon, Welcome Back, and description
+        // Only show the form fields and buttons
+        // Email Field
+        _buildEmailField(),
+        const SizedBox(height: 16),
+        // Master Key Field
+        _buildMasterKeyField(),
+        if (_isSignUpMode) ...[
+          const SizedBox(height: 16),
+          // Confirm Master Key Field
+          _buildConfirmMasterKeyField(),
         ],
+        const SizedBox(height: 24),
+        // Remember Email Checkbox
+        _buildRememberEmailCheckbox(),
+        const SizedBox(height: 24),
+        // Submit Button
+        _buildSubmitButton(),
+        const SizedBox(height: 16),
+        // Forgot Password Button
+        _buildForgotPasswordButton(),
+      ],
+    );
+  }
+
+  Widget _buildEmailField() {
+    return TextFormField(
+      controller: _emailController,
+      focusNode: _emailFocusNode,
+      keyboardType: TextInputType.emailAddress,
+      textInputAction: TextInputAction.next,
+      validator: _validateEmail,
+      enableInteractiveSelection: true,
+      autocorrect: false,
+      enableSuggestions: true,
+      inputFormatters: [
+        FilteringTextInputFormatter.deny(
+            RegExp(r'\s')), // No spaces in email
+      ],
+      onFieldSubmitted: (_) {
+        // Move focus to Master Key field when pressing Enter on email
+        _masterKeyFocusNode.requestFocus();
+      },
+      decoration: InputDecoration(
+        labelText: 'Email Address',
+        prefixIcon: const Icon(Icons.email_outlined),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        hintText: 'your.email@example.com',
       ),
     );
   }
 
-  void _showHelpDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.help_outline, color: Theme.of(context).primaryColor),
-            const SizedBox(width: 8),
-            const Text('Need Help?'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHelpItem(
-                'Can\'t receive verification email?',
-                'Check your spam folder, ensure the email address is correct, or try using a different email provider.',
-              ),
-              _buildHelpItem(
-                'Forgot your password?',
-                'Use the "Forgot Password?" link to receive a password reset email.',
-              ),
-              _buildHelpItem(
-                'Account not working?',
-                'Make sure you\'re using the same email and password you used to create your account.',
-              ),
-              _buildHelpItem(
-                'Security concerns?',
-                'Your passwords are encrypted with AES-256. We never store your passwords in plain text.',
-              ),
-            ],
+  Widget _buildMasterKeyField() {
+    return TextFormField(
+      controller: _masterKeyController,
+      focusNode: _masterKeyFocusNode,
+      obscureText: !_isMasterKeyVisible,
+      textInputAction: _isSignUpMode
+          ? TextInputAction.next
+          : TextInputAction.done,
+      validator: _validateMasterKey,
+      enableInteractiveSelection: true,
+      autocorrect: false,
+      enableSuggestions: false,
+      onChanged: (value) {
+        if (_isSignUpMode) {
+          setState(() {
+            _showMasterKeyStrength = value.isNotEmpty;
+          });
+        }
+      },
+      onFieldSubmitted: (_) {
+        if (!_isSignUpMode) {
+          // In sign-in mode, pressing Enter should trigger sign-in
+          _submitForm();
+        } else {
+          // In sign-up mode, move to confirm field
+          FocusScope.of(context).nextFocus();
+        }
+      },
+      decoration: InputDecoration(
+        labelText: 'Master Key',
+        prefixIcon: const Icon(Icons.lock_outline),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isMasterKeyVisible
+                ? Icons.visibility_off
+                : Icons.visibility,
           ),
+          onPressed: () {
+            setState(() {
+              _isMasterKeyVisible = !_isMasterKeyVisible;
+            });
+          },
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Got it'),
-          ),
-        ],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        helperText: _isSignUpMode
+            ? 'This Master Key will encrypt your vault'
+            : (_rememberEmail
+                ? 'Email remembered - Press Enter to sign in'
+                : 'Press Enter to sign in'),
+        hintText: _isSignUpMode
+            ? 'Create a strong master key'
+            : 'Enter your master key',
       ),
     );
   }
 
-  Widget _buildHelpItem(String question, String answer) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            question,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+  Widget _buildConfirmMasterKeyField() {
+    return TextFormField(
+      controller: _confirmMasterKeyController,
+      obscureText: !_isConfirmMasterKeyVisible,
+      textInputAction: TextInputAction.done,
+      validator: _validateConfirmMasterKey,
+      enableInteractiveSelection: true,
+      autocorrect: false,
+      enableSuggestions: false,
+      onFieldSubmitted: (_) {
+        // In sign-up mode, pressing Enter on confirm field should trigger sign-up
+        _submitForm();
+      },
+      decoration: InputDecoration(
+        labelText: 'Confirm Master Key',
+        prefixIcon: const Icon(Icons.lock_outline),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isConfirmMasterKeyVisible
+                ? Icons.visibility_off
+                : Icons.visibility,
           ),
-          const SizedBox(height: 4),
-          Text(
-            answer,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.grey,
-            ),
-          ),
-        ],
+          onPressed: () {
+            setState(() {
+              _isConfirmMasterKeyVisible =
+                  !_isConfirmMasterKeyVisible;
+            });
+          },
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        helperText: 'Press Enter to create account',
+        hintText: 'Re-enter your master key',
       ),
+    );
+  }
+
+  Widget _buildRememberEmailCheckbox() {
+    return Row(
+      children: [
+        Checkbox(
+          value: _rememberEmail,
+          onChanged: (value) {
+            setState(() {
+              _rememberEmail = value ?? false;
+            });
+          },
+        ),
+        const Text('Remember email for future logins'),
+      ],
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _submitForm,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Text(
+                _isSignUpMode ? 'Create Account' : 'Sign In',
+                style: const TextStyle(fontSize: 16),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildForgotPasswordButton() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        TextButton(
+          onPressed: _isLoading ? null : _forgotPassword,
+          child: const Text('Forgot Master Key?'),
+        ),
+      ],
     );
   }
 }
