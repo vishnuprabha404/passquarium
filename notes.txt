@@ -1477,3 +1477,19 @@ Project Status: Production-Ready - Vault Key Management Fully Functional
 ***REMOVED***T***REMOVED***I***REMOVED***M***REMOVED***E***REMOVED***:***REMOVED*** ***REMOVED***1***REMOVED***:***REMOVED***3***REMOVED***0***REMOVED*** ***REMOVED***A***REMOVED***M***REMOVED*** ***REMOVED***-***REMOVED*** ***REMOVED***V***REMOVED***a***REMOVED***u***REMOVED***l***REMOVED***t***REMOVED*** ***REMOVED***U***REMOVED***n***REMOVED***l***REMOVED***o***REMOVED***c***REMOVED***k***REMOVED*** ***REMOVED***P***REMOVED***r***REMOVED***o***REMOVED***b***REMOVED***l***REMOVED***e***REMOVED***m***REMOVED*** ***REMOVED***R***REMOVED***e***REMOVED***s***REMOVED***o***REMOVED***l***REMOVED***u***REMOVED***t***REMOVED***i***REMOVED***o***REMOVED***n***REMOVED*** ***REMOVED***&***REMOVED*** ***REMOVED***S***REMOVED***i***REMOVED***n***REMOVED***g***REMOVED***l***REMOVED***e***REMOVED***t***REMOVED***o***REMOVED***n***REMOVED*** ***REMOVED***P***REMOVED***a***REMOVED***t***REMOVED***t***REMOVED***e***REMOVED***r***REMOVED***n***REMOVED*** ***REMOVED***I***REMOVED***m***REMOVED***p***REMOVED***l***REMOVED***e***REMOVED***m***REMOVED***e***REMOVED***n***REMOVED***t***REMOVED***a***REMOVED***t***REMOVED***i***REMOVED***o***REMOVED***n***REMOVED***
 ***REMOVED***
 ***REMOVED***
+
+
+
+
+TODO
+
+
+delete all the credentials from GitHub
+
+add notes to gitignore
+
+spacing issue in the homepage.
+
+check if the app is secure and if the password is leaking anywhere
+
+check if the loading time can be reduced
