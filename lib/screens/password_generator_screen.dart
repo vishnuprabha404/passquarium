@@ -200,27 +200,28 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: Theme.of(context).dividerColor),
                         ),
                         child: _generatedPassword.isEmpty
-                            ? const Text(
+                            ? Text(
                                 'Click "Generate Password" to create a secure password',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.grey,
+                                  color: Theme.of(context).hintColor,
                                   fontStyle: FontStyle.italic,
                                 ),
                                 textAlign: TextAlign.center,
                               )
                             : SelectableText(
                                 _generatedPassword,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.2,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                       ),

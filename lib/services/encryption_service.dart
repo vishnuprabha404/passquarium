@@ -8,6 +8,32 @@ import 'package:flutter/material.dart';
 import 'package:pointycastle/export.dart' as pc;
 import 'package:flutter/foundation.dart';
 
+// Top-level function for PBKDF2 key derivation (for compute)
+Future<Uint8List> _pbkdf2DeriveKey(Map<String, dynamic> args) async {
+  final password = args['password'] as String;
+  final salt = args['salt'] as Uint8List;
+  final iterations = args['iterations'] as int;
+  final keyLength = args['keyLength'] as int;
+  final pc.PBKDF2KeyDerivator derivator = pc.PBKDF2KeyDerivator(pc.HMac(pc.SHA256Digest(), 64));
+  final pc.Pbkdf2Parameters params = pc.Pbkdf2Parameters(salt, iterations, keyLength);
+  derivator.init(params);
+  final key = derivator.process(Uint8List.fromList(utf8.encode(password)));
+  return key;
+}
+
+// Top-level function for AES decryption (for compute)
+String _aesCbcDecrypt(Map<String, dynamic> args) {
+  final base64CipherText = args['base64CipherText'] as String;
+  final vaultKey = args['vaultKey'] as Uint8List;
+  final combined = base64.decode(base64CipherText);
+  if (combined.length < 16) throw Exception('Invalid ciphertext');
+  final iv = combined.sublist(0, 16);
+  final ciphertext = combined.sublist(16);
+  final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(vaultKey), mode: encrypt.AESMode.cbc));
+  final decrypted = encrypter.decrypt(encrypt.Encrypted(ciphertext), iv: encrypt.IV(iv));
+  return decrypted;
+}
+
 class EncryptionService {
   // Singleton pattern
   static final EncryptionService _instance = EncryptionService._internal();
@@ -38,11 +64,12 @@ class EncryptionService {
 
   /// Derive master key using PBKDF2-SHA256 with 100,000 iterations
   Future<Uint8List> deriveMasterKey(String password, Uint8List salt, {int iterations = 100000, int keyLength = 32}) async {
-    final pc.PBKDF2KeyDerivator derivator = pc.PBKDF2KeyDerivator(pc.HMac(pc.SHA256Digest(), 64));
-    final pc.Pbkdf2Parameters params = pc.Pbkdf2Parameters(salt, iterations, keyLength);
-    derivator.init(params);
-    final key = derivator.process(Uint8List.fromList(utf8.encode(password)));
-    return key;
+    return await compute(_pbkdf2DeriveKey, {
+      'password': password,
+      'salt': salt,
+      'iterations': iterations,
+      'keyLength': keyLength,
+    });
   }
 
   /// Encrypt plaintext using VaultKey with AES-256-CBC
@@ -57,13 +84,10 @@ class EncryptionService {
 
   /// Decrypt Base64 ciphertext using VaultKey with AES-256-CBC
   Future<String> decryptWithVaultKey(String base64CipherText, Uint8List vaultKey) async {
-    final combined = base64.decode(base64CipherText);
-    if (combined.length < 16) throw Exception('Invalid ciphertext');
-    final iv = combined.sublist(0, 16);
-    final ciphertext = combined.sublist(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(vaultKey), mode: encrypt.AESMode.cbc));
-    final decrypted = encrypter.decrypt(encrypt.Encrypted(ciphertext), iv: encrypt.IV(iv));
-    return decrypted;
+    return await compute(_aesCbcDecrypt, {
+      'base64CipherText': base64CipherText,
+      'vaultKey': vaultKey,
+    });
   }
 
   // ========================================

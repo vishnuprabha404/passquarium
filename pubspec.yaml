@@ -45,7 +45,24 @@ dev_dependencies:
   build_runner: ^2.5.2
   firebase_auth_platform_interface: any
   local_auth_darwin: any
+  flutter_launcher_icons: ^0.13.1
+
 flutter:
   uses-material-design: true
   assets:
     - assets/images/ 
+
+flutter_launcher_icons:
+  image_path: "icon.png"
+  android: true
+  ios: true
+  windows:
+    generate: true
+    image_path: "icon.png"
+  macos:
+    generate: true
+    image_path: "icon.png"
+  linux:
+    generate: true
+    image_path: "icon.png"
+  remove_alpha_ios: true 
