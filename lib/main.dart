@@ -10,7 +10,7 @@ import 'package:super_locker/services/auto_lock_service.dart';
 import 'package:super_locker/screens/splash_screen.dart';
 import 'package:super_locker/screens/email_auth_screen.dart';
 import 'package:super_locker/screens/device_auth_screen.dart';
-import 'package:super_locker/screens/master_key_screen.dart';
+
 import 'package:super_locker/screens/home_screen.dart';
 import 'package:super_locker/screens/add_password_screen.dart';
 import 'package:super_locker/screens/search_password_screen.dart';
@@ -107,7 +107,7 @@ class _SuperLockerAppState extends State<SuperLockerApp> {
           '/': (context) => const SplashScreen(),
           '/email-auth': (context) => const EmailAuthScreen(),
           '/device-auth': (context) => const DeviceAuthScreen(),
-          '/master-key': (context) => const MasterKeyScreen(),
+
           '/home': (context) => const HomeScreen(),
           '/add-password': (context) => const AddPasswordScreen(),
           '/search-password': (context) => const SearchPasswordScreen(),

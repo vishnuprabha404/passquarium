@@ -9,6 +9,7 @@ import 'package:super_locker/services/password_service.dart';
 import 'package:super_locker/services/clipboard_manager.dart';
 import 'package:super_locker/services/auto_lock_service.dart';
 import 'package:super_locker/widgets/password_strength_indicator.dart';
+import 'package:super_locker/services/encryption_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
     
     // Use post frame callback to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadPasswords();
+      _initializeScreen();
     });
   }
 
@@ -72,6 +73,87 @@ class _HomeScreenState extends State<HomeScreen> {
         }).toList();
       });
     }
+  }
+
+  Future<void> _initializeScreen() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final encryptionService = Provider.of<EncryptionService>(context, listen: false);
+    
+    // Check if vault is unlocked, if not try to unlock it
+    if (!encryptionService.isVaultUnlocked) {
+      print('[DEBUG] HomeScreen: Vault not unlocked, attempting to unlock...');
+      
+      final masterPassword = authService.masterPassword;
+      if (masterPassword != null && authService.firebaseUser != null) {
+        try {
+          final unlockSuccess = await encryptionService.unlockVault(
+            masterPassword, 
+            authService.firebaseUser!.uid
+          );
+          
+          if (unlockSuccess) {
+            print('[DEBUG] HomeScreen: Vault unlocked successfully');
+          } else {
+            print('[DEBUG] HomeScreen: Failed to unlock vault, attempting to re-initialize vault key...');
+            // Fallback: Try to re-initialize the vault key if missing
+            try {
+              await encryptionService.initializeVaultKey(masterPassword, authService.firebaseUser!.uid);
+              final unlockRetry = await encryptionService.unlockVault(masterPassword, authService.firebaseUser!.uid);
+              if (unlockRetry) {
+                print('[DEBUG] HomeScreen: Vault re-initialized and unlocked successfully');
+              } else {
+                print('[DEBUG] HomeScreen: Failed to re-initialize and unlock vault');
+                if (mounted) {
+                  _showVaultError();
+                  return;
+                }
+              }
+            } catch (e) {
+              print('[ERROR] HomeScreen: Error re-initializing vault: $e');
+              if (mounted) {
+                _showVaultError();
+                return;
+              }
+            }
+          }
+        } catch (e) {
+          print('[ERROR] HomeScreen: Error unlocking vault: $e');
+          if (mounted) {
+            _showVaultError();
+            return;
+          }
+        }
+      } else {
+        print('[DEBUG] HomeScreen: No master password available, redirecting to auth');
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/email-auth');
+          return;
+        }
+      }
+    } else {
+      print('[DEBUG] HomeScreen: Vault already unlocked');
+    }
+    
+    // Load passwords after ensuring vault is unlocked
+    _loadPasswords();
+  }
+
+  void _showVaultError() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Vault Error'),
+        content: const Text('Could not unlock or initialize your vault. Please log out and log in again.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pushReplacementNamed('/email-auth');
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadPasswords() async {

@@ -5,9 +5,15 @@ import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:pointycastle/export.dart';
+import 'package:pointycastle/export.dart' as pc;
+import 'package:flutter/foundation.dart';
 
 class EncryptionService {
+  // Singleton pattern
+  static final EncryptionService _instance = EncryptionService._internal();
+  factory EncryptionService() => _instance;
+  EncryptionService._internal();
+
   static const _storage = FlutterSecureStorage();
   static const int _keyLength = 32; // 256 bits
   static const int _saltLength = 32; // 256 bits
@@ -26,75 +32,38 @@ class EncryptionService {
 
   /// Generate cryptographically secure random bytes
   Future<Uint8List> generateRandomBytes(int length) async {
-    final random = Random.secure();
-    return Uint8List.fromList(
-        List<int>.generate(length, (i) => random.nextInt(256)));
+    final rnd = Random.secure();
+    return Uint8List.fromList(List<int>.generate(length, (_) => rnd.nextInt(256)));
   }
 
   /// Derive master key using PBKDF2-SHA256 with 100,000 iterations
-  Future<Uint8List> deriveMasterKey(String password, Uint8List salt) async {
-    final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64));
-    pbkdf2.init(Pbkdf2Parameters(salt, _iterations, _keyLength));
-    
-    final passwordBytes = utf8.encode(password);
-    return pbkdf2.process(Uint8List.fromList(passwordBytes));
+  Future<Uint8List> deriveMasterKey(String password, Uint8List salt, {int iterations = 100000, int keyLength = 32}) async {
+    final pc.PBKDF2KeyDerivator derivator = pc.PBKDF2KeyDerivator(pc.HMac(pc.SHA256Digest(), 64));
+    final pc.Pbkdf2Parameters params = pc.Pbkdf2Parameters(salt, iterations, keyLength);
+    derivator.init(params);
+    final key = derivator.process(Uint8List.fromList(utf8.encode(password)));
+    return key;
   }
 
   /// Encrypt plaintext using VaultKey with AES-256-CBC
   Future<String> encryptWithVaultKey(String plainText, Uint8List vaultKey) async {
-    try {
-      print('[DEBUG] Encrypting with vault key');
-      
-      // Generate random IV (16 bytes for AES-CBC)
-      final iv = await generateRandomBytes(_ivLength);
-      
-      // Encrypt with AES-256-CBC
-      final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(vaultKey)));
-      final encrypted = encrypter.encrypt(plainText, iv: encrypt.IV(iv));
-      
-      // Combine [IV + ciphertext] and Base64 encode
-      final combined = <int>[];
-      combined.addAll(iv);
-      combined.addAll(encrypted.bytes);
-      
-      final result = base64.encode(combined);
-      print('[DEBUG] Encryption successful, result length: ${result.length}');
-      return result;
-    } catch (e) {
-      print('[ERROR] Encryption failed: $e');
-      throw Exception('Encryption failed: $e');
-    }
+    final iv = await generateRandomBytes(16);
+    final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(vaultKey), mode: encrypt.AESMode.cbc));
+    final encrypted = encrypter.encrypt(plainText, iv: encrypt.IV(iv));
+    // Store as base64: [iv + ciphertext]
+    final combined = Uint8List.fromList(iv + encrypted.bytes);
+    return base64.encode(combined);
   }
 
   /// Decrypt Base64 ciphertext using VaultKey with AES-256-CBC
   Future<String> decryptWithVaultKey(String base64CipherText, Uint8List vaultKey) async {
-    try {
-      print('[DEBUG] Decrypting with vault key');
-      
-      // Decode from Base64
-      final combined = base64.decode(base64CipherText);
-      
-      if (combined.length < _ivLength) {
-        throw Exception('Invalid ciphertext: too short');
-      }
-      
-      // Extract IV and ciphertext
-      final iv = Uint8List.fromList(combined.sublist(0, _ivLength));
-      final ciphertext = Uint8List.fromList(combined.sublist(_ivLength));
-      
-      // Decrypt with AES-256-CBC
-      final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(vaultKey)));
-      final decrypted = encrypter.decrypt(
-        encrypt.Encrypted(ciphertext), 
-        iv: encrypt.IV(iv)
-      );
-      
-      print('[DEBUG] Decryption successful');
-      return decrypted;
-    } catch (e) {
-      print('[ERROR] Decryption failed: $e');
-      throw Exception('Decryption failed: $e');
-    }
+    final combined = base64.decode(base64CipherText);
+    if (combined.length < 16) throw Exception('Invalid ciphertext');
+    final iv = combined.sublist(0, 16);
+    final ciphertext = combined.sublist(16);
+    final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(vaultKey), mode: encrypt.AESMode.cbc));
+    final decrypted = encrypter.decrypt(encrypt.Encrypted(ciphertext), iv: encrypt.IV(iv));
+    return decrypted;
   }
 
   // ========================================
@@ -202,10 +171,16 @@ class EncryptionService {
 
   /// Encrypt user password using the unlocked VaultKey
   Future<String> encryptPassword(String password) async {
+    print('[DEBUG] EncryptionService: encryptPassword called');
+    print('[DEBUG] EncryptionService: _cachedVaultKey is null: ${_cachedVaultKey == null}');
+    print('[DEBUG] EncryptionService: Current user ID: $_currentUserId');
+    
     if (_cachedVaultKey == null) {
+      print('[ERROR] EncryptionService: Vault not unlocked!');
       throw Exception('Vault not unlocked. Please authenticate first.');
     }
     
+    print('[DEBUG] EncryptionService: Proceeding with encryption...');
     return await encryptWithVaultKey(password, _cachedVaultKey!);
   }
 
@@ -274,6 +249,13 @@ class EncryptionService {
 
   /// Get current user ID
   String? get currentUserId => _currentUserId;
+
+  /// Set cached vault key (for external services)
+  void setCachedVaultKey(Uint8List vaultKey, String userId) {
+    _cachedVaultKey = vaultKey;
+    _currentUserId = userId;
+    print('[DEBUG] EncryptionService: Vault key cached for user: $userId');
+  }
 
   /// Lock vault (clear cached keys)
   void lockVault() {

@@ -166,8 +166,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
           // Auto-check verification status every 3 seconds
           _startVerificationChecker();
         } else {
-          // Sign-in successful and email verified - navigate to home
-          AutoLockService().unlockApp();
+          // Sign-in successful and email verified - go to home
           Navigator.of(context).pushReplacementNamed('/home');
         }
       }
@@ -224,12 +223,11 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
               },
             );
           } else {
-            // For sign-in: proceed to home after verification
+            // For sign-in: proceed to home after email verification
             _showSuccessDialog(
               'Email Verified!',
-              'Your email has been verified successfully. You can now use all features.',
+              'Your email has been verified successfully. Welcome to your vault.',
               onClose: () {
-                AutoLockService().unlockApp();
                 Navigator.of(context).pushReplacementNamed('/home');
               },
             );
@@ -274,9 +272,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
           // For sign-in: proceed to home after verification
           _showSuccessDialog(
             'Email Verified!',
-            'Your email has been verified successfully. You can now access all features.',
+            'Your email has been verified successfully. Welcome to your vault.',
             onClose: () {
-              AutoLockService().unlockApp();
               Navigator.of(context).pushReplacementNamed('/home');
             },
           );

@@ -73,8 +73,12 @@ class PasswordService extends ChangeNotifier {
     _clearError();
 
     try {
+      print('[DEBUG] PasswordService: Starting password encryption...');
+      print('[DEBUG] PasswordService: Vault unlocked status: ${_encryptionService.isVaultUnlocked}');
+      
       // Encrypt the password using the new vault key system
       final encryptedPassword = await _encryptionService.encryptPassword(password);
+      print('[DEBUG] PasswordService: Password encrypted successfully');
 
       // Create password entry
       final entry = PasswordEntry(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/services/password_service.dart';
+import 'package:super_locker/services/encryption_service.dart';
 
 class AddPasswordScreen extends StatefulWidget {
   const AddPasswordScreen({super.key});
@@ -99,6 +100,28 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
       final masterPassword = authService.masterPassword;
       if (masterPassword == null) {
         throw Exception('Master password not available');
+      }
+
+      // Get encryption service and check if vault is unlocked
+      final encryptionService = Provider.of<EncryptionService>(context, listen: false);
+      
+      if (!encryptionService.isVaultUnlocked) {
+        print('[DEBUG] AddPasswordScreen: Vault not unlocked, attempting to unlock...');
+        
+        if (authService.firebaseUser != null) {
+          final unlockSuccess = await encryptionService.unlockVault(
+            masterPassword, 
+            authService.firebaseUser!.uid
+          );
+          
+          if (!unlockSuccess) {
+            throw Exception('Failed to unlock vault. Please sign in again.');
+          }
+          
+          print('[DEBUG] AddPasswordScreen: Vault unlocked successfully');
+        } else {
+          throw Exception('User not authenticated. Please sign in again.');
+        }
       }
 
       final domain = passwordService.extractDomain(_websiteController.text);

@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Navigator.of(context).pushReplacementNamed('/email-auth');
             break;
           case AuthStatus.masterKeyRequired:
-            Navigator.of(context).pushReplacementNamed('/master-key');
+            Navigator.of(context).pushReplacementNamed('/home');
             break;
           case AuthStatus.authenticated:
             Navigator.of(context).pushReplacementNamed('/home');

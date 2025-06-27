@@ -8,6 +8,8 @@ import 'package:local_auth_windows/local_auth_windows.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:super_locker/services/encryption_service.dart';
+import 'package:super_locker/services/key_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum AuthStatus {
   unauthenticated,
@@ -26,6 +28,8 @@ class AuthService extends ChangeNotifier {
     ),
   );
   final EncryptionService _encryptionService = EncryptionService();
+  final KeyService _keyService = KeyService(EncryptionService());
+  Uint8List? _cachedVaultKey;
 
   AuthStatus _authStatus = AuthStatus.unauthenticated;
   String? _masterPassword; // This will be the email master key
@@ -225,9 +229,12 @@ class AuthService extends ChangeNotifier {
         _userEmail = email;
         _masterPassword = password;
 
-        // Initialize vault key system for new user (but don't unlock yet until email verified)
-        // We'll do this after email verification to ensure the account is fully set up
-        
+        // Initialize vault key system for new user (after email verification)
+        await _keyService.initializeVaultKeyForUser(_firebaseUser!.uid, password);
+        // Unlock and cache the vault key
+        _cachedVaultKey = await _keyService.unlockVaultKeyForUser(_firebaseUser!.uid, password);
+        _encryptionService.setCachedVaultKey(_cachedVaultKey!, _firebaseUser!.uid);
+
         // Store the email master key as master password hash (for compatibility)
         final hashedPassword = _encryptionService.hashMasterPassword(password);
         await _secureStorage.write(
@@ -307,18 +314,14 @@ class AuthService extends ChangeNotifier {
         _masterPassword = password;
 
         // Check if vault key exists for this user
-        final hasVaultKey = await _encryptionService.hasVaultKey(_firebaseUser!.uid);
-        
-        if (!hasVaultKey) {
+        final doc = await FirebaseFirestore.instance.collection('users').doc(_firebaseUser!.uid).get();
+        if (!doc.exists || doc.data()?['encryptedVaultKey'] == null) {
           // First time login - initialize vault key system
-          await _encryptionService.initializeVaultKey(password, _firebaseUser!.uid);
-        } else {
-          // Existing user - unlock vault
-          final unlockSuccess = await _encryptionService.unlockVault(password, _firebaseUser!.uid);
-          if (!unlockSuccess) {
-            throw Exception('Invalid master password');
-          }
+          await _keyService.initializeVaultKeyForUser(_firebaseUser!.uid, password);
         }
+        // Unlock and cache the vault key
+        _cachedVaultKey = await _keyService.unlockVaultKeyForUser(_firebaseUser!.uid, password);
+        _encryptionService.setCachedVaultKey(_cachedVaultKey!, _firebaseUser!.uid);
 
         // Store/update the email master key as master password hash (for compatibility)
         final hashedPassword = _encryptionService.hashMasterPassword(password);
@@ -356,16 +359,13 @@ class AuthService extends ChangeNotifier {
             _masterPassword = password;
 
             // Vault key setup for retry case
-            final hasVaultKey = await _encryptionService.hasVaultKey(_firebaseUser!.uid);
-            
-            if (!hasVaultKey) {
-              await _encryptionService.initializeVaultKey(password, _firebaseUser!.uid);
-            } else {
-              final unlockSuccess = await _encryptionService.unlockVault(password, _firebaseUser!.uid);
-              if (!unlockSuccess) {
-                throw Exception('Invalid master password');
-              }
+            final doc = await FirebaseFirestore.instance.collection('users').doc(_firebaseUser!.uid).get();
+            if (!doc.exists || doc.data()?['encryptedVaultKey'] == null) {
+              await _keyService.initializeVaultKeyForUser(_firebaseUser!.uid, password);
             }
+            // Unlock and cache the vault key
+            _cachedVaultKey = await _keyService.unlockVaultKeyForUser(_firebaseUser!.uid, password);
+            _encryptionService.setCachedVaultKey(_cachedVaultKey!, _firebaseUser!.uid);
 
             final hashedPassword = _encryptionService.hashMasterPassword(password);
             await _secureStorage.write(
@@ -464,6 +464,15 @@ class AuthService extends ChangeNotifier {
       final isValid =
           await _encryptionService.verifyMasterPassword(masterKey, storedHash);
       if (isValid) {
+        // CRITICAL: Unlock the vault after successful verification
+        print('[DEBUG] AuthService: Attempting to unlock vault for user: ${_firebaseUser!.uid}');
+        final unlockSuccess = await _encryptionService.unlockVault(masterKey, _firebaseUser!.uid);
+        print('[DEBUG] AuthService: Vault unlock success: $unlockSuccess');
+        if (!unlockSuccess) {
+          throw Exception('Failed to unlock vault with master key');
+        }
+        print('[DEBUG] AuthService: Vault unlocked successfully!');
+        
         _masterPassword = masterKey;
         _authStatus = AuthStatus.authenticated;
         notifyListeners();
