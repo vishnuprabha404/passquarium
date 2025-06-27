@@ -103,21 +103,21 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
       }
 
       // Get encryption service and check if vault is unlocked
-      final encryptionService = Provider.of<EncryptionService>(context, listen: false);
-      
+      final encryptionService =
+          Provider.of<EncryptionService>(context, listen: false);
+
       if (!encryptionService.isVaultUnlocked) {
-        print('[DEBUG] AddPasswordScreen: Vault not unlocked, attempting to unlock...');
-        
+        print(
+            '[DEBUG] AddPasswordScreen: Vault not unlocked, attempting to unlock...');
+
         if (authService.firebaseUser != null) {
           final unlockSuccess = await encryptionService.unlockVault(
-            masterPassword, 
-            authService.firebaseUser!.uid
-          );
-          
+              masterPassword, authService.firebaseUser!.uid);
+
           if (!unlockSuccess) {
             throw Exception('Failed to unlock vault. Please sign in again.');
           }
-          
+
           print('[DEBUG] AddPasswordScreen: Vault unlocked successfully');
         } else {
           throw Exception('User not authenticated. Please sign in again.');

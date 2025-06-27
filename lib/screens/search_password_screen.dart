@@ -336,7 +336,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                 children: [
                   Text(
                     entry.title.isNotEmpty ? entry.title : entry.website,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -372,7 +373,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 minimumSize: const Size(0, 36),
               ),
             ),
@@ -463,8 +465,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     try {
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword =
-          await passwordService.decryptPassword(entry);
+      final decryptedPassword = await passwordService.decryptPassword(entry);
 
       print(
           '🔍 DEBUG: Decryption result: ${decryptedPassword.isNotEmpty ? "SUCCESS" : "FAILED"}');
@@ -557,22 +558,23 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                         children: [
                           if (entry.website.isNotEmpty)
                             _buildEnhancedDetailRow(
-                              'Website', 
-                              entry.website, 
+                              'Website',
+                              entry.website,
                               Icons.language,
                               Colors.blue,
                             ),
-                          if (entry.url.isNotEmpty && entry.url != entry.website)
+                          if (entry.url.isNotEmpty &&
+                              entry.url != entry.website)
                             _buildEnhancedDetailRow(
-                              'URL', 
-                              entry.url, 
+                              'URL',
+                              entry.url,
                               Icons.link,
                               Colors.teal,
                             ),
                           if (entry.category.isNotEmpty)
                             _buildEnhancedDetailRow(
-                              'Category', 
-                              entry.category, 
+                              'Category',
+                              entry.category,
                               Icons.category,
                               Colors.orange,
                             ),
@@ -604,8 +606,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
                       children: [
                         if (entry.username.isNotEmpty)
                           _buildEnhancedDetailRow(
-                            'Username', 
-                            entry.username, 
+                            'Username',
+                            entry.username,
                             Icons.person,
                             Colors.purple,
                             copyable: true,
@@ -885,8 +887,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     try {
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword =
-          await passwordService.decryptPassword(entry);
+      final decryptedPassword = await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isNotEmpty) {
         await _clipboardManager.copySecureData(
@@ -947,8 +948,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
     try {
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword =
-          await passwordService.decryptPassword(entry);
+      final decryptedPassword = await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);
@@ -975,7 +975,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(
-          uri, 
+          uri,
           mode: LaunchMode.externalApplication,
           webViewConfiguration: const WebViewConfiguration(
             enableJavaScript: true,
@@ -1037,8 +1037,7 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
 
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword =
-          await passwordService.decryptPassword(entry);
+      final decryptedPassword = await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);
@@ -1127,12 +1126,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
   }
 
   Widget _buildEnhancedDetailRow(
-    String label, 
-    String value, 
-    IconData icon, 
-    Color iconColor, {
-    bool copyable = false
-  }) {
+      String label, String value, IconData icon, Color iconColor,
+      {bool copyable = false}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -1145,8 +1140,8 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
-              icon, 
-              size: 20, 
+              icon,
+              size: 20,
               color: iconColor,
             ),
           ),

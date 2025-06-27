@@ -22,7 +22,7 @@ void main() {
         try {
           await encryptionService.initializeVaultKey(masterPassword, userId);
           print('✅ Vault key initialized successfully');
-          
+
           // Verify vault key is cached
           expect(encryptionService.isVaultUnlocked, true);
           expect(encryptionService.currentUserId, userId);
@@ -50,7 +50,8 @@ void main() {
           expect(encryptionService.isVaultUnlocked, false);
 
           // Now unlock the vault
-          final success = await encryptionService.unlockVault(masterPassword, userId);
+          final success =
+              await encryptionService.unlockVault(masterPassword, userId);
           expect(success, true);
           expect(encryptionService.isVaultUnlocked, true);
           expect(encryptionService.currentUserId, userId);
@@ -74,7 +75,8 @@ void main() {
           encryptionService.lockVault();
 
           // Try to unlock with wrong password
-          final success = await encryptionService.unlockVault(wrongPassword, userId);
+          final success =
+              await encryptionService.unlockVault(wrongPassword, userId);
           expect(success, false);
           expect(encryptionService.isVaultUnlocked, false);
           print('✅ Wrong master password correctly rejected');
@@ -96,16 +98,19 @@ void main() {
         try {
           // Initialize vault
           await encryptionService.initializeVaultKey(masterPassword, userId);
-          
+
           // Encrypt password
-          final encryptedPassword = await encryptionService.encryptPassword(testPassword);
-          print('✅ Password encrypted: ${encryptedPassword.substring(0, 32)}...');
+          final encryptedPassword =
+              await encryptionService.encryptPassword(testPassword);
+          print(
+              '✅ Password encrypted: ${encryptedPassword.substring(0, 32)}...');
 
           expect(encryptedPassword, isNotEmpty);
           expect(encryptedPassword, isNot(equals(testPassword)));
 
           // Decrypt password
-          final decryptedPassword = await encryptionService.decryptPassword(encryptedPassword);
+          final decryptedPassword =
+              await encryptionService.decryptPassword(encryptedPassword);
           print('✅ Password decrypted: $decryptedPassword');
 
           expect(decryptedPassword, equals(testPassword));
@@ -125,18 +130,20 @@ void main() {
         try {
           // Initialize vault
           await encryptionService.initializeVaultKey(masterPassword, userId);
-          
+
           // Encrypt password
-          final encryptedPassword = await encryptionService.encryptPassword(testPassword);
-          
+          final encryptedPassword =
+              await encryptionService.encryptPassword(testPassword);
+
           // Lock vault
           encryptionService.lockVault();
-          
+
           // Try to decrypt when vault is locked
           await encryptionService.decryptPassword(encryptedPassword);
           fail('Should throw error when vault is locked');
         } catch (e) {
-          print('✅ Correctly rejected decryption when vault locked: ${e.toString().split('\n').first}');
+          print(
+              '✅ Correctly rejected decryption when vault locked: ${e.toString().split('\n').first}');
           expect(e.toString(), contains('Vault not unlocked'));
         }
       });
@@ -155,7 +162,8 @@ void main() {
         print('\n=== Password Strength Analysis ===');
 
         for (final (password, description) in passwords) {
-          final strength = encryptionService.calculatePasswordStrength(password);
+          final strength =
+              encryptionService.calculatePasswordStrength(password);
           print('$description "$password": $strength%');
 
           expect(strength, isA<int>());
@@ -170,7 +178,8 @@ void main() {
 
         final password1 = encryptionService.generateSecurePassword(length: 16);
         final password2 = encryptionService.generateSecurePassword(length: 16);
-        final longPassword = encryptionService.generateSecurePassword(length: 32);
+        final longPassword =
+            encryptionService.generateSecurePassword(length: 32);
 
         print('Generated password 1: $password1');
         print('Generated password 2: $password2');
@@ -182,8 +191,10 @@ void main() {
         expect(password1, isNot(equals(password2)));
 
         // Check strength of generated passwords
-        final strength1 = encryptionService.calculatePasswordStrength(password1);
-        final strength2 = encryptionService.calculatePasswordStrength(password2);
+        final strength1 =
+            encryptionService.calculatePasswordStrength(password1);
+        final strength2 =
+            encryptionService.calculatePasswordStrength(password2);
 
         expect(strength1, greaterThan(60));
         expect(strength2, greaterThan(60));
@@ -207,11 +218,12 @@ void main() {
 
       test('should derive master key with PBKDF2', () async {
         const masterPassword = 'TestPassword123!';
-        
+
         print('\n=== Master Key Derivation Test ===');
 
         final salt = await encryptionService.generateRandomBytes(32);
-        final masterKey = await encryptionService.deriveMasterKey(masterPassword, salt);
+        final masterKey =
+            await encryptionService.deriveMasterKey(masterPassword, salt);
 
         expect(masterKey.length, equals(32));
         expect(masterKey, isNot(equals(salt)));

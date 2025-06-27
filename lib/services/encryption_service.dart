@@ -14,8 +14,10 @@ Future<Uint8List> _pbkdf2DeriveKey(Map<String, dynamic> args) async {
   final salt = args['salt'] as Uint8List;
   final iterations = args['iterations'] as int;
   final keyLength = args['keyLength'] as int;
-  final pc.PBKDF2KeyDerivator derivator = pc.PBKDF2KeyDerivator(pc.HMac(pc.SHA256Digest(), 64));
-  final pc.Pbkdf2Parameters params = pc.Pbkdf2Parameters(salt, iterations, keyLength);
+  final pc.PBKDF2KeyDerivator derivator =
+      pc.PBKDF2KeyDerivator(pc.HMac(pc.SHA256Digest(), 64));
+  final pc.Pbkdf2Parameters params =
+      pc.Pbkdf2Parameters(salt, iterations, keyLength);
   derivator.init(params);
   final key = derivator.process(Uint8List.fromList(utf8.encode(password)));
   return key;
@@ -29,8 +31,10 @@ String _aesCbcDecrypt(Map<String, dynamic> args) {
   if (combined.length < 16) throw Exception('Invalid ciphertext');
   final iv = combined.sublist(0, 16);
   final ciphertext = combined.sublist(16);
-  final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(vaultKey), mode: encrypt.AESMode.cbc));
-  final decrypted = encrypter.decrypt(encrypt.Encrypted(ciphertext), iv: encrypt.IV(iv));
+  final encrypter = encrypt.Encrypter(
+      encrypt.AES(encrypt.Key(vaultKey), mode: encrypt.AESMode.cbc));
+  final decrypted =
+      encrypter.decrypt(encrypt.Encrypted(ciphertext), iv: encrypt.IV(iv));
   return decrypted;
 }
 
@@ -59,11 +63,13 @@ class EncryptionService {
   /// Generate cryptographically secure random bytes
   Future<Uint8List> generateRandomBytes(int length) async {
     final rnd = Random.secure();
-    return Uint8List.fromList(List<int>.generate(length, (_) => rnd.nextInt(256)));
+    return Uint8List.fromList(
+        List<int>.generate(length, (_) => rnd.nextInt(256)));
   }
 
   /// Derive master key using PBKDF2-SHA256 with 100,000 iterations
-  Future<Uint8List> deriveMasterKey(String password, Uint8List salt, {int iterations = 100000, int keyLength = 32}) async {
+  Future<Uint8List> deriveMasterKey(String password, Uint8List salt,
+      {int iterations = 100000, int keyLength = 32}) async {
     return await compute(_pbkdf2DeriveKey, {
       'password': password,
       'salt': salt,
@@ -73,9 +79,11 @@ class EncryptionService {
   }
 
   /// Encrypt plaintext using VaultKey with AES-256-CBC
-  Future<String> encryptWithVaultKey(String plainText, Uint8List vaultKey) async {
+  Future<String> encryptWithVaultKey(
+      String plainText, Uint8List vaultKey) async {
     final iv = await generateRandomBytes(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(vaultKey), mode: encrypt.AESMode.cbc));
+    final encrypter = encrypt.Encrypter(
+        encrypt.AES(encrypt.Key(vaultKey), mode: encrypt.AESMode.cbc));
     final encrypted = encrypter.encrypt(plainText, iv: encrypt.IV(iv));
     // Store as base64: [iv + ciphertext]
     final combined = Uint8List.fromList(iv + encrypted.bytes);
@@ -83,7 +91,8 @@ class EncryptionService {
   }
 
   /// Decrypt Base64 ciphertext using VaultKey with AES-256-CBC
-  Future<String> decryptWithVaultKey(String base64CipherText, Uint8List vaultKey) async {
+  Future<String> decryptWithVaultKey(
+      String base64CipherText, Uint8List vaultKey) async {
     return await compute(_aesCbcDecrypt, {
       'base64CipherText': base64CipherText,
       'vaultKey': vaultKey,
@@ -98,26 +107,24 @@ class EncryptionService {
   Future<void> initializeVaultKey(String masterPassword, String userId) async {
     try {
       print('[DEBUG] Initializing vault key for user: $userId');
-      
+
       // 1. Generate random VaultKey (32 bytes)
       final vaultKey = await generateRandomBytes(_vaultKeyLength);
-      
+
       // 2. Generate random salt for master key derivation (32 bytes)
       final randomSalt = await generateRandomBytes(_saltLength);
-      
+
       // 3. Derive MasterKey using PBKDF2-SHA256
       final masterKey = await deriveMasterKey(masterPassword, randomSalt);
-      
+
       // 4. Generate random IV for VaultKey encryption (16 bytes)
       final vaultKeyIV = await generateRandomBytes(_ivLength);
-      
+
       // 5. Encrypt VaultKey using AES-256-CBC with MasterKey
       final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(masterKey)));
-      final encryptedVaultKey = encrypter.encrypt(
-        base64.encode(vaultKey), 
-        iv: encrypt.IV(vaultKeyIV)
-      );
-      
+      final encryptedVaultKey = encrypter.encrypt(base64.encode(vaultKey),
+          iv: encrypt.IV(vaultKeyIV));
+
       // 6. Create storage structure
       final vaultData = {
         'salt': base64.encode(randomSalt),
@@ -126,18 +133,16 @@ class EncryptionService {
         'iterations': _iterations,
         'created_at': DateTime.now().toIso8601String(),
       };
-      
+
       // 7. Store securely in device storage
       await _storage.write(
-        key: 'vault_data_$userId', 
-        value: jsonEncode(vaultData)
-      );
-      
+          key: 'vault_data_$userId', value: jsonEncode(vaultData));
+
       // 8. Cache for current session
       _cachedMasterKey = masterKey;
       _cachedVaultKey = vaultKey;
       _currentUserId = userId;
-      
+
       print('[DEBUG] Vault key initialized successfully for user: $userId');
     } catch (e) {
       print('[ERROR] Failed to initialize vault key: $e');
@@ -149,37 +154,36 @@ class EncryptionService {
   Future<bool> unlockVault(String masterPassword, String userId) async {
     try {
       print('[DEBUG] Attempting to unlock vault for user: $userId');
-      
+
       // 1. Retrieve stored vault data
       final vaultDataJson = await _storage.read(key: 'vault_data_$userId');
       if (vaultDataJson == null) {
         throw Exception('Vault data not found for user');
       }
-      
+
       final vaultData = jsonDecode(vaultDataJson) as Map<String, dynamic>;
-      
+
       // 2. Extract components
       final salt = base64.decode(vaultData['salt'] as String);
       final vaultKeyIV = base64.decode(vaultData['vaultKeyIV'] as String);
       final encryptedVaultKey = vaultData['encryptedVaultKey'] as String;
       final iterations = vaultData['iterations'] as int? ?? _iterations;
-      
+
       // 3. Re-derive MasterKey using stored salt
       final masterKey = await deriveMasterKey(masterPassword, salt);
-      
+
       // 4. Decrypt VaultKey using MasterKey
       final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(masterKey)));
       final decryptedVaultKeyB64 = encrypter.decrypt(
-        encrypt.Encrypted.fromBase64(encryptedVaultKey),
-        iv: encrypt.IV(vaultKeyIV)
-      );
+          encrypt.Encrypted.fromBase64(encryptedVaultKey),
+          iv: encrypt.IV(vaultKeyIV));
       final vaultKey = base64.decode(decryptedVaultKeyB64);
-      
+
       // 5. Cache for current session
       _cachedMasterKey = masterKey;
       _cachedVaultKey = vaultKey;
       _currentUserId = userId;
-      
+
       print('[DEBUG] Vault unlocked successfully for user: $userId');
       return true;
     } catch (e) {
@@ -196,14 +200,15 @@ class EncryptionService {
   /// Encrypt user password using the unlocked VaultKey
   Future<String> encryptPassword(String password) async {
     print('[DEBUG] EncryptionService: encryptPassword called');
-    print('[DEBUG] EncryptionService: _cachedVaultKey is null: ${_cachedVaultKey == null}');
+    print(
+        '[DEBUG] EncryptionService: _cachedVaultKey is null: ${_cachedVaultKey == null}');
     print('[DEBUG] EncryptionService: Current user ID: $_currentUserId');
-    
+
     if (_cachedVaultKey == null) {
       print('[ERROR] EncryptionService: Vault not unlocked!');
       throw Exception('Vault not unlocked. Please authenticate first.');
     }
-    
+
     print('[DEBUG] EncryptionService: Proceeding with encryption...');
     return await encryptWithVaultKey(password, _cachedVaultKey!);
   }
@@ -213,7 +218,7 @@ class EncryptionService {
     if (_cachedVaultKey == null) {
       throw Exception('Vault not unlocked. Please authenticate first.');
     }
-    
+
     return await decryptWithVaultKey(encryptedPassword, _cachedVaultKey!);
   }
 
@@ -223,28 +228,25 @@ class EncryptionService {
 
   /// Change master password (re-encrypts VaultKey only, not user data)
   Future<bool> changeMasterPassword(
-    String oldPassword, 
-    String newPassword, 
-    String userId
-  ) async {
+      String oldPassword, String newPassword, String userId) async {
     try {
       // 1. Unlock with old password to get VaultKey
       if (!await unlockVault(oldPassword, userId)) {
         throw Exception('Current master password is incorrect');
       }
-      
+
       // 2. Generate new salt and derive new MasterKey
       final newSalt = await generateRandomBytes(_saltLength);
       final newMasterKey = await deriveMasterKey(newPassword, newSalt);
-      
+
       // 3. Generate new IV and re-encrypt VaultKey
       final newVaultKeyIV = await generateRandomBytes(_ivLength);
-      final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key(newMasterKey)));
+      final encrypter =
+          encrypt.Encrypter(encrypt.AES(encrypt.Key(newMasterKey)));
       final encryptedVaultKey = encrypter.encrypt(
-        base64.encode(_cachedVaultKey!), 
-        iv: encrypt.IV(newVaultKeyIV)
-      );
-      
+          base64.encode(_cachedVaultKey!),
+          iv: encrypt.IV(newVaultKeyIV));
+
       // 4. Store new vault data
       final vaultData = {
         'salt': base64.encode(newSalt),
@@ -253,15 +255,13 @@ class EncryptionService {
         'iterations': _iterations,
         'updated_at': DateTime.now().toIso8601String(),
       };
-      
+
       await _storage.write(
-        key: 'vault_data_$userId', 
-        value: jsonEncode(vaultData)
-      );
-      
+          key: 'vault_data_$userId', value: jsonEncode(vaultData));
+
       // 5. Update cached master key
       _cachedMasterKey = newMasterKey;
-      
+
       return true;
     } catch (e) {
       throw Exception('Failed to change master password: $e');
@@ -367,15 +367,18 @@ class EncryptionService {
     if (password.contains(RegExp(r'[A-Z]'))) score += 10;
     if (password.contains(RegExp(r'[a-z]'))) score += 10;
     if (password.contains(RegExp(r'[0-9]'))) score += 10;
-    if (password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'))) score += 15;
+    if (password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]')))
+      score += 15;
 
     // Bonus for variety
     final hasUpper = password.contains(RegExp(r'[A-Z]'));
     final hasLower = password.contains(RegExp(r'[a-z]'));
     final hasNumber = password.contains(RegExp(r'[0-9]'));
-    final hasSymbol = password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'));
-    
-    final varietyCount = [hasUpper, hasLower, hasNumber, hasSymbol].where((x) => x).length;
+    final hasSymbol =
+        password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]'));
+
+    final varietyCount =
+        [hasUpper, hasLower, hasNumber, hasSymbol].where((x) => x).length;
     if (varietyCount >= 3) score += 10;
     if (varietyCount == 4) score += 10;
 
@@ -413,7 +416,8 @@ class EncryptionService {
   /// Hash master password for storage (never store plaintext)
   String hashMasterPassword(String masterPassword) {
     final random = Random.secure();
-    final salt = Uint8List.fromList(List<int>.generate(16, (i) => random.nextInt(256)));
+    final salt =
+        Uint8List.fromList(List<int>.generate(16, (i) => random.nextInt(256)));
     final passwordBytes = utf8.encode(masterPassword);
     final combined = <int>[];
     combined.addAll(passwordBytes);
@@ -428,15 +432,15 @@ class EncryptionService {
     try {
       final parts = storedHash.split('.');
       if (parts.length != 2) return false;
-      
+
       final salt = base64.decode(parts[0]);
       final expectedHash = parts[1];
-      
+
       final passwordBytes = utf8.encode(password);
       final combined = <int>[];
       combined.addAll(passwordBytes);
       combined.addAll(salt);
-      
+
       final actualHash = sha256.convert(combined).toString();
       return actualHash == expectedHash;
     } catch (e) {
@@ -490,4 +494,3 @@ class EncryptionService {
     }
   }
 }
-

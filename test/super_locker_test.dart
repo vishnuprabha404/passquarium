@@ -162,7 +162,7 @@ void main() {
         try {
           // Encrypt the password
           final encryptedPassword = await encryptionService.encryptPassword(
-              testPassword, masterPassword);
+              testPassword);
 
           expect(encryptedPassword, isNotEmpty,
               reason: 'Encrypted password should not be empty');
@@ -171,7 +171,7 @@ void main() {
 
           // Decrypt the password
           final decryptedPassword = await encryptionService.decryptPassword(
-              encryptedPassword, masterPassword);
+              encryptedPassword);
 
           expect(decryptedPassword, equals(testPassword),
               reason: 'Decrypted password should match original');
@@ -189,11 +189,11 @@ void main() {
         try {
           // Encrypt with correct master password
           final encryptedPassword = await encryptionService.encryptPassword(
-              testPassword, masterPassword);
+              testPassword);
 
           // Try to decrypt with wrong master password
           await encryptionService.decryptPassword(
-              encryptedPassword, wrongMasterPassword);
+              encryptedPassword);
 
           fail('Should throw error when decrypting with wrong master password');
         } catch (e) {
@@ -386,7 +386,7 @@ void main() {
             domain: 'test-site.com',
             username: 'testuser',
             encryptedPassword: await encryptionService.encryptPassword(
-                testSitePassword, masterPassword),
+                testSitePassword),
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           );
@@ -397,7 +397,7 @@ void main() {
 
           // Decrypt and verify
           final decryptedPassword = await encryptionService.decryptPassword(
-              entry.encryptedPassword, masterPassword);
+              entry.encryptedPassword);
 
           print('Decrypted password: $decryptedPassword');
 
@@ -417,7 +417,7 @@ void main() {
         const masterPassword = testPassword;
 
         encryptionService
-            .encryptPassword(plainPassword, masterPassword)
+            .encryptPassword(plainPassword)
             .then((encrypted) {
           expect(encrypted, isNot(contains(plainPassword)),
               reason: 'Encrypted data should not contain plaintext password');
@@ -441,9 +441,9 @@ void main() {
         const masterPassword = testPassword;
 
         final encrypted1 =
-            await encryptionService.encryptPassword(password, masterPassword);
+            await encryptionService.encryptPassword(password);
         final encrypted2 =
-            await encryptionService.encryptPassword(password, masterPassword);
+            await encryptionService.encryptPassword(password);
 
         expect(encrypted1, isNot(equals(encrypted2)),
             reason: 'Each encryption should use unique salt/IV');
@@ -460,9 +460,9 @@ void main() {
         // Perform multiple encryption/decryption operations
         for (int i = 0; i < 10; i++) {
           final encrypted =
-              await encryptionService.encryptPassword(password, masterPassword);
+              await encryptionService.encryptPassword(password);
           final decrypted = await encryptionService.decryptPassword(
-              encrypted, masterPassword);
+              encrypted);
           expect(decrypted, equals(password));
         }
 
@@ -491,12 +491,14 @@ void main() {
           print('✅ Vault initialized');
 
           // 2. Encrypt a password
-          final encryptedPassword = await encryptionService.encryptPassword(testPassword);
+          final encryptedPassword =
+              await encryptionService.encryptPassword(testPassword);
           expect(encryptedPassword, isNotEmpty);
           print('✅ Password encrypted');
 
           // 3. Decrypt the password
-          final decryptedPassword = await encryptionService.decryptPassword(encryptedPassword);
+          final decryptedPassword =
+              await encryptionService.decryptPassword(encryptedPassword);
           expect(decryptedPassword, equals(testPassword));
           print('✅ Password decrypted');
 
@@ -506,16 +508,17 @@ void main() {
           print('✅ Vault locked');
 
           // 5. Unlock the vault
-          final unlockSuccess = await encryptionService.unlockVault(masterPassword, userId);
+          final unlockSuccess =
+              await encryptionService.unlockVault(masterPassword, userId);
           expect(unlockSuccess, true);
           expect(encryptionService.isVaultUnlocked, true);
           print('✅ Vault unlocked');
 
           // 6. Decrypt password again after unlock
-          final decryptedAgain = await encryptionService.decryptPassword(encryptedPassword);
+          final decryptedAgain =
+              await encryptionService.decryptPassword(encryptedPassword);
           expect(decryptedAgain, equals(testPassword));
           print('✅ Password decrypted after unlock');
-
         } catch (e) {
           print('❌ Lifecycle test failed: $e');
           fail('Complete vault key lifecycle should work');
@@ -545,15 +548,16 @@ void main() {
 
           // Verify passwords are different
           expect(encrypted1, isNot(equals(encrypted2)));
-          
+
           // Decrypt both passwords
-          final decrypted1 = await encryptionService.decryptPassword(encrypted1);
-          final decrypted2 = await encryptionService.decryptPassword(encrypted2);
-          
+          final decrypted1 =
+              await encryptionService.decryptPassword(encrypted1);
+          final decrypted2 =
+              await encryptionService.decryptPassword(encrypted2);
+
           expect(decrypted1, equals(password1));
           expect(decrypted2, equals(password2));
           print('✅ Both users can decrypt their own passwords');
-
         } catch (e) {
           print('❌ Multiple users test failed: $e');
           fail('Multiple users should have separate vaults');
@@ -573,12 +577,13 @@ void main() {
           // Initialize with correct password
           await encryptionService.initializeVaultKey(correctPassword, userId);
           final encrypted = await encryptionService.encryptPassword('test');
-          
+
           // Lock vault
           encryptionService.lockVault();
-          
+
           // Try to unlock with wrong password
-          final unlockSuccess = await encryptionService.unlockVault(wrongPassword, userId);
+          final unlockSuccess =
+              await encryptionService.unlockVault(wrongPassword, userId);
           expect(unlockSuccess, false);
           expect(encryptionService.isVaultUnlocked, false);
           print('✅ Wrong master password correctly rejected');
@@ -591,7 +596,6 @@ void main() {
             expect(e.toString(), contains('Vault not unlocked'));
             print('✅ Decryption correctly blocked when vault locked');
           }
-
         } catch (e) {
           print('❌ Security test failed: $e');
           fail('Security measures should work correctly');
@@ -607,11 +611,14 @@ void main() {
 
         try {
           await encryptionService.initializeVaultKey(masterPassword, userId);
-          
+
           // Encrypt same password multiple times
-          final encrypted1 = await encryptionService.encryptPassword(testPassword);
-          final encrypted2 = await encryptionService.encryptPassword(testPassword);
-          final encrypted3 = await encryptionService.encryptPassword(testPassword);
+          final encrypted1 =
+              await encryptionService.encryptPassword(testPassword);
+          final encrypted2 =
+              await encryptionService.encryptPassword(testPassword);
+          final encrypted3 =
+              await encryptionService.encryptPassword(testPassword);
 
           // All should be different due to unique IVs
           expect(encrypted1, isNot(equals(encrypted2)));
@@ -620,15 +627,17 @@ void main() {
           print('✅ Each encryption produces unique result');
 
           // All should decrypt to same original
-          final decrypted1 = await encryptionService.decryptPassword(encrypted1);
-          final decrypted2 = await encryptionService.decryptPassword(encrypted2);
-          final decrypted3 = await encryptionService.decryptPassword(encrypted3);
+          final decrypted1 =
+              await encryptionService.decryptPassword(encrypted1);
+          final decrypted2 =
+              await encryptionService.decryptPassword(encrypted2);
+          final decrypted3 =
+              await encryptionService.decryptPassword(encrypted3);
 
           expect(decrypted1, equals(testPassword));
           expect(decrypted2, equals(testPassword));
           expect(decrypted3, equals(testPassword));
           print('✅ All encrypted versions decrypt to original');
-
         } catch (e) {
           print('❌ Unique encryption test failed: $e');
           fail('Unique encryption should work correctly');
@@ -652,7 +661,8 @@ void main() {
 
         // All passwords should be strong
         for (final password in passwords) {
-          final strength = encryptionService.calculatePasswordStrength(password);
+          final strength =
+              encryptionService.calculatePasswordStrength(password);
           expect(strength, greaterThan(60));
           print('Password: $password (Strength: $strength%)');
         }
@@ -671,11 +681,13 @@ void main() {
         ];
 
         for (final (password, expectedCategory) in testCases) {
-          final strength = encryptionService.calculatePasswordStrength(password);
-          final category = encryptionService.getPasswordStrengthDescription(strength);
-          
+          final strength =
+              encryptionService.calculatePasswordStrength(password);
+          final category =
+              encryptionService.getPasswordStrengthDescription(strength);
+
           print('$expectedCategory "$password": $strength% ($category)');
-          
+
           expect(strength, inInclusiveRange(0, 100));
           expect(category, isNotEmpty);
         }

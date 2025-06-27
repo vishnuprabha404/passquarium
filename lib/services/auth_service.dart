@@ -230,10 +230,13 @@ class AuthService extends ChangeNotifier {
         _masterPassword = password;
 
         // Initialize vault key system for new user (after email verification)
-        await _keyService.initializeVaultKeyForUser(_firebaseUser!.uid, password);
+        await _keyService.initializeVaultKeyForUser(
+            _firebaseUser!.uid, password);
         // Unlock and cache the vault key
-        _cachedVaultKey = await _keyService.unlockVaultKeyForUser(_firebaseUser!.uid, password);
-        _encryptionService.setCachedVaultKey(_cachedVaultKey!, _firebaseUser!.uid);
+        _cachedVaultKey = await _keyService.unlockVaultKeyForUser(
+            _firebaseUser!.uid, password);
+        _encryptionService.setCachedVaultKey(
+            _cachedVaultKey!, _firebaseUser!.uid);
 
         // Store the email master key as master password hash (for compatibility)
         final hashedPassword = _encryptionService.hashMasterPassword(password);
@@ -304,19 +307,25 @@ class AuthService extends ChangeNotifier {
         print('[DEBUG] AuthService: Starting vault key operations...');
 
         // Check if vault key exists for this user
-        final doc = await FirebaseFirestore.instance.collection('users').doc(_firebaseUser!.uid).get();
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(_firebaseUser!.uid)
+            .get();
         if (!doc.exists || doc.data()?['encryptedVaultKey'] == null) {
           // First time login - initialize vault key system
           print('[DEBUG] AuthService: Initializing vault key for new user...');
-          await _keyService.initializeVaultKeyForUser(_firebaseUser!.uid, password);
+          await _keyService.initializeVaultKeyForUser(
+              _firebaseUser!.uid, password);
           print('[DEBUG] AuthService: Vault key initialized successfully');
         } else {
           print('[DEBUG] AuthService: Vault key found, unlocking...');
         }
-        
+
         // Unlock and cache the vault key
-        _cachedVaultKey = await _keyService.unlockVaultKeyForUser(_firebaseUser!.uid, password);
-        _encryptionService.setCachedVaultKey(_cachedVaultKey!, _firebaseUser!.uid);
+        _cachedVaultKey = await _keyService.unlockVaultKeyForUser(
+            _firebaseUser!.uid, password);
+        _encryptionService.setCachedVaultKey(
+            _cachedVaultKey!, _firebaseUser!.uid);
         print('[DEBUG] AuthService: Vault key unlocked and cached');
 
         // Store/update the email master key as master password hash (for compatibility)
@@ -356,15 +365,22 @@ class AuthService extends ChangeNotifier {
             _masterPassword = password;
 
             // Vault key setup for retry case
-            final doc = await FirebaseFirestore.instance.collection('users').doc(_firebaseUser!.uid).get();
+            final doc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(_firebaseUser!.uid)
+                .get();
             if (!doc.exists || doc.data()?['encryptedVaultKey'] == null) {
-              await _keyService.initializeVaultKeyForUser(_firebaseUser!.uid, password);
+              await _keyService.initializeVaultKeyForUser(
+                  _firebaseUser!.uid, password);
             }
             // Unlock and cache the vault key
-            _cachedVaultKey = await _keyService.unlockVaultKeyForUser(_firebaseUser!.uid, password);
-            _encryptionService.setCachedVaultKey(_cachedVaultKey!, _firebaseUser!.uid);
+            _cachedVaultKey = await _keyService.unlockVaultKeyForUser(
+                _firebaseUser!.uid, password);
+            _encryptionService.setCachedVaultKey(
+                _cachedVaultKey!, _firebaseUser!.uid);
 
-            final hashedPassword = _encryptionService.hashMasterPassword(password);
+            final hashedPassword =
+                _encryptionService.hashMasterPassword(password);
             await _secureStorage.write(
                 key: 'master_password_hash_${_firebaseUser!.uid}',
                 value: hashedPassword);
@@ -462,14 +478,16 @@ class AuthService extends ChangeNotifier {
           await _encryptionService.verifyMasterPassword(masterKey, storedHash);
       if (isValid) {
         // CRITICAL: Unlock the vault after successful verification
-        print('[DEBUG] AuthService: Attempting to unlock vault for user: ${_firebaseUser!.uid}');
-        final unlockSuccess = await _encryptionService.unlockVault(masterKey, _firebaseUser!.uid);
+        print(
+            '[DEBUG] AuthService: Attempting to unlock vault for user: ${_firebaseUser!.uid}');
+        final unlockSuccess =
+            await _encryptionService.unlockVault(masterKey, _firebaseUser!.uid);
         print('[DEBUG] AuthService: Vault unlock success: $unlockSuccess');
         if (!unlockSuccess) {
           throw Exception('Failed to unlock vault with master key');
         }
         print('[DEBUG] AuthService: Vault unlocked successfully!');
-        
+
         _masterPassword = masterKey;
         _authStatus = AuthStatus.authenticated;
         notifyListeners();
@@ -612,24 +630,27 @@ class AuthService extends ChangeNotifier {
   /// Complete vault initialization after email verification
   Future<void> completeVaultInitialization() async {
     if (_firebaseUser == null) return;
-    
+
     try {
       // Get temporarily stored password
       final tempPassword = await _secureStorage.read(
           key: 'temp_master_password_${_firebaseUser!.uid}');
-      
+
       if (tempPassword != null) {
         // Initialize vault key system
-        await _encryptionService.initializeVaultKey(tempPassword, _firebaseUser!.uid);
-        
+        await _encryptionService.initializeVaultKey(
+            tempPassword, _firebaseUser!.uid);
+
         // Clear temporary password
-        await _secureStorage.delete(key: 'temp_master_password_${_firebaseUser!.uid}');
-        
+        await _secureStorage.delete(
+            key: 'temp_master_password_${_firebaseUser!.uid}');
+
         // Update master password in memory
         _masterPassword = tempPassword;
       } else if (_masterPassword != null) {
         // Use current master password
-        await _encryptionService.initializeVaultKey(_masterPassword!, _firebaseUser!.uid);
+        await _encryptionService.initializeVaultKey(
+            _masterPassword!, _firebaseUser!.uid);
       }
     } catch (e) {
       // If vault initialization fails, we can still proceed as the user can re-authenticate
@@ -641,10 +662,10 @@ class AuthService extends ChangeNotifier {
   void lock() {
     _masterPassword = null;
     _deviceAuthCompleted = false;
-    
+
     // Lock the encryption vault
     _encryptionService.lockVault();
-    
+
     if (_isDeviceAuthSupported) {
       _authStatus = AuthStatus.deviceAuthRequired;
     } else {
@@ -658,10 +679,10 @@ class AuthService extends ChangeNotifier {
     _masterPassword = null;
     _deviceAuthCompleted = false;
     _userEmail = null; // Clear email to force re-authentication
-    
+
     // Lock the encryption vault
     _encryptionService.lockVault();
-    
+
     if (_isDeviceAuthSupported) {
       _authStatus = AuthStatus.deviceAuthRequired;
     } else {
@@ -673,10 +694,10 @@ class AuthService extends ChangeNotifier {
   /// Check if master key verification is required
   bool requiresMasterKeyVerification() {
     // If we don't have the master password, vault is locked, or user/email info is missing
-    return _masterPassword == null || 
-           _userEmail == null || 
-           _firebaseUser == null ||
-           !_encryptionService.isVaultUnlocked;
+    return _masterPassword == null ||
+        _userEmail == null ||
+        _firebaseUser == null ||
+        !_encryptionService.isVaultUnlocked;
   }
 
   /// Reset authentication state for fresh start
@@ -694,7 +715,8 @@ class AuthService extends ChangeNotifier {
       // Don't clear stored credentials during verification sign-out
       // This allows easier re-sign-in after verification
       // But clear temporary password
-      await _secureStorage.delete(key: 'temp_master_password_${_firebaseUser!.uid}');
+      await _secureStorage.delete(
+          key: 'temp_master_password_${_firebaseUser!.uid}');
     }
 
     _masterPassword = null;
@@ -725,7 +747,8 @@ class AuthService extends ChangeNotifier {
       await _secureStorage.delete(
           key: 'master_password_hash_${_firebaseUser!.uid}');
       await _secureStorage.delete(key: 'user_email_${_firebaseUser!.uid}');
-      await _secureStorage.delete(key: 'temp_master_password_${_firebaseUser!.uid}');
+      await _secureStorage.delete(
+          key: 'temp_master_password_${_firebaseUser!.uid}');
     }
 
     _masterPassword = null;

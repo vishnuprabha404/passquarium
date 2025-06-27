@@ -178,7 +178,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       if (success && mounted) {
         // Clear the loading snackbar
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        
+
         if (_isSignUpMode) {
           // Sign-up successful - show verification message
           setState(() {
@@ -199,7 +199,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
       }
-      
+
       if (mounted) {
         // Check if this is an email verification error
         if (e.toString().contains('EMAIL_NOT_VERIFIED')) {
@@ -559,7 +559,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 60),
-                  
+
                   // App Logo/Title
                   Icon(
                     Icons.lock_outline,
@@ -601,7 +601,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
               ),
             ),
           ),
-          
+
           // Loading overlay
           if (_isLoading)
             Container(
@@ -617,7 +617,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                         const CircularProgressIndicator(),
                         const SizedBox(height: 16),
                         Text(
-                          _isSignUpMode ? 'Creating your secure vault...' : 'Unlocking your vault...',
+                          _isSignUpMode
+                              ? 'Creating your secure vault...'
+                              : 'Unlocking your vault...',
                           textAlign: TextAlign.center,
                           style: const TextStyle(fontSize: 16),
                         ),
@@ -694,9 +696,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                   children: [
                     Expanded(
                       child: TextButton.icon(
-                        onPressed: _isLoading
-                            ? null
-                            : _resendVerificationEmail,
+                        onPressed: _isLoading ? null : _resendVerificationEmail,
                         icon: const Icon(Icons.refresh, size: 16),
                         label: const Text('Resend Email'),
                       ),
@@ -704,12 +704,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextButton.icon(
-                        onPressed: _isLoading
-                            ? null
-                            : _checkVerificationManually,
-                        icon: const Icon(
-                            Icons.check_circle_outline,
-                            size: 16),
+                        onPressed:
+                            _isLoading ? null : _checkVerificationManually,
+                        icon: const Icon(Icons.check_circle_outline, size: 16),
                         label: const Text('Check Status'),
                       ),
                     ),
@@ -789,8 +786,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       autocorrect: false,
       enableSuggestions: true,
       inputFormatters: [
-        FilteringTextInputFormatter.deny(
-            RegExp(r'\s')), // No spaces in email
+        FilteringTextInputFormatter.deny(RegExp(r'\s')), // No spaces in email
       ],
       onFieldSubmitted: (_) {
         // Move focus to Master Key field when pressing Enter on email
@@ -812,9 +808,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       controller: _masterKeyController,
       focusNode: _masterKeyFocusNode,
       obscureText: !_isMasterKeyVisible,
-      textInputAction: _isSignUpMode
-          ? TextInputAction.next
-          : TextInputAction.done,
+      textInputAction:
+          _isSignUpMode ? TextInputAction.next : TextInputAction.done,
       validator: _validateMasterKey,
       enableInteractiveSelection: true,
       autocorrect: false,
@@ -840,9 +835,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
         prefixIcon: const Icon(Icons.lock_outline),
         suffixIcon: IconButton(
           icon: Icon(
-            _isMasterKeyVisible
-                ? Icons.visibility_off
-                : Icons.visibility,
+            _isMasterKeyVisible ? Icons.visibility_off : Icons.visibility,
           ),
           onPressed: () {
             setState(() {
@@ -889,8 +882,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
           ),
           onPressed: () {
             setState(() {
-              _isConfirmMasterKeyVisible =
-                  !_isConfirmMasterKeyVisible;
+              _isConfirmMasterKeyVisible = !_isConfirmMasterKeyVisible;
             });
           },
         ),

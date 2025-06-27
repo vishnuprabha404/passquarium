@@ -154,7 +154,7 @@ void main() {
 
         // Create encrypted password entry (simulating what goes to Firebase)
         final encryptedPassword = await encryptionService.encryptPassword(
-            testSitePassword, masterPassword);
+            testSitePassword);
 
         final entry = PasswordEntry(
           id: 'security-test-1',
@@ -273,7 +273,7 @@ void main() {
 
           // Simulate Firebase storage cycle
           final encrypted = await encryptionService.encryptPassword(
-              originalPassword, masterPassword);
+              originalPassword);
 
           // Create entry (what goes to Firebase)
           final entry = PasswordEntry(
@@ -292,7 +292,7 @@ void main() {
 
           // Decrypt (simulating dashboard display)
           final decrypted = await encryptionService.decryptPassword(
-              retrievedEntry.encryptedPassword, masterPassword);
+              retrievedEntry.encryptedPassword);
 
           print('  Original: $originalPassword');
           print('  Decrypted: $decrypted');
@@ -324,7 +324,7 @@ void main() {
         for (final (name, website, username, password) in websiteData) {
           // Encrypt password (what dashboard does before Firebase)
           final encryptedPassword =
-              await encryptionService.encryptPassword(password, masterPassword);
+              await encryptionService.encryptPassword(password);
 
           final entry = PasswordEntry(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -368,7 +368,7 @@ void main() {
         for (final entry in passwordEntries.take(3)) {
           // Test first 3
           final decryptedPassword = await encryptionService.decryptPassword(
-              entry.encryptedPassword, masterPassword);
+              entry.encryptedPassword);
 
           print('  ${entry.website}: Retrieved and decrypted successfully');
           expect(decryptedPassword, isNotEmpty,
@@ -469,7 +469,7 @@ void main() {
             domain: website,
             username: testEmail,
             encryptedPassword: await encryptionService.encryptPassword(
-                password, masterPassword),
+                password),
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
             category: category,
@@ -536,9 +536,9 @@ void main() {
         try {
           // Try to decrypt with wrong master password (should fail)
           final encrypted = await encryptionService.encryptPassword(
-              sensitivePassword, masterPassword);
+              sensitivePassword);
 
-          await encryptionService.decryptPassword(encrypted, 'wrongpassword');
+          await encryptionService.decryptPassword(encrypted);
           fail('Should have thrown an error');
         } catch (e) {
           final errorMessage = e.toString();
@@ -707,7 +707,7 @@ void main() {
 
         // Decrypt to verify functionality
         final decryptedPassword = await encryptionService.decryptPassword(
-            foundEntry.encryptedPassword, masterPassword);
+            foundEntry.encryptedPassword);
 
         expect(decryptedPassword, equals(testPassword1),
             reason: 'Decrypted password should match original');
@@ -715,7 +715,7 @@ void main() {
         // Verify wrong master password fails
         try {
           await encryptionService.decryptPassword(
-              foundEntry.encryptedPassword, 'wrongpassword');
+              foundEntry.encryptedPassword);
           fail('Should have failed with wrong master password');
         } catch (e) {
           print(
@@ -740,7 +740,7 @@ Future<PasswordEntry> _createPasswordEntry(
   final encryptionService = EncryptionService();
 
   final encryptedPassword =
-      await encryptionService.encryptPassword(password, masterPassword);
+      await encryptionService.encryptPassword(password);
 
   return PasswordEntry(
     id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -764,7 +764,7 @@ Future<PasswordEntry> _createPasswordEntryWithCategory(
   final encryptionService = EncryptionService();
 
   final encryptedPassword =
-      await encryptionService.encryptPassword(password, masterPassword);
+      await encryptionService.encryptPassword(password);
 
   return PasswordEntry(
     id: DateTime.now().millisecondsSinceEpoch.toString(),

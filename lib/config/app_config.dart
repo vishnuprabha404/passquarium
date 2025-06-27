@@ -5,8 +5,10 @@ class AppConfig {
   static const bool showDebugBanner = false;
 
   // Security settings
-  static const int autoLockTimeoutSeconds = 300; // 5 minutes - device auth required
-  static const int masterKeyTimeoutSeconds = 900; // 15 minutes - device auth + master key required
+  static const int autoLockTimeoutSeconds =
+      300; // 5 minutes - device auth required
+  static const int masterKeyTimeoutSeconds =
+      900; // 15 minutes - device auth + master key required
   static const int clipboardClearSeconds = 30;
   static const int maxLoginAttempts = 5;
   static const int passwordStrengthMinLength = 8;

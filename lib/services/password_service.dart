@@ -61,7 +61,8 @@ class PasswordService extends ChangeNotifier {
     required String domain,
     required String username,
     required String password,
-    required String masterPassword, // Keep for compatibility but won't be used directly
+    required String
+        masterPassword, // Keep for compatibility but won't be used directly
     String? notes,
   }) async {
     if (_userId == null) {
@@ -74,10 +75,12 @@ class PasswordService extends ChangeNotifier {
 
     try {
       print('[DEBUG] PasswordService: Starting password encryption...');
-      print('[DEBUG] PasswordService: Vault unlocked status: ${_encryptionService.isVaultUnlocked}');
-      
+      print(
+          '[DEBUG] PasswordService: Vault unlocked status: ${_encryptionService.isVaultUnlocked}');
+
       // Encrypt the password using the new vault key system
-      final encryptedPassword = await _encryptionService.encryptPassword(password);
+      final encryptedPassword =
+          await _encryptionService.encryptPassword(password);
       print('[DEBUG] PasswordService: Password encrypted successfully');
 
       // Create password entry
@@ -120,7 +123,8 @@ class PasswordService extends ChangeNotifier {
     required String domain,
     required String username,
     required String password,
-    required String masterPassword, // Keep for compatibility but won't be used directly
+    required String
+        masterPassword, // Keep for compatibility but won't be used directly
     String? notes,
   }) async {
     if (_userId == null) {
@@ -135,7 +139,8 @@ class PasswordService extends ChangeNotifier {
       final existingEntry = _passwords.firstWhere((p) => p.id == id);
 
       // Encrypt the new password using the vault key system
-      final encryptedPassword = await _encryptionService.encryptPassword(password);
+      final encryptedPassword =
+          await _encryptionService.encryptPassword(password);
 
       // Create updated entry
       final updatedEntry = existingEntry.copyWith(
@@ -210,7 +215,7 @@ class PasswordService extends ChangeNotifier {
       if (!_encryptionService.isVaultUnlocked) {
         throw Exception('Vault is locked. Please authenticate first.');
       }
-      
+
       return await _encryptionService.decryptPassword(entry.encryptedPassword);
     } catch (e) {
       throw Exception('Failed to decrypt password: $e');
@@ -218,17 +223,19 @@ class PasswordService extends ChangeNotifier {
   }
 
   /// Batch decrypt passwords for display (more efficient)
-  Future<Map<String, String>> batchDecryptPasswords(List<PasswordEntry> entries) async {
+  Future<Map<String, String>> batchDecryptPasswords(
+      List<PasswordEntry> entries) async {
     try {
       if (!_encryptionService.isVaultUnlocked) {
         throw Exception('Vault is locked. Please authenticate first.');
       }
 
       final decryptedPasswords = <String, String>{};
-      
+
       for (final entry in entries) {
         try {
-          final decryptedPassword = await _encryptionService.decryptPassword(entry.encryptedPassword);
+          final decryptedPassword =
+              await _encryptionService.decryptPassword(entry.encryptedPassword);
           decryptedPasswords[entry.id] = decryptedPassword;
         } catch (e) {
           // If individual password decryption fails, skip it but don't fail the whole batch
@@ -236,7 +243,7 @@ class PasswordService extends ChangeNotifier {
           decryptedPasswords[entry.id] = '[Decryption Failed]';
         }
       }
-      
+
       return decryptedPasswords;
     } catch (e) {
       throw Exception('Failed to decrypt passwords: $e');
@@ -256,7 +263,8 @@ class PasswordService extends ChangeNotifier {
     try {
       // First, ensure vault is unlocked
       if (!_encryptionService.isVaultUnlocked) {
-        final unlockSuccess = await _encryptionService.unlockVault(masterPassword, _userId!);
+        final unlockSuccess =
+            await _encryptionService.unlockVault(masterPassword, _userId!);
         if (!unlockSuccess) {
           throw Exception('Failed to unlock vault for migration');
         }
@@ -267,7 +275,7 @@ class PasswordService extends ChangeNotifier {
 
       for (int i = 0; i < _passwords.length; i++) {
         final entry = _passwords[i];
-        
+
         try {
           // Check if password is already in new format
           if (_encryptionService.isNewFormat(entry.encryptedPassword)) {
@@ -277,14 +285,17 @@ class PasswordService extends ChangeNotifier {
           // Decrypt with old system (this will need the master password directly)
           String decryptedPassword;
           try {
-            decryptedPassword = await _encryptionService.decryptText(entry.encryptedPassword, masterPassword);
+            decryptedPassword = await _encryptionService.decryptText(
+                entry.encryptedPassword, masterPassword);
           } catch (e) {
-            print('Warning: Failed to decrypt legacy password for ${entry.website}: $e');
+            print(
+                'Warning: Failed to decrypt legacy password for ${entry.website}: $e');
             continue; // Skip passwords that can't be decrypted
           }
 
           // Re-encrypt with new vault key system
-          final newEncryptedPassword = await _encryptionService.encryptPassword(decryptedPassword);
+          final newEncryptedPassword =
+              await _encryptionService.encryptPassword(decryptedPassword);
 
           // Update the entry
           final updatedEntry = entry.copyWith(
@@ -303,7 +314,6 @@ class PasswordService extends ChangeNotifier {
           // Update local list
           _passwords[i] = updatedEntry;
           migratedCount++;
-
         } catch (e) {
           print('Warning: Failed to migrate password for ${entry.website}: $e');
           // Continue with other passwords even if one fails
@@ -311,9 +321,10 @@ class PasswordService extends ChangeNotifier {
       }
 
       notifyListeners();
-      
+
       if (migratedCount > 0) {
-        print('Successfully migrated $migratedCount out of $totalCount passwords to vault key system');
+        print(
+            'Successfully migrated $migratedCount out of $totalCount passwords to vault key system');
       }
 
       return true;

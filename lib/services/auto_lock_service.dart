@@ -4,8 +4,8 @@ import 'package:super_locker/services/auth_service.dart';
 import 'package:super_locker/config/app_config.dart';
 
 enum LockLevel {
-  deviceAuth,      // Require device authentication only
-  masterKey,       // Require device auth + master key
+  deviceAuth, // Require device authentication only
+  masterKey, // Require device auth + master key
 }
 
 class AutoLockService with WidgetsBindingObserver {
@@ -55,21 +55,19 @@ class AutoLockService with WidgetsBindingObserver {
     if (!_isEnabled || _isLocked) return;
 
     _lastActivity = DateTime.now();
-    
+
     _deviceAuthTimer?.cancel();
     _masterKeyTimer?.cancel();
 
     // Set device auth timer (5 minutes)
     _deviceAuthTimer = Timer(
-      Duration(seconds: AppConfig.autoLockTimeoutSeconds), 
-      () => _lockApp(LockLevel.deviceAuth)
-    );
+        Duration(seconds: AppConfig.autoLockTimeoutSeconds),
+        () => _lockApp(LockLevel.deviceAuth));
 
     // Set master key timer (15 minutes)
     _masterKeyTimer = Timer(
-      Duration(seconds: AppConfig.masterKeyTimeoutSeconds), 
-      () => _lockApp(LockLevel.masterKey)
-    );
+        Duration(seconds: AppConfig.masterKeyTimeoutSeconds),
+        () => _lockApp(LockLevel.masterKey));
 
     // Notify about user activity
     _onUserActivity?.call();
@@ -132,7 +130,7 @@ class AutoLockService with WidgetsBindingObserver {
   // Get current state
   bool get isLocked => _isLocked;
   bool get isEnabled => _isEnabled;
-  
+
   // Get time since last activity
   Duration? get timeSinceLastActivity {
     if (_lastActivity == null) return null;
@@ -147,34 +145,38 @@ class AutoLockService with WidgetsBindingObserver {
 
   // Get remaining time before device auth lock
   Duration get timeUntilDeviceLock {
-    if (_deviceAuthTimer == null || !_deviceAuthTimer!.isActive || _lastActivity == null) {
+    if (_deviceAuthTimer == null ||
+        !_deviceAuthTimer!.isActive ||
+        _lastActivity == null) {
       return Duration.zero;
     }
-    
+
     final elapsed = DateTime.now().difference(_lastActivity!);
     final timeout = Duration(seconds: AppConfig.autoLockTimeoutSeconds);
     final remaining = timeout - elapsed;
-    
+
     return remaining.isNegative ? Duration.zero : remaining;
   }
 
   // Get remaining time before master key lock
   Duration get timeUntilMasterKeyLock {
-    if (_masterKeyTimer == null || !_masterKeyTimer!.isActive || _lastActivity == null) {
+    if (_masterKeyTimer == null ||
+        !_masterKeyTimer!.isActive ||
+        _lastActivity == null) {
       return Duration.zero;
     }
-    
+
     final elapsed = DateTime.now().difference(_lastActivity!);
     final timeout = Duration(seconds: AppConfig.masterKeyTimeoutSeconds);
     final remaining = timeout - elapsed;
-    
+
     return remaining.isNegative ? Duration.zero : remaining;
   }
 
   // Check if we need master key re-authentication based on session time
   bool shouldRequireMasterKey() {
     if (_sessionStartTime == null) return true;
-    
+
     final sessionDuration = DateTime.now().difference(_sessionStartTime!);
     return sessionDuration.inSeconds >= AppConfig.masterKeyTimeoutSeconds;
   }
@@ -188,9 +190,11 @@ class AutoLockService with WidgetsBindingObserver {
         if (_isEnabled && !_isLocked) {
           final timeSinceActivity = timeSinceLastActivity;
           if (timeSinceActivity != null) {
-            if (timeSinceActivity.inSeconds >= AppConfig.masterKeyTimeoutSeconds) {
+            if (timeSinceActivity.inSeconds >=
+                AppConfig.masterKeyTimeoutSeconds) {
               _lockApp(LockLevel.masterKey);
-            } else if (timeSinceActivity.inSeconds >= AppConfig.autoLockTimeoutSeconds) {
+            } else if (timeSinceActivity.inSeconds >=
+                AppConfig.autoLockTimeoutSeconds) {
               _lockApp(LockLevel.deviceAuth);
             } else {
               _resetTimers();
@@ -275,7 +279,7 @@ class AutoLockProvider extends ChangeNotifier {
 
   bool get isEnabled => _autoLockService.isEnabled;
   bool get isLocked => _autoLockService.isLocked;
-  
+
   // Get time since last activity
   Duration? get timeSinceLastActivity {
     return _autoLockService.timeSinceLastActivity;

@@ -30,10 +30,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _autoLockService = AutoLockService();
     _searchController.addListener(_onSearchChanged);
-    
+
     // Ensure auto-lock service is unlocked when home screen is accessed
     _autoLockService.unlockApp();
-    
+
     // Use post frame callback to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeScreen();
@@ -77,32 +77,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _initializeScreen() async {
     final authService = Provider.of<AuthService>(context, listen: false);
-    final encryptionService = Provider.of<EncryptionService>(context, listen: false);
-    
+    final encryptionService =
+        Provider.of<EncryptionService>(context, listen: false);
+
     // Check if vault is unlocked, if not try to unlock it
     if (!encryptionService.isVaultUnlocked) {
       print('[DEBUG] HomeScreen: Vault not unlocked, attempting to unlock...');
-      
+
       final masterPassword = authService.masterPassword;
       if (masterPassword != null && authService.firebaseUser != null) {
         try {
           final unlockSuccess = await encryptionService.unlockVault(
-            masterPassword, 
-            authService.firebaseUser!.uid
-          );
-          
+              masterPassword, authService.firebaseUser!.uid);
+
           if (unlockSuccess) {
             print('[DEBUG] HomeScreen: Vault unlocked successfully');
           } else {
-            print('[DEBUG] HomeScreen: Failed to unlock vault, attempting to re-initialize vault key...');
+            print(
+                '[DEBUG] HomeScreen: Failed to unlock vault, attempting to re-initialize vault key...');
             // Fallback: Try to re-initialize the vault key if missing
             try {
-              await encryptionService.initializeVaultKey(masterPassword, authService.firebaseUser!.uid);
-              final unlockRetry = await encryptionService.unlockVault(masterPassword, authService.firebaseUser!.uid);
+              await encryptionService.initializeVaultKey(
+                  masterPassword, authService.firebaseUser!.uid);
+              final unlockRetry = await encryptionService.unlockVault(
+                  masterPassword, authService.firebaseUser!.uid);
               if (unlockRetry) {
-                print('[DEBUG] HomeScreen: Vault re-initialized and unlocked successfully');
+                print(
+                    '[DEBUG] HomeScreen: Vault re-initialized and unlocked successfully');
               } else {
-                print('[DEBUG] HomeScreen: Failed to re-initialize and unlock vault');
+                print(
+                    '[DEBUG] HomeScreen: Failed to re-initialize and unlock vault');
                 if (mounted) {
                   _showVaultError();
                   return;
@@ -124,7 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         }
       } else {
-        print('[DEBUG] HomeScreen: No master password available, redirecting to auth');
+        print(
+            '[DEBUG] HomeScreen: No master password available, redirecting to auth');
         if (mounted) {
           Navigator.of(context).pushReplacementNamed('/email-auth');
           return;
@@ -133,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       print('[DEBUG] HomeScreen: Vault already unlocked');
     }
-    
+
     // Load passwords after ensuring vault is unlocked
     _loadPasswords();
   }
@@ -143,7 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Vault Error'),
-        content: const Text('Could not unlock or initialize your vault. Please log out and log in again.'),
+        content: const Text(
+            'Could not unlock or initialize your vault. Please log out and log in again.'),
         actions: [
           TextButton(
             onPressed: () {
@@ -902,13 +908,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 // Avatar
                                 CircleAvatar(
-                                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                                  backgroundColor: Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.1),
                                   child: Text(
                                     password.domain.isNotEmpty
                                         ? password.domain[0].toUpperCase()
@@ -925,18 +934,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                 // Username and Web URL
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        password.title.isNotEmpty ? password.title : password.website,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                        password.title.isNotEmpty
+                                            ? password.title
+                                            : password.website,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         password.username,
-                                        style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                                        style: TextStyle(
+                                            color: Colors.grey[700],
+                                            fontSize: 14),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -965,7 +981,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
                                     minimumSize: const Size(0, 36),
                                   ),
                                 ),
@@ -974,7 +991,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 PopupMenuButton<String>(
                                   icon: const Icon(Icons.more_vert, size: 24),
                                   onSelected: (value) async {
-                                    print('🔧 DEBUG: Home PopupMenu selected: $value');
+                                    print(
+                                        '🔧 DEBUG: Home PopupMenu selected: $value');
                                     switch (value) {
                                       case 'view':
                                         _viewPassword(password);
@@ -985,7 +1003,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     }
                                   },
                                   itemBuilder: (context) {
-                                    print('🔧 DEBUG: Building home popup menu items');
+                                    print(
+                                        '🔧 DEBUG: Building home popup menu items');
                                     return [
                                       const PopupMenuItem(
                                         value: 'view',
@@ -997,12 +1016,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ],
                                         ),
                                       ),
-                                      if (password.website.isNotEmpty || password.url.isNotEmpty)
+                                      if (password.website.isNotEmpty ||
+                                          password.url.isNotEmpty)
                                         const PopupMenuItem(
                                           value: 'browser',
                                           child: Row(
                                             children: [
-                                              Icon(Icons.open_in_browser, size: 20),
+                                              Icon(Icons.open_in_browser,
+                                                  size: 20),
                                               SizedBox(width: 8),
                                               Text('Open in Browser'),
                                             ],
@@ -1143,8 +1164,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword =
-          await passwordService.decryptPassword(entry);
+      final decryptedPassword = await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isNotEmpty) {
         _showPasswordDialog(entry, decryptedPassword);
@@ -1231,22 +1251,23 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           if (entry.website.isNotEmpty)
                             _buildEnhancedDetailRow(
-                              'Website', 
-                              entry.website, 
+                              'Website',
+                              entry.website,
                               Icons.language,
                               Colors.blue,
                             ),
-                          if (entry.url.isNotEmpty && entry.url != entry.website)
+                          if (entry.url.isNotEmpty &&
+                              entry.url != entry.website)
                             _buildEnhancedDetailRow(
-                              'URL', 
-                              entry.url, 
+                              'URL',
+                              entry.url,
                               Icons.link,
                               Colors.teal,
                             ),
                           if (entry.category.isNotEmpty)
                             _buildEnhancedDetailRow(
-                              'Category', 
-                              entry.category, 
+                              'Category',
+                              entry.category,
                               Icons.category,
                               Colors.orange,
                             ),
@@ -1278,8 +1299,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         if (entry.username.isNotEmpty)
                           _buildEnhancedDetailRow(
-                            'Username', 
-                            entry.username, 
+                            'Username',
+                            entry.username,
                             Icons.person,
                             Colors.purple,
                             copyable: true,
@@ -1441,12 +1462,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildEnhancedDetailRow(
-    String label, 
-    String value, 
-    IconData icon, 
-    Color iconColor, {
-    bool copyable = false
-  }) {
+      String label, String value, IconData icon, Color iconColor,
+      {bool copyable = false}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -1459,8 +1476,8 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
-              icon, 
-              size: 20, 
+              icon,
+              size: 20,
               color: iconColor,
             ),
           ),
@@ -1540,8 +1557,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword =
-          await passwordService.decryptPassword(entry);
+      final decryptedPassword = await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isNotEmpty) {
         await _clipboardManager.copySecureData(
@@ -1602,8 +1618,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword =
-          await passwordService.decryptPassword(entry);
+      final decryptedPassword = await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);
@@ -1631,7 +1646,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(
-          uri, 
+          uri,
           mode: LaunchMode.externalApplication,
           webViewConfiguration: const WebViewConfiguration(
             enableJavaScript: true,
@@ -1693,8 +1708,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final passwordService =
           Provider.of<PasswordService>(context, listen: false);
-      final decryptedPassword =
-          await passwordService.decryptPassword(entry);
+      final decryptedPassword = await passwordService.decryptPassword(entry);
 
       if (decryptedPassword.isEmpty) {
         _showMessage('Failed to decrypt password', isError: true);

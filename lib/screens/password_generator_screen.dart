@@ -202,7 +202,8 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Theme.of(context).dividerColor),
+                          border:
+                              Border.all(color: Theme.of(context).dividerColor),
                         ),
                         child: _generatedPassword.isEmpty
                             ? Text(
@@ -221,7 +222,8 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.2,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                       ),

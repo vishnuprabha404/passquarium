@@ -45,8 +45,8 @@ class _DeviceAuthScreenState extends State<DeviceAuthScreen> {
       if (success && mounted) {
         // Check if we need master key verification based on timeout
         final autoLockService = AutoLockService();
-        final requiresMasterKey = autoLockService.shouldRequireMasterKey() || 
-                                 authService.requiresMasterKeyVerification();
+        final requiresMasterKey = autoLockService.shouldRequireMasterKey() ||
+            authService.requiresMasterKeyVerification();
 
         if (requiresMasterKey) {
           // 15-minute timeout reached - require master key verification

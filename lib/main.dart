@@ -53,14 +53,14 @@ class _SuperLockerAppState extends State<SuperLockerApp> {
             case LockLevel.deviceAuth:
               // 5-minute timeout - require device authentication only
               Navigator.of(context).pushNamedAndRemoveUntil(
-                '/device-auth', 
+                '/device-auth',
                 (route) => false,
               );
               break;
             case LockLevel.masterKey:
               // 15-minute timeout - require device auth + master key
               Navigator.of(context).pushNamedAndRemoveUntil(
-                '/device-auth', 
+                '/device-auth',
                 (route) => false,
               );
               break;
@@ -107,7 +107,6 @@ class _SuperLockerAppState extends State<SuperLockerApp> {
           '/': (context) => const SplashScreen(),
           '/email-auth': (context) => const EmailAuthScreen(),
           '/device-auth': (context) => const DeviceAuthScreen(),
-
           '/home': (context) => const HomeScreen(),
           '/add-password': (context) => const AddPasswordScreen(),
           '/search-password': (context) => const SearchPasswordScreen(),
