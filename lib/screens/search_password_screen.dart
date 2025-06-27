@@ -352,58 +352,75 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
             ],
           ],
         ),
-        trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, size: 24),
-          onSelected: (value) async {
-            print('🔧 DEBUG: PopupMenu selected: $value');
-            switch (value) {
-              case 'view':
-                _viewPassword(entry);
-                break;
-              case 'copy':
-                _copyPassword(entry);
-                break;
-              case 'browser':
-                _openInBrowser(entry);
-                break;
-            }
-          },
-          itemBuilder: (context) {
-            print('🔧 DEBUG: Building popup menu items');
-            return [
-              const PopupMenuItem(
-                value: 'view',
-                child: Row(
-                  children: [
-                    Icon(Icons.visibility, size: 20),
-                    SizedBox(width: 8),
-                    Text('View Details'),
-                  ],
-                ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Copy Password Button
+            IconButton(
+              icon: const Icon(Icons.copy, size: 20),
+              tooltip: 'Copy Password',
+              onPressed: () => _copyPassword(entry),
+              style: IconButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                foregroundColor: Theme.of(context).primaryColor,
               ),
-              const PopupMenuItem(
-                value: 'copy',
-                child: Row(
-                  children: [
-                    Icon(Icons.copy, size: 20),
-                    SizedBox(width: 8),
-                    Text('Copy Password'),
-                  ],
-                ),
-              ),
-              if (entry.website.isNotEmpty || entry.url.isNotEmpty)
-                const PopupMenuItem(
-                  value: 'browser',
-                  child: Row(
-                    children: [
-                      Icon(Icons.open_in_browser, size: 20),
-                      SizedBox(width: 8),
-                      Text('Open in Browser'),
-                    ],
+            ),
+            const SizedBox(width: 4),
+            // Three Dots Menu
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, size: 24),
+              onSelected: (value) async {
+                print('🔧 DEBUG: PopupMenu selected: $value');
+                switch (value) {
+                  case 'view':
+                    _viewPassword(entry);
+                    break;
+                  case 'copy':
+                    _copyPassword(entry);
+                    break;
+                  case 'browser':
+                    _openInBrowser(entry);
+                    break;
+                }
+              },
+              itemBuilder: (context) {
+                print('🔧 DEBUG: Building popup menu items');
+                return [
+                  const PopupMenuItem(
+                    value: 'view',
+                    child: Row(
+                      children: [
+                        Icon(Icons.visibility, size: 20),
+                        SizedBox(width: 8),
+                        Text('View Details'),
+                      ],
+                    ),
                   ),
-                ),
-            ];
-          },
+                  const PopupMenuItem(
+                    value: 'copy',
+                    child: Row(
+                      children: [
+                        Icon(Icons.copy, size: 20),
+                        SizedBox(width: 8),
+                        Text('Copy Password'),
+                      ],
+                    ),
+                  ),
+                  if (entry.website.isNotEmpty || entry.url.isNotEmpty)
+                    const PopupMenuItem(
+                      value: 'browser',
+                      child: Row(
+                        children: [
+                          Icon(Icons.open_in_browser, size: 20),
+                          SizedBox(width: 8),
+                          Text('Open in Browser'),
+                        ],
+                      ),
+                    ),
+                ];
+              },
+            ),
+          ],
         ),
         onTap: () => _viewPassword(entry),
         isThreeLine: entry.notes.isNotEmpty,
