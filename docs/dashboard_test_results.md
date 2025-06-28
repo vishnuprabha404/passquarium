@@ -115,7 +115,7 @@ Firebase data structure contains only:
 ## 🛠️ Test Credentials Used
 - **Email**: `vishnuprabha101@gmail.com`
 - **Master Password**: `87654321`
-- **Windows PIN**: `69161966`
+- **Windows PIN**: `***REMOVED***`
 - **Test Passwords**: Various secure passwords with special characters
 
 ## 📈 Performance Metrics

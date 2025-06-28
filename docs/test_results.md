@@ -27,7 +27,7 @@
 ### ✅ Correct Credentials (Provided by User):
 - **Email**: `vishnuprabha101@gmail.com`
 - **Password**: `87654321` 
-- **Windows PIN**: `69161966`
+- **Windows PIN**: `***REMOVED***`
 
 ### ❌ Wrong Credentials (For Testing):
 - **Email**: `wrong@email.com`
@@ -66,7 +66,7 @@
 - Successfully recognized as valid
 
 ✅ **Correct Windows PIN Recognition**
-- PIN: `69161966`
+- PIN: `***REMOVED***`
 - Length validation: 8 digits
 - Numeric validation: All digits
 - Successfully recognized as valid

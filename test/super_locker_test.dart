@@ -15,7 +15,7 @@ void main() {
     // Test credentials (provided by user)
     const String testEmail = 'vishnuprabha101@gmail.com';
     const String testPassword = '87654321';
-    const String testWindowsPin = '69161966';
+    const String testWindowsPin = '***REMOVED***';
 
     // Wrong credentials for testing
     const String wrongEmail = 'wrong@email.com';

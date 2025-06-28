@@ -11,7 +11,7 @@ void main() {
     // Test credentials (from previous tests)
     const String testEmail = 'vishnuprabha101@gmail.com';
     const String testPassword = '87654321';
-    const String testWindowsPin = '69161966';
+    const String testWindowsPin = '***REMOVED***';
 
     // Test website passwords
     const String gmailPassword = 'MyGmailPassword123!';
