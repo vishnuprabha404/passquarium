@@ -10,6 +10,7 @@ import 'package:super_locker/services/auto_lock_service.dart';
 import 'package:super_locker/screens/splash_screen.dart';
 import 'package:super_locker/screens/email_auth_screen.dart';
 import 'package:super_locker/screens/device_auth_screen.dart';
+import 'package:super_locker/screens/performance_analysis_screen.dart';
 
 import 'package:super_locker/screens/home_screen.dart';
 import 'package:super_locker/screens/add_password_screen.dart';
@@ -111,6 +112,7 @@ class _SuperLockerAppState extends State<SuperLockerApp> {
           '/add-password': (context) => const AddPasswordScreen(),
           '/search-password': (context) => const SearchPasswordScreen(),
           '/password-generator': (context) => const PasswordGeneratorScreen(),
+          '/performance': (context) => const PerformanceAnalysisScreen(),
         },
       ),
     );

@@ -1493,3 +1493,11 @@ spacing issue in the homepage.
 check if the app is secure and if the password is leaking anywhere
 
 check if the loading time can be reduced
+
+learn how search screen and home_screen are related.
+
+Sign out system after 15 and 30 minutes
+
+clear clipboard after 3 minutes universally.
+
+add browser button while viewing the info

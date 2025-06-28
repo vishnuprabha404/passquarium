@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:pointycastle/export.dart' as pc;
 import 'package:flutter/foundation.dart';
+import 'dart:developer' as developer;
 
 // Top-level function for PBKDF2 key derivation (for compute)
 Future<Uint8List> _pbkdf2DeriveKey(Map<String, dynamic> args) async {
@@ -38,6 +39,44 @@ String _aesCbcDecrypt(Map<String, dynamic> args) {
   return decrypted;
 }
 
+// Top-level function for parallel decryption (for compute)
+Future<List<String>> _parallelDecrypt(Map<String, dynamic> args) async {
+  final List<String> ciphertexts = args['ciphertexts'];
+  final Uint8List vaultKey = args['vaultKey'];
+  
+  return await Future.wait(ciphertexts.map((ciphertext) async {
+    return _aesCbcDecrypt({
+      'base64CipherText': ciphertext,
+      'vaultKey': vaultKey,
+    });
+  }));
+}
+
+// Performance tracking for compute operations
+Future<Map<String, dynamic>> _pbkdf2DeriveKeyWithMetrics(Map<String, dynamic> args) async {
+  final stopwatch = Stopwatch()..start();
+  
+  final key = await _pbkdf2DeriveKey(args);
+  
+  stopwatch.stop();
+  return {
+    'key': key,
+    'duration': stopwatch.elapsedMilliseconds,
+  };
+}
+
+Future<Map<String, dynamic>> _aesCbcDecryptWithMetrics(Map<String, dynamic> args) async {
+  final stopwatch = Stopwatch()..start();
+  
+  final decrypted = _aesCbcDecrypt(args);
+  
+  stopwatch.stop();
+  return {
+    'decrypted': decrypted,
+    'duration': stopwatch.elapsedMilliseconds,
+  };
+}
+
 class EncryptionService {
   // Singleton pattern
   static final EncryptionService _instance = EncryptionService._internal();
@@ -55,6 +94,15 @@ class EncryptionService {
   Uint8List? _cachedMasterKey;
   Uint8List? _cachedVaultKey;
   String? _currentUserId;
+
+  // Performance metrics
+  final Map<String, List<int>> _performanceMetrics = {
+    'key_derivation': <int>[],
+    'decryption': <int>[],
+    'encryption': <int>[],
+  };
+
+  Map<String, List<int>> get performanceMetrics => _performanceMetrics;
 
   // ========================================
   // HELPER FUNCTIONS (As Per Specification)
@@ -93,10 +141,58 @@ class EncryptionService {
   /// Decrypt Base64 ciphertext using VaultKey with AES-256-CBC
   Future<String> decryptWithVaultKey(
       String base64CipherText, Uint8List vaultKey) async {
-    return await compute(_aesCbcDecrypt, {
+    final stopwatch = Stopwatch()..start();
+    developer.log('Starting decryption operation');
+
+    final result = await compute(_aesCbcDecryptWithMetrics, {
       'base64CipherText': base64CipherText,
       'vaultKey': vaultKey,
     });
+
+    stopwatch.stop();
+    _performanceMetrics['decryption']!.add(result['duration'] as int);
+    developer.log('Decryption completed in ${stopwatch.elapsedMilliseconds}ms');
+
+    return result['decrypted'] as String;
+  }
+
+  /// Decrypt multiple passwords in parallel using compute
+  Future<List<String>> decryptPasswordsParallel(List<String> encryptedPasswords) async {
+    if (_cachedVaultKey == null) {
+      throw Exception('Vault not unlocked. Please authenticate first.');
+    }
+
+    final stopwatch = Stopwatch()..start();
+    developer.log('Starting parallel decryption of ${encryptedPasswords.length} passwords');
+
+    final results = await compute(_parallelDecrypt, {
+      'ciphertexts': encryptedPasswords,
+      'vaultKey': _cachedVaultKey!,
+    });
+
+    stopwatch.stop();
+    final avgTimePerPassword = stopwatch.elapsedMilliseconds / encryptedPasswords.length;
+    developer.log('Parallel decryption completed in ${stopwatch.elapsedMilliseconds}ms (avg ${avgTimePerPassword.toStringAsFixed(2)}ms per password)');
+
+    return results;
+  }
+
+  /// Batch decrypt passwords with optimized parallel processing
+  Future<Map<String, String>> batchDecryptPasswords(Map<String, String> encryptedPasswords) async {
+    if (_cachedVaultKey == null) {
+      throw Exception('Vault not unlocked. Please authenticate first.');
+    }
+
+    final entries = encryptedPasswords.entries.toList();
+    final ciphertexts = entries.map((e) => e.value).toList();
+    final decrypted = await decryptPasswordsParallel(ciphertexts);
+
+    final result = <String, String>{};
+    for (var i = 0; i < entries.length; i++) {
+      result[entries[i].key] = decrypted[i];
+    }
+
+    return result;
   }
 
   // ========================================
@@ -106,7 +202,8 @@ class EncryptionService {
   /// Initialize vault key system for a new user
   Future<void> initializeVaultKey(String masterPassword, String userId) async {
     try {
-      print('[DEBUG] Initializing vault key for user: $userId');
+      final stopwatch = Stopwatch()..start();
+      developer.log('[DEBUG] Initializing vault key for user: $userId');
 
       // 1. Generate random VaultKey (32 bytes)
       final vaultKey = await generateRandomBytes(_vaultKeyLength);
@@ -115,7 +212,16 @@ class EncryptionService {
       final randomSalt = await generateRandomBytes(_saltLength);
 
       // 3. Derive MasterKey using PBKDF2-SHA256
-      final masterKey = await deriveMasterKey(masterPassword, randomSalt);
+      final derivationResult = await compute(_pbkdf2DeriveKeyWithMetrics, {
+        'password': masterPassword,
+        'salt': randomSalt,
+        'iterations': _iterations,
+        'keyLength': _keyLength,
+      });
+      
+      final masterKey = derivationResult['key'] as Uint8List;
+      _performanceMetrics['key_derivation']!.add(derivationResult['duration'] as int);
+      developer.log('Key derivation completed in ${derivationResult['duration']}ms');
 
       // 4. Generate random IV for VaultKey encryption (16 bytes)
       final vaultKeyIV = await generateRandomBytes(_ivLength);
@@ -143,9 +249,10 @@ class EncryptionService {
       _cachedVaultKey = vaultKey;
       _currentUserId = userId;
 
-      print('[DEBUG] Vault key initialized successfully for user: $userId');
+      stopwatch.stop();
+      developer.log('[DEBUG] Vault key initialized successfully in ${stopwatch.elapsedMilliseconds}ms');
     } catch (e) {
-      print('[ERROR] Failed to initialize vault key: $e');
+      developer.log('[ERROR] Failed to initialize vault key: $e', error: e);
       throw Exception('Failed to initialize vault key: $e');
     }
   }
@@ -492,5 +599,24 @@ class EncryptionService {
     } catch (e) {
       return false;
     }
+  }
+
+  // Performance analysis methods
+  double getAverageDecryptionTime() {
+    if (_performanceMetrics['decryption']!.isEmpty) return 0;
+    return _performanceMetrics['decryption']!.reduce((a, b) => a + b) /
+        _performanceMetrics['decryption']!.length;
+  }
+
+  double getAverageKeyDerivationTime() {
+    if (_performanceMetrics['key_derivation']!.isEmpty) return 0;
+    return _performanceMetrics['key_derivation']!.reduce((a, b) => a + b) /
+        _performanceMetrics['key_derivation']!.length;
+  }
+
+  void clearPerformanceMetrics() {
+    _performanceMetrics['key_derivation']!.clear();
+    _performanceMetrics['decryption']!.clear();
+    _performanceMetrics['encryption']!.clear();
   }
 }

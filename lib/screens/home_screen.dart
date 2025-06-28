@@ -25,11 +25,15 @@ class _HomeScreenState extends State<HomeScreen> {
   List<PasswordEntry> _filteredPasswords = [];
   bool _isSearching = false;
 
+  // Add scroll controller for pagination
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _autoLockService = AutoLockService();
     _searchController.addListener(_onSearchChanged);
+    _scrollController.addListener(_scrollListener);
 
     // Ensure auto-lock service is unlocked when home screen is accessed
     _autoLockService.unlockApp();
@@ -44,6 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -72,6 +78,22 @@ class _HomeScreenState extends State<HomeScreen> {
               password.category.toLowerCase().contains(query);
         }).toList();
       });
+    }
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.8) {
+      // Load more passwords when user scrolls to 80% of the list
+      final passwordService =
+          Provider.of<PasswordService>(context, listen: false);
+      if (!passwordService.isLoading && passwordService.hasMorePasswords) {
+        passwordService.loadMorePasswords().then((_) {
+          setState(() {
+            _filteredPasswords = passwordService.passwords;
+          });
+        });
+      }
     }
   }
 
@@ -181,117 +203,38 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showSettingsMenu() {
     final authService = Provider.of<AuthService>(context, listen: false);
     final userInfo = authService.getUserInfo();
+    final userEmail = userInfo != null ? userInfo['email'] as String? : null;
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // User Info Section
-            if (userInfo != null) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Account Information',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${userInfo['email'] ?? 'Unknown'}',
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          userInfo['emailVerified'] == true
-                              ? Icons.verified
-                              : Icons.warning,
-                          size: 16,
-                          color: userInfo['emailVerified'] == true
-                              ? Colors.green
-                              : Colors.orange,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          userInfo['emailVerified'] == true
-                              ? 'Email Verified'
-                              : 'Email Not Verified',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: userInfo['emailVerified'] == true
-                                ? Colors.green
-                                : Colors.orange,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // Menu Options
-            ListTile(
-              leading: const Icon(Icons.lock_outline),
-              title: const Text('Lock App'),
-              onTap: () {
-                Navigator.pop(context);
-                _lockApp();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.key),
-              title: const Text('Change Password'),
-              onTap: () {
-                Navigator.pop(context);
-                _showChangePasswordDialog();
-              },
-            ),
-            if (userInfo != null && userInfo['emailVerified'] == false) ...[
-              ListTile(
-                leading: const Icon(Icons.mark_email_unread),
-                title: const Text('Verify Email'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _sendVerificationEmail();
-                },
-              ),
-            ],
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Sign Out'),
-              onTap: () {
-                Navigator.pop(context);
-                _showSignOutDialog();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.switch_account),
-              title: const Text('Switch Account'),
-              onTap: () {
-                Navigator.pop(context);
-                _showSwitchAccountDialog();
-              },
-            ),
-          ],
-        ),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.speed),
+            title: const Text('Performance Analysis'),
+            onTap: () {
+              Navigator.pop(context); // Close the bottom sheet
+              Navigator.pushNamed(context, '/performance');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: Text('User: ${userEmail ?? 'Unknown'}'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Sign Out'),
+            onTap: () async {
+              Navigator.pop(context); // Close the bottom sheet
+              await authService.signOut();
+              if (mounted) {
+                Navigator.of(context)
+                    .pushNamedAndRemoveUntil('/email-auth', (route) => false);
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -897,13 +840,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
 
                     return ListView.builder(
-                      physics:
-                          const NeverScrollableScrollPhysics(), // Disable scrolling since we're inside SingleChildScrollView
-                      shrinkWrap:
-                          true, // Allow ListView to size itself based on content
-                      padding: const EdgeInsets.only(bottom: 16),
-                      itemCount: _filteredPasswords.length,
+                      controller: _scrollController,
+                      itemCount: _filteredPasswords.length + (passwordService.hasMorePasswords ? 1 : 0),
                       itemBuilder: (context, index) {
+                        if (index == _filteredPasswords.length) {
+                          return const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+
                         final password = _filteredPasswords[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8),
@@ -974,19 +920,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 const SizedBox(width: 12),
                                 // Copy Pass Button
-                                ElevatedButton.icon(
+                                ElevatedButton(
                                   onPressed: () => _copyPassword(password),
-                                  icon: const Icon(Icons.copy, size: 16),
-                                  label: const Text('Copy Pass'),
+                                  child: const Text('Copy', style: TextStyle(fontSize: 13)),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    minimumSize: const Size(0, 36),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    minimumSize: const Size(0, 32),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 4),
                                 // Three Dots Menu
                                 PopupMenuButton<String>(
                                   icon: const Icon(Icons.more_vert, size: 24),

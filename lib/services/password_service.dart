@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import 'package:super_locker/models/password_entry.dart';
 import 'package:super_locker/services/encryption_service.dart';
+import 'dart:developer' as developer;
 
 class PasswordService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -14,18 +15,92 @@ class PasswordService extends ChangeNotifier {
   List<PasswordEntry> _passwords = [];
   bool _isLoading = false;
   String? _error;
+  DocumentSnapshot? _lastDocument;
+  static const int _pageSize = 20;
+  bool _hasMorePasswords = true;
+
+  // Performance metrics
+  Map<String, int> _performanceMetrics = {
+    'firestore_fetch': 0,
+    'password_decryption': 0,
+    'total_load_time': 0,
+  };
+
+  Map<String, int> get performanceMetrics => _performanceMetrics;
 
   List<PasswordEntry> get passwords => _passwords;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  bool get hasMorePasswords => _hasMorePasswords;
 
   /// Get current user ID for Firebase operations
   String? get _userId => _firebaseAuth.currentUser?.uid;
 
-  /// Load all passwords from Firebase
+  /// Load initial passwords from Firebase
   Future<void> loadPasswords() async {
     if (_userId == null) {
       _setError('User not authenticated');
+      return;
+    }
+
+    final stopwatch = Stopwatch()..start();
+    final firestoreStopwatch = Stopwatch()..start();
+    
+    _setLoading(true);
+    _clearError();
+    _passwords = [];
+    _lastDocument = null;
+    _hasMorePasswords = true;
+
+    try {
+      developer.log('Starting password load operation');
+      
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('passwords')
+          .orderBy('created_at', descending: true)
+          .limit(_pageSize)
+          .get();
+
+      firestoreStopwatch.stop();
+      _performanceMetrics['firestore_fetch'] = firestoreStopwatch.elapsedMilliseconds;
+      developer.log('Firestore fetch completed in ${firestoreStopwatch.elapsedMilliseconds}ms');
+
+      final decryptionStopwatch = Stopwatch()..start();
+      
+      if (snapshot.docs.isEmpty) {
+        _hasMorePasswords = false;
+      } else {
+        _lastDocument = snapshot.docs.last;
+        _passwords = snapshot.docs
+            .map((doc) => PasswordEntry.fromMap({
+                  'id': doc.id,
+                  ...doc.data(),
+                }))
+            .toList();
+      }
+
+      decryptionStopwatch.stop();
+      _performanceMetrics['password_decryption'] = decryptionStopwatch.elapsedMilliseconds;
+      developer.log('Password mapping completed in ${decryptionStopwatch.elapsedMilliseconds}ms');
+
+      stopwatch.stop();
+      _performanceMetrics['total_load_time'] = stopwatch.elapsedMilliseconds;
+      developer.log('Total load operation completed in ${stopwatch.elapsedMilliseconds}ms');
+
+      notifyListeners();
+    } catch (e) {
+      developer.log('Error during password load: $e', error: e);
+      _setError('Failed to load passwords: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Load more passwords (pagination)
+  Future<void> loadMorePasswords() async {
+    if (!_hasMorePasswords || _isLoading || _userId == null || _lastDocument == null) {
       return;
     }
 
@@ -38,18 +113,24 @@ class PasswordService extends ChangeNotifier {
           .doc(_userId)
           .collection('passwords')
           .orderBy('created_at', descending: true)
+          .startAfterDocument(_lastDocument!)
+          .limit(_pageSize)
           .get();
 
-      _passwords = snapshot.docs
-          .map((doc) => PasswordEntry.fromMap({
-                'id': doc.id,
-                ...doc.data(),
-              }))
-          .toList();
+      if (snapshot.docs.isEmpty) {
+        _hasMorePasswords = false;
+      } else {
+        _lastDocument = snapshot.docs.last;
+        _passwords.addAll(snapshot.docs
+            .map((doc) => PasswordEntry.fromMap({
+                  'id': doc.id,
+                  ...doc.data(),
+                })));
+      }
 
       notifyListeners();
     } catch (e) {
-      _setError('Failed to load passwords: $e');
+      _setError('Failed to load more passwords: $e');
     } finally {
       _setLoading(false);
     }
@@ -230,22 +311,41 @@ class PasswordService extends ChangeNotifier {
         throw Exception('Vault is locked. Please authenticate first.');
       }
 
-      final decryptedPasswords = <String, String>{};
+      final stopwatch = Stopwatch()..start();
+      developer.log('Starting batch decryption of ${entries.length} passwords');
 
-      for (final entry in entries) {
-        try {
-          final decryptedPassword =
-              await _encryptionService.decryptPassword(entry.encryptedPassword);
-          decryptedPasswords[entry.id] = decryptedPassword;
-        } catch (e) {
-          // If individual password decryption fails, skip it but don't fail the whole batch
-          print('Warning: Failed to decrypt password for ${entry.website}: $e');
-          decryptedPasswords[entry.id] = '[Decryption Failed]';
-        }
+      final decryptedPasswords = <String, String>{};
+      final futures = <Future<void>>[];
+
+      // Process passwords in parallel batches of 5
+      for (var i = 0; i < entries.length; i += 5) {
+        final batch = entries.skip(i).take(5);
+        futures.addAll(batch.map((entry) async {
+          try {
+            final decryptStopwatch = Stopwatch()..start();
+            final decryptedPassword =
+                await _encryptionService.decryptPassword(entry.encryptedPassword);
+            decryptStopwatch.stop();
+            
+            developer.log('Decrypted password for ${entry.website} in ${decryptStopwatch.elapsedMilliseconds}ms');
+            
+            decryptedPasswords[entry.id] = decryptedPassword;
+          } catch (e) {
+            developer.log('Failed to decrypt password for ${entry.website}: $e', error: e);
+            decryptedPasswords[entry.id] = '[Decryption Failed]';
+          }
+        }));
       }
+
+      // Wait for all decryption operations to complete
+      await Future.wait(futures);
+
+      stopwatch.stop();
+      developer.log('Batch decryption completed in ${stopwatch.elapsedMilliseconds}ms');
 
       return decryptedPasswords;
     } catch (e) {
+      developer.log('Batch decryption failed: $e', error: e);
       throw Exception('Failed to decrypt passwords: $e');
     }
   }

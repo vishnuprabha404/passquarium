@@ -366,19 +366,18 @@ class _SearchPasswordScreenState extends State<SearchPasswordScreen>
             ),
             const SizedBox(width: 12),
             // Copy Pass Button
-            ElevatedButton.icon(
+            ElevatedButton(
               onPressed: () => _copyPassword(entry),
-              icon: const Icon(Icons.copy, size: 16),
-              label: const Text('Copy Pass'),
+              child: const Text('Copy', style: TextStyle(fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                minimumSize: const Size(0, 36),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             // Three Dots Menu
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, size: 24),
