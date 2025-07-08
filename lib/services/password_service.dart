@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
-import 'package:super_locker/models/password_entry.dart';
-import 'package:super_locker/services/encryption_service.dart';
-import 'dart:developer' as developer;
+import 'package:passquarium/models/password_entry.dart';
+import 'package:passquarium/services/encryption_service.dart';
 
 class PasswordService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

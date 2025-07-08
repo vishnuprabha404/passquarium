@@ -1,7 +1,7 @@
-# Super Locker - Production Build Script
+# Passquarium - Production Build Script
 # This script builds a clean, production-ready version of the app
 
-Write-Host "🔒 Super Locker - Production Build Script" -ForegroundColor Blue
+Write-Host "🔒 Passquarium - Production Build Script" -ForegroundColor Blue
 Write-Host "==========================================" -ForegroundColor Blue
 
 # Check if Flutter is installed

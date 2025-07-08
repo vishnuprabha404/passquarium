@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:super_locker/services/encryption_service.dart';
-import 'package:super_locker/services/clipboard_manager.dart';
-import 'package:super_locker/widgets/password_strength_indicator.dart';
+import 'package:passquarium/services/encryption_service.dart';
+import 'package:passquarium/services/clipboard_manager.dart';
+import 'package:passquarium/widgets/password_strength_indicator.dart';
 
 class PasswordGeneratorScreen extends StatefulWidget {
   const PasswordGeneratorScreen({super.key});

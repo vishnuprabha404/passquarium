@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:super_locker/services/auth_service.dart';
-import 'package:super_locker/services/auto_lock_service.dart';
+import 'package:passquarium/services/auth_service.dart';
+import 'package:passquarium/services/auto_lock_service.dart';
 
 class DeviceAuthScreen extends StatefulWidget {
   const DeviceAuthScreen({super.key});

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
-import 'package:super_locker/services/auth_service.dart';
-import 'package:super_locker/config/app_config.dart';
+import 'package:passquarium/services/auth_service.dart';
+import 'package:passquarium/config/app_config.dart';
 
 enum LockLevel {
   deviceAuth, // Require device authentication only

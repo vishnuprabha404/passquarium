@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
-import 'package:super_locker/models/password_entry.dart';
-import 'package:super_locker/services/auth_service.dart';
-import 'package:super_locker/services/encryption_service.dart';
-import 'package:super_locker/services/password_service.dart';
-// import 'package:super_locker/services/firestore_service.dart';
-import 'package:super_locker/services/auto_lock_service.dart';
-import 'package:super_locker/services/clipboard_manager.dart';
+import 'package:passquarium/models/password_entry.dart';
+import 'package:passquarium/services/auth_service.dart';
+import 'package:passquarium/services/encryption_service.dart';
+import 'package:passquarium/services/password_service.dart';
+// import 'package:passquarium/services/firestore_service.dart';
+import 'package:passquarium/services/auto_lock_service.dart';
+import 'package:passquarium/services/clipboard_manager.dart';
 
 // Initialization status enum
 enum InitializationStatus {

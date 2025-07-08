@@ -1,7 +1,7 @@
-# Super Locker APK Build Script
+# Passquarium APK Build Script
 # This script builds the APK with proper memory management
 
-Write-Host "Starting Super Locker APK Build..." -ForegroundColor Green
+Write-Host "Starting Passquarium APK Build..." -ForegroundColor Green
 
 # Clean the project first
 Write-Host "Cleaning Flutter project..." -ForegroundColor Yellow

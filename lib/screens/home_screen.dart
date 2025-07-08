@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:super_locker/models/password_entry.dart';
+import 'package:passquarium/models/password_entry.dart';
 
-import 'package:super_locker/screens/edit_password_screen.dart';
-import 'package:super_locker/services/auth_service.dart';
-import 'package:super_locker/services/password_service.dart';
-import 'package:super_locker/services/clipboard_manager.dart';
-import 'package:super_locker/services/auto_lock_service.dart';
-import 'package:super_locker/widgets/password_strength_indicator.dart';
-import 'package:super_locker/services/encryption_service.dart';
+import 'package:passquarium/screens/edit_password_screen.dart';
+import 'package:passquarium/services/auth_service.dart';
+import 'package:passquarium/services/password_service.dart';
+import 'package:passquarium/services/clipboard_manager.dart';
+import 'package:passquarium/services/auto_lock_service.dart';
+import 'package:passquarium/widgets/password_strength_indicator.dart';
+import 'package:passquarium/services/encryption_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -549,7 +549,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Super Locker'),
+        title: const Text('Passquarium'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

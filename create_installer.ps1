@@ -1,11 +1,11 @@
-# Super Locker - Windows Installer Creation Script
+# Passquarium - Windows Installer Creation Script
 # This script builds the Flutter app and creates a Windows installer using NSIS
 
-Write-Host "🔒 Super Locker - Windows Installer Creator" -ForegroundColor Blue
+Write-Host "🔒 Passquarium - Windows Installer Creator" -ForegroundColor Blue
 Write-Host "=============================================" -ForegroundColor Blue
 
 # Configuration
-$AppName = "Super Locker"
+$AppName = "Passquarium"
 $AppVersion = "1.6"
 $BuildType = "Release"
 $NSISPath = ""
@@ -75,7 +75,7 @@ if (-not (Test-Path $licensePath)) {
     $licenseContent = @"
 MIT License
 
-Copyright (c) 2025 Super Locker Team
+Copyright (c) 2025 Passquarium Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -134,14 +134,14 @@ Push-Location installer
 
 try {
     # Run NSIS to create installer
-    $nsisArgs = @("super_locker_installer.nsi")
+            $nsisArgs = @("passquarium_installer.nsi")
     $process = Start-Process -FilePath $NSISPath -ArgumentList $nsisArgs -Wait -PassThru -NoNewWindow
     
     if ($process.ExitCode -eq 0) {
         Write-Host "✅ Installer created successfully!" -ForegroundColor Green
         
         # Check if installer was created
-        $installerPath = "SuperLockerInstaller_v$AppVersion.exe"
+        $installerPath = "PassquariumInstaller_v$AppVersion.exe"
         if (Test-Path $installerPath) {
             $installerSize = (Get-Item $installerPath).Length / 1MB
             Write-Host "📦 Installer: $installerPath" -ForegroundColor Cyan
@@ -166,7 +166,7 @@ Write-Host "=======================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "📦 Files created:" -ForegroundColor Cyan
 Write-Host "   • Application: $exePath" -ForegroundColor White
-Write-Host "   • Installer: installer\SuperLockerInstaller_v$AppVersion.exe" -ForegroundColor White
+Write-Host "   • Installer: installer\PassquariumInstaller_v$AppVersion.exe" -ForegroundColor White
 Write-Host ""
 Write-Host "🚀 Next steps:" -ForegroundColor Cyan
 Write-Host "   1. Test the installer on a clean Windows machine" -ForegroundColor White
@@ -178,5 +178,5 @@ Write-Host ""
 $runInstaller = Read-Host "Would you like to test the installer now? (y/n)"
 if ($runInstaller -eq 'y' -or $runInstaller -eq 'Y') {
     Write-Host "🚀 Running installer..." -ForegroundColor Yellow
-    Start-Process -FilePath "installer\SuperLockerInstaller_v$AppVersion.exe" -Wait
+    Start-Process -FilePath "installer\PassquariumInstaller_v$AppVersion.exe" -Wait
 } 

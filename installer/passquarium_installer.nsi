@@ -1,17 +1,17 @@
-; Super Locker - Windows Installer Script (NSIS)
-; This script creates a professional installer for Super Locker Password Manager
+; Passquarium - Windows Installer Script (NSIS)
+; This script creates a professional installer for Passquarium Password Manager
 
-!define APP_NAME "Super Locker"
+!define APP_NAME "Passquarium"
 !define APP_VERSION "1.6"
-!define APP_PUBLISHER "Super Locker Team"
-!define APP_URL "https://github.com/yourusername/super_locker"
+!define APP_PUBLISHER "Passquarium Team"
+!define APP_URL "https://github.com/yourusername/passquarium"
 !define APP_DESCRIPTION "Secure Password Manager with Military-Grade Encryption"
-!define APP_EXECUTABLE "super_locker.exe"
+!define APP_EXECUTABLE "passquarium.exe"
 !define APP_ICON "app_icon.ico"
 
 ; Installer properties
 Name "${APP_NAME}"
-OutFile "SuperLockerInstaller_v${APP_VERSION}.exe"
+OutFile "PassquariumInstaller_v${APP_VERSION}.exe"
 InstallDir "$PROGRAMFILES64\${APP_NAME}"
 InstallDirRegKey HKLM "Software\${APP_NAME}" "InstallDir"
 RequestExecutionLevel admin
@@ -56,7 +56,7 @@ VIAddVersionKey "FileDescription" "${APP_NAME} Installer"
 VIAddVersionKey "FileVersion" "${APP_VERSION}"
 VIAddVersionKey "ProductVersion" "${APP_VERSION}"
 VIAddVersionKey "InternalName" "${APP_NAME}"
-VIAddVersionKey "OriginalFilename" "SuperLockerInstaller_v${APP_VERSION}.exe"
+VIAddVersionKey "OriginalFilename" "PassquariumInstaller_v${APP_VERSION}.exe"
 
 ; Installer Sections
 Section "!${APP_NAME} (Required)" SecCore

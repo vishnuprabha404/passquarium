@@ -36,6 +36,6 @@ add_dependencies(${BINARY_NAME} flutter_assemble)
 # Post-build command to create desktop shortcut after successful compilation
 add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
   COMMAND powershell -ExecutionPolicy Bypass -File "${CMAKE_SOURCE_DIR}/create_shortcut.ps1" -ExePath "$<TARGET_FILE:${BINARY_NAME}>"
-  COMMENT "Creating desktop shortcut for Super Locker"
+      COMMENT "Creating desktop shortcut for Passquarium"
   VERBATIM
 ) 
