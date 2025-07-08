@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-import 'package:super_locker/config/app_config.dart';
-import 'package:super_locker/services/auth_service.dart';
-import 'package:super_locker/services/password_service.dart';
-import 'package:super_locker/services/encryption_service.dart';
-import 'package:super_locker/services/auto_lock_service.dart';
-import 'package:super_locker/screens/splash_screen.dart';
-import 'package:super_locker/screens/email_auth_screen.dart';
-import 'package:super_locker/screens/device_auth_screen.dart';
+import 'package:passquarium/config/app_config.dart';
+import 'package:passquarium/services/auth_service.dart';
+import 'package:passquarium/services/password_service.dart';
+import 'package:passquarium/services/encryption_service.dart';
+import 'package:passquarium/services/auto_lock_service.dart';
+import 'package:passquarium/screens/splash_screen.dart';
+import 'package:passquarium/screens/email_auth_screen.dart';
+import 'package:passquarium/screens/device_auth_screen.dart';
 
-import 'package:super_locker/screens/home_screen.dart';
-import 'package:super_locker/screens/add_password_screen.dart';
-import 'package:super_locker/screens/search_password_screen.dart';
-import 'package:super_locker/screens/password_generator_screen.dart';
+import 'package:passquarium/screens/home_screen.dart';
+import 'package:passquarium/screens/add_password_screen.dart';
+import 'package:passquarium/screens/search_password_screen.dart';
+import 'package:passquarium/screens/password_generator_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,17 +24,17 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const SuperLockerApp());
+  runApp(const PassquariumApp());
 }
 
-class SuperLockerApp extends StatefulWidget {
-  const SuperLockerApp({super.key});
+class PassquariumApp extends StatefulWidget {
+  const PassquariumApp({super.key});
 
   @override
-  State<SuperLockerApp> createState() => _SuperLockerAppState();
+  State<PassquariumApp> createState() => _PassquariumAppState();
 }
 
-class _SuperLockerAppState extends State<SuperLockerApp> {
+class _PassquariumAppState extends State<PassquariumApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override

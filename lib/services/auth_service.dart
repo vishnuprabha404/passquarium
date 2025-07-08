@@ -7,8 +7,8 @@ import 'package:local_auth_android/local_auth_android.dart';
 import 'package:local_auth_windows/local_auth_windows.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:super_locker/services/encryption_service.dart';
-import 'package:super_locker/services/key_service.dart';
+import 'package:passquarium/services/encryption_service.dart';
+import 'package:passquarium/services/key_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum AuthStatus {
@@ -117,7 +117,7 @@ class AuthService extends ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 500));
 
       final bool didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Please authenticate to access Super Locker',
+        localizedReason: 'Please authenticate to access Passquarium',
         options: const AuthenticationOptions(
           biometricOnly: false,
           stickyAuth:
@@ -127,7 +127,7 @@ class AuthService extends ChangeNotifier {
         ),
         authMessages: const [
           AndroidAuthMessages(
-            signInTitle: 'Super Locker',
+            signInTitle: 'Passquarium',
             biometricHint: 'Touch the fingerprint sensor or use your PIN',
             biometricNotRecognized: 'Fingerprint not recognized. Try again.',
             biometricRequiredTitle: 'Biometric Authentication',

@@ -1,9 +1,9 @@
-# Super Locker - Automated Setup Script for Windows
+# Passquarium - Automated Setup Script for Windows
 # PowerShell script to install all requirements and set up the development environment
 # Run this script as Administrator
 
 Write-Host "=================================" -ForegroundColor Cyan
-Write-Host "Super Locker Setup Script" -ForegroundColor Cyan
+Write-Host "Passquarium Setup Script" -ForegroundColor Cyan
 Write-Host "Setting up development environment..." -ForegroundColor Cyan
 Write-Host "=================================" -ForegroundColor Cyan
 

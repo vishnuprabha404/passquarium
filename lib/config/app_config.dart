@@ -29,7 +29,7 @@ class AppConfig {
   static const Duration splashScreenDuration = Duration(seconds: 1);
 
   // Application metadata
-  static const String appName = 'Super Locker';
+  static const String appName = 'Passquarium';
   static const String appVersion = '1.0.0';
   static const String appDescription = 'Secure Password Manager';
 
@@ -41,7 +41,7 @@ class AppConfig {
   ];
 
   // Help and support
-  static const String supportEmail = 'support@superlocker.app';
-  static const String privacyPolicyUrl = 'https://superlocker.app/privacy';
-  static const String termsOfServiceUrl = 'https://superlocker.app/terms';
+  static const String supportEmail = 'support@passquarium.app';
+  static const String privacyPolicyUrl = 'https://passquarium.app/privacy';
+  static const String termsOfServiceUrl = 'https://passquarium.app/terms';
 }

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Super Locker - Automated Setup Script for macOS/Linux
+# Passquarium - Automated Setup Script for macOS/Linux
 # Bash script to install all requirements and set up the development environment
 
 echo "================================="
-echo "Super Locker Setup Script"
+echo "Passquarium Setup Script"
 echo "Setting up development environment..."
 echo "================================="
 

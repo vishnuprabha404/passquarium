@@ -1,6 +1,6 @@
-# Super Locker Windows Installer
+# Passquarium Windows Installer
 
-This directory contains the NSIS installer configuration for creating a professional Windows installer for Super Locker.
+This directory contains the NSIS installer configuration for creating a professional Windows installer for Passquarium.
 
 ## 🚀 Quick Start
 
@@ -29,7 +29,7 @@ This script will:
 1. ✅ Clean and build your Flutter app for Windows
 2. ✅ Verify all dependencies are present
 3. ✅ Create a professional Windows installer using NSIS
-4. ✅ Generate `SuperLockerInstaller_v1.6.exe`
+4. ✅ Generate `PassquariumInstaller_v1.6.exe`
 
 ## 📦 What the Installer Includes
 
@@ -42,7 +42,7 @@ This script will:
 - ✅ File association and version information
 
 ### Installation Components
-- **Core Application** (Required): Main Super Locker executable and Flutter runtime
+- **Core Application** (Required): Main Passquarium executable and Flutter runtime
 - **Desktop Shortcut**: Creates shortcut on user's desktop
 - **Start Menu Shortcuts**: Creates program group in Start Menu
 - **Quick Launch Shortcut**: Adds to Quick Launch toolbar
@@ -59,25 +59,25 @@ If you prefer to create the installer manually:
 2. **Compile the NSIS script:**
    ```bash
    cd installer
-   makensis super_locker_installer.nsi
+   makensis passquarium_installer.nsi
    ```
 
 ## 📋 Installer Configuration
 
 ### Key Files
-- `super_locker_installer.nsi` - Main NSIS installer script
+- `passquarium_installer.nsi` - Main NSIS installer script
 - `LICENSE.txt` - License agreement shown during installation
 - `README.md` - This documentation file
 
 ### Customization Options
 
-Edit `super_locker_installer.nsi` to modify:
+Edit `passquarium_installer.nsi` to modify:
 
 ```nsis
-!define APP_NAME "Super Locker"
+!define APP_NAME "Passquarium"
 !define APP_VERSION "1.6"
-!define APP_PUBLISHER "Super Locker Team"
-!define APP_URL "https://github.com/yourusername/super_locker"
+!define APP_PUBLISHER "Passquarium Team"
+!define APP_URL "https://github.com/yourusername/passquarium"
 !define APP_DESCRIPTION "Secure Password Manager with Military-Grade Encryption"
 ```
 
@@ -88,7 +88,7 @@ For production distribution, consider code signing your installer:
 1. **Obtain a code signing certificate** from a trusted CA
 2. **Sign the installer** using SignTool:
    ```bash
-   signtool sign /f "certificate.pfx" /p "password" /t "http://timestamp.verisign.com/scripts/timstamp.dll" SuperLockerInstaller_v1.6.exe
+   signtool sign /f "certificate.pfx" /p "password" /t "http://timestamp.verisign.com/scripts/timstamp.dll" PassquariumInstaller_v1.6.exe
    ```
 
 ## 🧪 Testing the Installer
@@ -146,4 +146,4 @@ flutter build windows --release
 
 ## 📝 License
 
-The installer script is provided under the same license as the main Super Locker application (MIT License). 
+The installer script is provided under the same license as the main Passquarium application (MIT License). 

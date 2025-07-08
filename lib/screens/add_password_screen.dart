@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:super_locker/services/auth_service.dart';
-import 'package:super_locker/services/password_service.dart';
-import 'package:super_locker/services/encryption_service.dart';
+import 'package:passquarium/services/auth_service.dart';
+import 'package:passquarium/services/password_service.dart';
+import 'package:passquarium/services/encryption_service.dart';
 
 class AddPasswordScreen extends StatefulWidget {
   const AddPasswordScreen({super.key});

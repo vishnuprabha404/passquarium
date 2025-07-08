@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:super_locker/models/password_entry.dart';
-import 'package:super_locker/services/auth_service.dart';
+import 'package:passquarium/models/password_entry.dart';
+import 'package:passquarium/services/auth_service.dart';
 
 class FirestoreService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;

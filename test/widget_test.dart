@@ -7,15 +7,15 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:super_locker/main.dart';
+import 'package:passquarium/main.dart';
 
 void main() {
   testWidgets('App launches successfully', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const SuperLockerApp());
+    await tester.pumpWidget(const PassquariumApp());
 
     // Verify that the splash screen appears
-    expect(find.text('Super Locker'), findsOneWidget);
+    expect(find.text('Passquarium'), findsOneWidget);
     expect(find.text('Secure Password Manager'), findsOneWidget);
   });
 }

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:super_locker/services/encryption_service.dart';
+import 'package:passquarium/services/encryption_service.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 
 class KeyService {

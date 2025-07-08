@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:super_locker/config/app_config.dart';
-import 'package:super_locker/services/auth_service.dart';
-import 'package:super_locker/services/auto_lock_service.dart';
-import 'package:super_locker/widgets/password_strength_indicator.dart';
+import 'package:passquarium/config/app_config.dart';
+import 'package:passquarium/services/auth_service.dart';
+import 'package:passquarium/services/auto_lock_service.dart';
+import 'package:passquarium/widgets/password_strength_indicator.dart';
 
 class EmailAuthScreen extends StatefulWidget {
   const EmailAuthScreen({super.key});
@@ -568,7 +568,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Super Locker',
+                    'Passquarium',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 32,

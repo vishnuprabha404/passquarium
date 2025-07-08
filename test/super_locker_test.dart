@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:super_locker/services/auth_service.dart';
-import 'package:super_locker/services/password_service.dart';
-import 'package:super_locker/services/encryption_service.dart';
-import 'package:super_locker/models/password_entry.dart';
+import 'package:passquarium/services/auth_service.dart';
+import 'package:passquarium/services/password_service.dart';
+import 'package:passquarium/services/encryption_service.dart';
+import 'package:passquarium/models/password_entry.dart';
 
 // Mock classes for testing
 
 void main() {
-  group('Super Locker Tests', () {
+  group('Passquarium Tests', () {
     late AuthService authService;
     late PasswordService passwordService;
     late EncryptionService encryptionService;
