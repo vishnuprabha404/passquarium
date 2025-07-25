@@ -1,4 +1,4 @@
-# Super Locker - Secure Password Manager
+# Passquarium - Secure Password Manager
 
 ## 👋 Personal Introduction
 
