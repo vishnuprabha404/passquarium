@@ -29,7 +29,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.example.passquarium"
+    namespace "com.passquarium.app"
     compileSdkVersion 35
     ndkVersion flutter.ndkVersion
 
@@ -47,7 +47,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.passquarium"
+        applicationId "com.passquarium.app"
         minSdkVersion 23
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
@@ -65,10 +65,24 @@ android {
             }
         }
         debug {
+            minifyEnabled false
+            shrinkResources false
             ndk {
                 abiFilters 'arm64-v8a', 'x86_64'
             }
         }
+    }
+    
+    // Disable asset compression and optimize for memory usage
+    aaptOptions {
+        noCompress '*'
+        cruncherEnabled = false
+        cruncherProcesses = 0
+    }
+    
+    // Disable PNG crunching to save memory
+    androidResources {
+        noCompress '*'
     }
 }
 
@@ -79,4 +93,12 @@ flutter {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.biometric:biometric:1.1.0'
+    
+    // Import the Firebase BoM
+    implementation platform('com.google.firebase:firebase-bom:34.0.0')
+    
+    // Firebase dependencies (versions managed by BoM)
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-firestore'
+    implementation 'com.google.firebase:firebase-analytics'
 } 

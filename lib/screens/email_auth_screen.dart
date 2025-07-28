@@ -445,6 +445,32 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     }
   }
 
+  void _goBackToSignIn() {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    
+    // Sign out the user during verification process
+    authService.signOutDuringVerification();
+    
+    setState(() {
+      _isSignUpMode = false; // Switch to sign-in mode
+      _showEmailVerificationMessage = false;
+      _emailVerificationSent = false;
+      _masterKeyController.clear(); // Clear password field for security
+      _confirmMasterKeyController.clear();
+      _showMasterKeyStrength = false;
+    });
+    
+    // Hide verification UI with animation
+    _slideController.reverse();
+    
+    // Focus on the master key field since email is already filled
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _masterKeyFocusNode.requestFocus();
+      }
+    });
+  }
+
   void _showErrorDialog(String title, String message) {
     showDialog(
       context: context,
@@ -692,22 +718,40 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
+                Column(
                   children: [
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: _isLoading ? null : _resendVerificationEmail,
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Resend Email'),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton.icon(
+                            onPressed: _isLoading ? null : _resendVerificationEmail,
+                            icon: const Icon(Icons.refresh, size: 16),
+                            label: const Text('Resend Email'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextButton.icon(
+                            onPressed:
+                                _isLoading ? null : _checkVerificationManually,
+                            icon: const Icon(Icons.check_circle_outline, size: 16),
+                            label: const Text('Check Status'),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
                       child: TextButton.icon(
-                        onPressed:
-                            _isLoading ? null : _checkVerificationManually,
-                        icon: const Icon(Icons.check_circle_outline, size: 16),
-                        label: const Text('Check Status'),
+                        onPressed: _isLoading ? null : _goBackToSignIn,
+                        icon: const Icon(Icons.arrow_back, size: 16),
+                        label: const Text('Back to Sign In'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(context).primaryColor,
+                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
                       ),
                     ),
                   ],
@@ -771,6 +815,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
         const SizedBox(height: 16),
         // Forgot Password Button
         _buildForgotPasswordButton(),
+        const SizedBox(height: 16),
+        // Mode Toggle Button
+        _buildModeToggleButton(),
       ],
     );
   }
@@ -945,6 +992,56 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
           child: const Text('Forgot Master Key?'),
         ),
       ],
+    );
+  }
+
+  Widget _buildModeToggleButton() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).primaryColor.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            _isSignUpMode 
+                ? 'Already have an account? ' 
+                : 'Don\'t have an account? ',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
+          TextButton(
+            onPressed: _isLoading ? null : () {
+              setState(() {
+                _isSignUpMode = !_isSignUpMode;
+                // Clear form when switching modes for security
+                _masterKeyController.clear();
+                _confirmMasterKeyController.clear();
+                _showMasterKeyStrength = false;
+              });
+            },
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              _isSignUpMode ? 'Sign In' : 'Sign Up',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
