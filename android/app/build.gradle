@@ -30,7 +30,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.passquarium.app"
-    compileSdkVersion 35
+    compileSdk 35
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -49,10 +49,15 @@ android {
     defaultConfig {
         applicationId "com.passquarium.app"
         minSdkVersion 23
-        targetSdkVersion 35
+        targetSdk 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
+        // Optimize for performance
+        vectorDrawables.useSupportLibrary = true
+        ndk {
+            abiFilters 'arm64-v8a', 'x86_64'
+        }
     }
 
     buildTypes {
@@ -60,29 +65,32 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
-            ndk {
-                abiFilters 'arm64-v8a'
-            }
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
             minifyEnabled false
             shrinkResources false
-            ndk {
-                abiFilters 'arm64-v8a', 'x86_64'
-            }
+            debuggable true
         }
     }
     
-    // Disable asset compression and optimize for memory usage
+    // Optimize for memory usage - disable asset compression
     aaptOptions {
         noCompress '*'
         cruncherEnabled = false
         cruncherProcesses = 0
     }
     
-    // Disable PNG crunching to save memory
+    // Disable automatic per-app language generation for now
     androidResources {
-        noCompress '*'
+        generateLocaleConfig false
+    }
+    
+    // Configure dex options for memory optimization
+    dexOptions {
+        javaMaxHeapSize "3g"
+        preDexLibraries false
+        dexInProcess false
     }
 }
 
