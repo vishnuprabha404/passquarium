@@ -29,8 +29,8 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.example.passquarium"
-    compileSdkVersion 35
+    namespace "com.passquarium.app"
+    compileSdk 35
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -47,12 +47,17 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.passquarium"
+        applicationId "com.passquarium.app"
         minSdkVersion 23
-        targetSdkVersion 35
+        targetSdk 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
+        // Optimize for performance
+        vectorDrawables.useSupportLibrary = true
+        ndk {
+            abiFilters 'arm64-v8a', 'x86_64'
+        }
     }
 
     buildTypes {
@@ -60,15 +65,32 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
-            ndk {
-                abiFilters 'arm64-v8a'
-            }
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            ndk {
-                abiFilters 'arm64-v8a', 'x86_64'
-            }
+            minifyEnabled false
+            shrinkResources false
+            debuggable true
         }
+    }
+    
+    // Optimize for memory usage - disable asset compression
+    aaptOptions {
+        noCompress '*'
+        cruncherEnabled = false
+        cruncherProcesses = 0
+    }
+    
+    // Disable automatic per-app language generation for now
+    androidResources {
+        generateLocaleConfig false
+    }
+    
+    // Configure dex options for memory optimization
+    dexOptions {
+        javaMaxHeapSize "3g"
+        preDexLibraries false
+        dexInProcess false
     }
 }
 
@@ -79,4 +101,12 @@ flutter {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.biometric:biometric:1.1.0'
+    
+    // Import the Firebase BoM
+    implementation platform('com.google.firebase:firebase-bom:34.0.0')
+    
+    // Firebase dependencies (versions managed by BoM)
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-firestore'
+    implementation 'com.google.firebase:firebase-analytics'
 } 
