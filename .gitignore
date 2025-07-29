@@ -97,5 +97,16 @@ docs/todo.md
 **/dashboard_test_results.md
 **/firebase_integration_summary.md
 
+# Windows executable and installer files (local distribution only)
+*.exe
+*.msi
+*.msix
+build/windows/x64/runner/Release/
+build/windows/x64/runner/Debug/
+installer/passquarium_installer.exe
+installer/output/
+installer/dist/
+installer/PassquariumInstaller_*.exe
+
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages 
