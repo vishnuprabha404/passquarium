@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:super_locker/services/password_service.dart';
-import 'package:super_locker/services/encryption_service.dart';
+import 'package:passquarium/services/password_service.dart';
+import 'package:passquarium/services/encryption_service.dart';
 
 class PerformanceAnalysisScreen extends StatelessWidget {
   const PerformanceAnalysisScreen({Key? key}) : super(key: key);
