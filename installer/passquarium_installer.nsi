@@ -2,7 +2,7 @@
 ; This script creates a professional installer for Passquarium Password Manager
 
 !define APP_NAME "Passquarium"
-!define APP_VERSION "1.6"
+!define APP_VERSION "2.0"
 !define APP_PUBLISHER "Passquarium Team"
 !define APP_URL "https://github.com/vishnuprabha404/passquarium"
 !define APP_DESCRIPTION "Secure Password Manager with Military-Grade Encryption"
@@ -66,15 +66,15 @@ Section "!${APP_NAME} (Required)" SecCore
   SetOutPath $INSTDIR
   
   ; Copy main executable
-  File "..\build\windows\x64\runner\Release\${APP_EXECUTABLE}"
+  File "..\build\windows\x64\runner\Debug\${APP_EXECUTABLE}"
   
   ; Copy Flutter framework files
-  File "..\build\windows\x64\runner\Release\flutter_windows.dll"
-  File /nonfatal "..\build\windows\x64\runner\Release\*.dll"
+  File "..\build\windows\x64\runner\Debug\flutter_windows.dll"
+  File /nonfatal "..\build\windows\x64\runner\Debug\*.dll"
   
   ; Copy data directory
   SetOutPath $INSTDIR\data
-  File /r "..\build\windows\x64\runner\Release\data\*"
+  File /r "..\build\windows\x64\runner\Debug\data\*"
   
   ; Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"

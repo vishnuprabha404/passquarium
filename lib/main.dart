@@ -15,6 +15,7 @@ import 'package:passquarium/screens/home_screen.dart';
 import 'package:passquarium/screens/add_password_screen.dart';
 import 'package:passquarium/screens/search_password_screen.dart';
 import 'package:passquarium/screens/password_generator_screen.dart';
+import 'package:passquarium/screens/performance_analysis_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
