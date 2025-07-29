@@ -1,4 +1,4 @@
-# 📋 SUPER LOCKER - DAILY DEVELOPER ROUTINE
+# 📋 PASSQUARIUM - DAILY DEVELOPER ROUTINE
 # Version: 1.1
 # Last Updated: January 21, 2025
 
@@ -101,7 +101,7 @@ Check if any of these changed and update README accordingly:
 - [ ] Fix Windows release build configuration
 ```
 
-## 🔐 SUPER LOCKER SPECIFIC CHECKS
+## 🔐 PASSQUARIUM SPECIFIC CHECKS
 
 ### Security & Authentication
 - [x] Verify Firebase Auth is properly configured ✅

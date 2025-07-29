@@ -4,7 +4,7 @@
 !define APP_NAME "Passquarium"
 !define APP_VERSION "1.6"
 !define APP_PUBLISHER "Passquarium Team"
-!define APP_URL "https://github.com/yourusername/passquarium"
+!define APP_URL "https://github.com/vishnuprabha404/passquarium"
 !define APP_DESCRIPTION "Secure Password Manager with Military-Grade Encryption"
 !define APP_EXECUTABLE "passquarium.exe"
 !define APP_ICON "app_icon.ico"

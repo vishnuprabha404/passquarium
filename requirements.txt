@@ -1,4 +1,4 @@
-# Super Locker - Password Manager
+# Passquarium - Password Manager
 # Development Requirements and Dependencies
 # Last Updated: June 18, 2025
 
@@ -148,8 +148,8 @@
 # =============================================================================
 
 # 1. Clone repository:
-# git clone https://github.com/yourusername/super_locker.git
-# cd super_locker
+# git clone https://github.com/vishnuprabha404/passquarium.git
+# cd passquarium
 
 # 2. Install Flutter dependencies:
 # flutter pub get

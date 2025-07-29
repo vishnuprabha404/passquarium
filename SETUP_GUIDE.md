@@ -1,4 +1,4 @@
-# Quick Setup Guide for Super Locker
+# Quick Setup Guide for Passquarium
 
 ## 🚀 Immediate Testing (Without Firebase)
 

@@ -138,7 +138,7 @@ service cloud.firestore {
 ✅ **Data will persist across sessions**  
 ✅ **Multi-device sync is enabled**  
 
-Your Super Locker password manager is now fully functional with cloud storage!
+Your Passquarium password manager is now fully functional with cloud storage!
 
 ---
 *Fix applied: $(date)*  

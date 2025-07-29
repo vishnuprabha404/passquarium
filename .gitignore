@@ -88,5 +88,14 @@ coverage/
 *.prof
 *.trace
 
+# Test documentation and results (local testing only)
+docs/test_results.md
+docs/dashboard_test_results.md
+docs/firebase_integration_summary.md
+docs/todo.md
+**/test_results.md
+**/dashboard_test_results.md
+**/firebase_integration_summary.md
+
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages 
