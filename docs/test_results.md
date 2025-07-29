@@ -1,4 +1,4 @@
-# 🧪 Super Locker Unit Test Results
+# 🧪 Passquarium Unit Test Results
 
 ## Test Session Summary
 **Date**: June 19, 2025  
@@ -218,4 +218,4 @@ PS C:\Users\vishn\Documents\super_locker> flutter test test/encryption_service_t
 
 ---
 
-*Generated on June 19, 2025 - Super Locker v1.3* 
+*Generated on June 19, 2025 - Passquarium v1.3* 

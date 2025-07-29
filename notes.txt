@@ -1,5 +1,5 @@
 ===============================================================================
-                              SUPER LOCKER - PASSWORD MANAGER
+                              PASSQUARIUM - PASSWORD MANAGER
                                     PROJECT NOTES
 ===============================================================================
 
@@ -185,7 +185,7 @@ Master Password:
 === DATE: June 16, 2025 ===
 TIME: 2:00 PM - Project Planning & Initial Setup
 WHAT WAS DONE:
-- Conceptualized Super Locker password manager application
+- Conceptualized Passquarium password manager application
 - Defined security requirements and architecture
 - Created comprehensive project structure
 - Implemented core data models and services
@@ -476,9 +476,9 @@ TECHNICAL IMPLEMENTATION:
 - Shortcut properties: Target path, working directory, description, icon
 
 SHORTCUT DETAILS:
-- Name: "Super Locker.lnk"
+- Name: "Passquarium.lnk"
 - Location: User's desktop
-- Description: "Super Locker - Secure Password Manager"
+- Description: "Passquarium - Secure Password Manager"
 - Icon: Uses the application executable icon
 - Working directory: Set to executable location for proper resource loading
 
