@@ -33,6 +33,7 @@ Passquarium is a secure, cross-platform password manager built with Flutter that
 - **Android**: Full biometric authentication support (fingerprint, face ID, device PIN)
 - **Windows**: Windows Hello integration with fallback authentication
 - **Easy Installation**: Automated installer creation for Windows (.exe) and Android (.apk)
+- **Build File Management**: Generated installers and APK files are automatically excluded from version control
 - **Responsive UI**: Adapts to different screen sizes and orientations
 
 ### 🚀 Core Functionality
@@ -59,9 +60,13 @@ cd passquarium
 flutter run -d windows   # Run the app
 ```
 
-**Want to create an installer?**
+**Want to create installers?**
 ```bash
-.\build_production.ps1   # Creates Windows .exe installer
+# Windows installer (.exe)
+.\build_production.ps1
+
+# Android APK (.apk)
+.\build_android.ps1
 ```
 
 💡 **Note**: Full setup requires Firebase configuration (see detailed guide below).
@@ -355,17 +360,71 @@ flutter run --release
 
 ### Building for Release
 
-#### Android Release Build
+#### Creating Android APK
+
+For easy distribution and installation on Android devices:
+
+**🔧 How it Works:**
+- **Step 1**: Build script creates the APK file (`app-release.apk`)
+- **Step 2**: Transfer APK to Android device and install manually
+- **Result**: Passquarium is installed on Android with full functionality
+
+**Option 1: Automated APK Build (Recommended)**
+```powershell
+# Run the automated Android APK build script
+.\build_android.ps1
+
+# This script will:
+# 1. Clean previous builds
+# 2. Build Android release APK
+# 3. Open the folder containing the APK
+# 4. Offer to copy APK to a custom location
+# 5. Generate app-release.apk ready for installation
+```
+
+**Option 2: Manual APK Build**
+```bash
+# Build APK for testing and distribution
+flutter build apk --release
+
+# The APK will be in: build/app/outputs/flutter-apk/app-release.apk
+```
+
+**Option 2: Comprehensive Build Options**
 ```bash
 # Build APK for testing
 flutter build apk --release
 
-# Build App Bundle for Play Store
+# Build App Bundle for Play Store (if planning to publish)
 flutter build appbundle --release
 
-# Build APK for specific architecture
+# Build APK for specific architecture (smaller file size)
 flutter build apk --release --target-platform android-arm64
+
+# Build APK with debug info (for troubleshooting)
+flutter build apk --debug
 ```
+
+**📱 Generated APK Files:**
+- 📦 **APK Location**: `build/app/outputs/flutter-apk/app-release.apk` (~15-25 MB)
+- 🚀 **Universal APK**: Works on all Android devices (ARM, ARM64, x86)
+- 🔒 **Note**: APK files are automatically excluded from git (added to `.gitignore`)
+
+**📲 Installation Process (Android):**
+1. **APK Location**: Find the APK in `build/app/outputs/flutter-apk/app-release.apk`
+2. **Transfer to Device**: Copy APK to your Android device (USB, email, cloud storage)
+3. **Enable Unknown Sources**: Settings → Security → Install unknown apps → Allow from this source
+4. **Install APK**: Tap the APK file on your device to install
+5. **Launch**: Open Passquarium from your app drawer
+6. **Enjoy**: Your secure password manager on Android!
+
+**📁 Note**: The build script automatically opens the folder containing the APK when creation is successful!
+
+**🎯 What You'll See After Running the Script:**
+1. **Windows Explorer Opens**: Shows the APK output directory 
+2. **APK File Ready**: The .apk file is ready for device installation
+3. **Copy Option**: Script offers to copy APK to a custom location
+4. **Installation Ready**: APK is ready to transfer to your Android device
 
 #### Windows Release Build
 ```bash
@@ -381,24 +440,33 @@ flutter build windows --debug
 
 For easy distribution and installation on Windows:
 
+**🔧 How it Works:**
+- **Step 1**: Build script creates the installer file (`PassquariumInstaller_v1.6.exe`)
+- **Step 2**: You manually run the installer to actually install the software
+- **Result**: Passquarium is installed to Program Files with proper Windows integration
+
 **Option 1: Complete Build + Installer (Recommended)**
 ```powershell
 # Run the automated build and installer creation script
 .\build_production.ps1
 
 # This script will:
-# 1. Clean previous builds
-# 2. Build Windows debug version (release has Firebase issues)
-# 3. Create installer (if NSIS is installed)
-# 4. Generate PassquariumInstaller_v1.6.exe
+# 1. Check for existing builds (offers to use them to save time)
+# 2. Clean previous builds (if fresh build chosen)
+# 3. Build Windows debug version (release has Firebase issues)
+# 4. Create installer (if NSIS is installed)
+# 5. Generate PassquariumInstaller_v2.0.exe
+# 6. Open the folder containing the installer
+# 7. Ask if you want to run the installer immediately
 ```
 
-**Option 2: Create Installer from Existing Build**
+**Option 2: Manual Installer Creation**
 ```powershell
-# If you already have a Windows build, just create the installer
-.\create_installer.ps1
+# If you already have a Windows build, manually create installer
+cd installer
+makensis passquarium_installer.nsi
 
-# This will generate: PassquariumInstaller_v1.6.exe
+# This will generate: PassquariumInstaller_v2.0.exe
 ```
 
 **Prerequisites for Installer Creation:**
@@ -408,15 +476,36 @@ For easy distribution and installation on Windows:
    - Restart PowerShell after installation
 
 **Generated Files:**
-- 📦 **Installer**: `PassquariumInstaller_v1.6.exe` (~15-25 MB)
+- 📦 **Installer**: `PassquariumInstaller_v2.0.exe` (~15-25 MB)
 - 🚀 **Executable**: `build/windows/x64/runner/Debug/passquarium.exe`
 - 🔒 **Note**: These files are automatically excluded from git (added to `.gitignore`)
 
 **Installation Process:**
-1. Run `PassquariumInstaller_v1.6.exe` as Administrator
-2. Follow the installation wizard
-3. Launch Passquarium from Start Menu or Desktop shortcut
-4. Enjoy your secure password manager!
+1. **Installer Location**: The installer is created in the project root directory: `PassquariumInstaller_v2.0.exe`
+2. **Manual Installation**: Right-click `PassquariumInstaller_v2.0.exe` → "Run as Administrator"
+3. **Follow Installation Wizard**: Choose installation options and location
+4. **Installed Location**: Software installs to `C:\Program Files\Passquarium\`
+5. **Control Panel Integration**: Appears in "Add/Remove Programs" for easy uninstallation
+6. **Start Menu & Desktop**: Creates shortcuts for easy access
+7. **Launch**: Run Passquarium from Start Menu, Desktop, or directly from Program Files
+
+**📁 Note**: The build script automatically opens the project folder containing the installer when creation is successful!
+
+**🎯 What You'll See After Running the Script:**
+
+**If No Existing Build:**
+1. **Fresh Build Process**: Clean → Dependencies → Analyze → Build (~10 minutes)
+2. **Installer Creation**: Creates PassquariumInstaller_v2.0.exe
+3. **Windows Explorer Opens**: Shows the project directory with installer
+4. **Install Option**: Script asks if you want to run the installer immediately
+
+**If Existing Build Found:**
+1. **Build Detection**: Shows existing build details (size, date, location)
+2. **User Choice**: Option to use existing build (fast) or create fresh build
+3. **Time Saving**: Skip directly to installer creation if using existing build
+4. **Manual Control**: You have full control over when and how to install
+
+**⚡ Performance Tip**: Choose option 1 (use existing build) when you just want to create a new installer from your current code without rebuilding!
 
 ### Troubleshooting Platform Issues
 
@@ -514,6 +603,8 @@ passquarium/
 ├── requirements.txt           # Development requirements
 ├── setup.ps1                  # Windows setup script
 ├── setup.sh                   # macOS/Linux setup script
+├── build_production.ps1       # Windows installer build script
+├── build_android.ps1          # Android APK build script
 └── notes.txt                  # Project development log
 ```
 

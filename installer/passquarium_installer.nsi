@@ -2,7 +2,7 @@
 ; This script creates a professional installer for Passquarium Password Manager
 
 !define APP_NAME "Passquarium"
-!define APP_VERSION "1.6"
+!define APP_VERSION "2.0"
 !define APP_PUBLISHER "Passquarium Team"
 !define APP_URL "https://github.com/vishnuprabha404/passquarium"
 !define APP_DESCRIPTION "Secure Password Manager with Military-Grade Encryption"
