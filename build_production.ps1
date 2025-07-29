@@ -166,10 +166,10 @@ if ($buildSuccessful) {
                 Write-Host ""
                 Write-Host "The installer does NOT auto-install. You must run it manually!" -ForegroundColor Yellow
                 
-                # Open the folder containing the installer
+                # Show the exact path of the installer
                 Write-Host ""
-                Write-Host "Opening folder containing the installer..." -ForegroundColor Green
-                Start-Process explorer.exe -ArgumentList (Get-Location).Path
+                $installerFullPath = (Get-Location).Path + "\" + $installerPath
+                Write-Host "Installer location: $installerFullPath" -ForegroundColor Cyan
                 
                 # Ask if user wants to run the installer now
                 Write-Host ""
