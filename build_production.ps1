@@ -135,8 +135,8 @@ if ($buildSuccessful) {
                 Write-Host "Installer location: $installerPath" -ForegroundColor Cyan
                 
                 # Show installer size - check for both v1.6 and v2.0
-                $installerPath = "PassquariumInstaller_v2.0.exe"
-                $installerPathV16 = "PassquariumInstaller_v1.6.exe"
+                $installerPath = "installer\PassquariumInstaller_v2.0.exe"
+                $installerPathV16 = "installer\PassquariumInstaller_v1.6.exe"
                 
                 if (Test-Path $installerPath) {
                     $installerSize = (Get-Item $installerPath).Length / 1MB
@@ -158,13 +158,13 @@ if ($buildSuccessful) {
                 Write-Host "========================================" -ForegroundColor Green
                 Write-Host ""
                 Write-Host "NEXT STEPS:" -ForegroundColor Yellow
-                Write-Host "1. Right-click '$installerPath' -> 'Run as Administrator'" -ForegroundColor Cyan
+                Write-Host "1. Right-click '$($installerPath.Split('\')[-1])' -> 'Run as Administrator'" -ForegroundColor Cyan
                 Write-Host "2. Follow the installation wizard" -ForegroundColor Cyan
                 Write-Host "3. Software will install to: C:\Program Files\Passquarium\" -ForegroundColor Cyan
                 Write-Host "4. Will appear in Control Panel > Add/Remove Programs" -ForegroundColor Cyan
                 Write-Host "5. Will create Start Menu shortcut" -ForegroundColor Cyan
                 Write-Host ""
-                Write-Host "The installer does NOT auto-install. You must run it manually!" -ForegroundColor Yellow
+               
                 
                 # Show the exact path of the installer
                 Write-Host ""
