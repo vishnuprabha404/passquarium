@@ -16,7 +16,7 @@ The app currently works on Android and Windows, using AES-256 encryption to keep
 
 ## 🔐 About This Project
 
-Super Locker is a secure, cross-platform password manager built with Flutter that works on Android and Windows. It uses military-grade AES-256 encryption to protect your passwords with multiple layers of security.
+Passquarium is a secure, cross-platform password manager built with Flutter that works on Android and Windows. It uses military-grade AES-256 encryption to protect your passwords with multiple layers of security.
 
 ## 🎯 Features
 
@@ -511,10 +511,6 @@ See [`requirements.txt`](requirements.txt) for the complete installation guide i
 7. Push to branch: `git push origin feature/amazing-feature`
 8. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🛣️ Roadmap & Personal Development Plan
 
 ### Immediate Goals (Next 3 Months)
@@ -566,4 +562,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **🐛 Found a bug?** Please open an issue on GitHub with detailed steps to reproduce.
 
-**🔐 Security Issues**: Please email security@superlocker.app for responsible disclosure. 
+**🔐 Security Issues**: Please email vishnuprabha404@gmail.com for responsible disclosure. 
