@@ -132,13 +132,24 @@ if ($buildSuccessful) {
             
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "SUCCESS: Installer created successfully!" -ForegroundColor Green
-                Write-Host "Installer location: PassquariumInstaller_v2.0.exe" -ForegroundColor Cyan
+                Write-Host "Installer location: $installerPath" -ForegroundColor Cyan
                 
-                # Show installer size
+                # Show installer size - check for both v1.6 and v2.0
                 $installerPath = "PassquariumInstaller_v2.0.exe"
+                $installerPathV16 = "PassquariumInstaller_v1.6.exe"
+                
                 if (Test-Path $installerPath) {
                     $installerSize = (Get-Item $installerPath).Length / 1MB
                     Write-Host "Installer size: $([math]::Round($installerSize, 2)) MB" -ForegroundColor Cyan
+                } elseif (Test-Path $installerPathV16) {
+                    $installerPath = $installerPathV16
+                    $installerSize = (Get-Item $installerPath).Length / 1MB
+                    Write-Host "Installer size: $([math]::Round($installerSize, 2)) MB (v1.6)" -ForegroundColor Cyan
+                    Write-Host "Note: Using v1.6 installer (v2.0 not found)" -ForegroundColor Yellow
+                } else {
+                    Write-Host "ERROR: Installer not found!" -ForegroundColor Red
+                    Write-Host "Expected: $installerPath or $installerPathV16" -ForegroundColor Red
+                    exit 1
                 }
                 
                 Write-Host ""
